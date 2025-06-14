@@ -4,5 +4,5 @@ project(frelayTest LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(frelayTest protocolTest.cpp)
+add_executable(frelayTest protocolTest.cpp infoTest.h infoTest.cpp)
 target_link_libraries(frelayTest PRIVATE Protocol)

@@ -155,6 +155,8 @@
         "qtablewidget": "cpp",
         "qapplication": "cpp",
         "text_encoding": "cpp",
-        "hash_map": "cpp"
+        "hash_map": "cpp",
+        "qreadwritelock": "cpp",
+        "qdatastream": "cpp"
     }
 }

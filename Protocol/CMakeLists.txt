@@ -15,6 +15,9 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
 set(SOURCES
 Protocol.cxx
 Protocol.h
+InfoClient.h
+InfoClient.cpp
+InfoPack.hpp
 )
 
 add_library(Protocol STATIC ${SOURCES})

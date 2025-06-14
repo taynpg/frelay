@@ -1,7 +1,8 @@
 #include <Protocol.h>
 #include <QDebug>
+#include "infoTest.h"
 
-int main()
+int test1()
 {
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->type = FBT_CLI_BIN_FILEDATA;
@@ -14,6 +15,11 @@ int main()
     qDebug() << "Packed data hex:" << packet.toHex();
 
     auto ret = Protocol::ParseBuffer(packet);
+    return 0;
+}
 
+int main()
+{
+    performanceTest();
     return 0;
 }
