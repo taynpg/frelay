@@ -28,3 +28,51 @@ bool ClientCore::Connect(const QString& ip, quint16 port)
 void ClientCore::Disconnect()
 {
 }
+
+void ClientCore::onReadyRead()
+{
+    QByteArray data = socket_->readAll();
+    recvBuffer_.append(data);
+    while (true) {
+        auto frame = Protocol::ParseBuffer(recvBuffer_);
+        if (frame == nullptr) {
+            break;
+        }
+        UseFrame(frame);
+    }
+}
+
+void ClientCore::onDisconnected()
+{
+    qCritical() << QString("client %1 disconnected...").arg(remoteID_);
+}
+
+void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
+{
+}
+
+bool ClientCore::Send(QSharedPointer<FrameBuffer> frame)
+{
+    if (frame == nullptr) {
+        return false;
+    }
+    auto data = Protocol::PackBuffer(frame);
+    if (data.size() == 0) {
+        return false;
+    }
+    return Send(data.constData(), data.size());
+}
+
+bool ClientCore::Send(const char* data, qint64 len)
+{
+    if (socket_->state() != QAbstractSocket::ConnectedState) {
+        qCritical() << QString("client %1 not connected...").arg(remoteID_);
+        return false;
+    }
+    qint64 bytesWritten = socket_->write(data, len);
+    if (bytesWritten == -1 || !socket_->waitForBytesWritten(5000)) {
+        qCritical() << QString("Send data to server failed. %1").arg(socket_->errorString());
+        return false;
+    }
+    return true;
+}
