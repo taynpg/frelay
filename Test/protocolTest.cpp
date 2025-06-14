@@ -1,6 +1,8 @@
 #include <Protocol.h>
 #include <QDebug>
+
 #include "infoTest.h"
+#include "msgTest.h"
 
 int test1()
 {
@@ -12,7 +14,7 @@ int test1()
 
     QByteArray packet = Protocol::PackBuffer(frame);
     qDebug() << "Test1 - Packed data size:" << packet.size();
-    qDebug() << "Packed data hex:" << packet.toHex();
+    qWarning() << "Packed data hex:" << packet.toHex();
 
     auto ret = Protocol::ParseBuffer(packet);
     return 0;
@@ -20,6 +22,7 @@ int test1()
 
 int main()
 {
-    performanceTest();
+    setConsoleMsgHandler();
+    test1();
     return 0;
 }
