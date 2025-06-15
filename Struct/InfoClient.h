@@ -1,5 +1,5 @@
-#ifndef COMSTRUCT_H
-#define COMSTRUCT_H
+#ifndef INFO_CLIENT_H
+#define INFO_CLIENT_H
 
 #include <QBuffer>
 #include <QDataStream>
@@ -46,4 +46,4 @@ struct InfoClientVec {
     }
 };
 
-#endif   // COMSTRUCT_H
+#endif   // INFO_CLIENT_H

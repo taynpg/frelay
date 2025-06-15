@@ -76,3 +76,24 @@ bool ClientCore::Send(const char* data, qint64 len)
     }
     return true;
 }
+
+void ClientCore::SetClientsCall(const std::function<void(const InfoClientVec& clients)>& call)
+{
+}
+
+void ClientCore::SetPathCall(const std::function<void(const QString& path)>& call)
+{
+}
+
+void ClientCore::SetFileCall(const std::function<void(const DirFileInfoVec& files)>& call)
+{
+}
+
+void ClientCore::SetRemoteID(const QString& id)
+{
+}
+
+QString ClientCore::GetRemoteID()
+{
+    return remoteID_;
+}

@@ -12,6 +12,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
 
-add_library(Util STATIC Util.h Util.cpp)
-target_link_libraries(Util PRIVATE Qt${QT_VERSION_MAJOR}::Core)
+add_library(Util STATIC Util.h Util.cpp LocalFile.h LocalFile.cpp)
+target_link_libraries(Util PRIVATE Qt${QT_VERSION_MAJOR}::Core Struct)
 target_include_directories(Util PUBLIC ${CMAKE_CURRENT_LIST_DIR})

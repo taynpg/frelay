@@ -58,3 +58,16 @@ void Util::ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, c
         break;
     }
 }
+
+QString DirFileHelper::GetErr() const
+{
+    return QString();
+}
+
+void DirFileHelper::registerPathCall(const std::function<void(const QString& path)>& call)
+{
+}
+
+void DirFileHelper::registerFileCall(const std::function<void(const DirFileInfoVec& vec)>& call)
+{
+}

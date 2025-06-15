@@ -15,11 +15,15 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network)
 set(SOURCES
 ClientCore.cpp
 ClientCore.h
+RemoteFile.h
+RemoteFile.cpp
 )
 
 add_library(ClientCore STATIC ${SOURCES})
 target_link_libraries(ClientCore PRIVATE Protocol 
     Qt${QT_VERSION_MAJOR}::Core 
     Qt${QT_VERSION_MAJOR}::Network
+    Struct
+    Util
 )
 target_include_directories(ClientCore PUBLIC ${CMAKE_CURRENT_LIST_DIR})

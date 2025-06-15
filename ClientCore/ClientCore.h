@@ -1,6 +1,8 @@
 #ifndef CLIENTCORE_H
 #define CLIENTCORE_H
 
+#include <InfoClient.h>
+#include <InfoDirFile.h>
 #include <Protocol.h>
 #include <QDataStream>
 #include <QHostAddress>
@@ -20,6 +22,8 @@ public:
 public:
     bool Connect(const QString& ip, quint16 port);
     void Disconnect();
+    bool Send(QSharedPointer<FrameBuffer> frame);
+    bool Send(const char* data, qint64 len);
 
 private:
     void onReadyRead();
@@ -27,8 +31,13 @@ private:
 
 private:
     void UseFrame(QSharedPointer<FrameBuffer> frame);
-    bool Send(QSharedPointer<FrameBuffer> frame);
-    bool Send(const char* data, qint64 len);
+
+public:
+    void SetClientsCall(const std::function<void(const InfoClientVec& clients)>& call);
+    void SetPathCall(const std::function<void(const QString& path)>& call);
+    void SetFileCall(const std::function<void(const DirFileInfoVec& files)>& call);
+    void SetRemoteID(const QString& id);
+    QString GetRemoteID();
 
 public:
     QMutex conMutex_;
