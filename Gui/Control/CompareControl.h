@@ -12,11 +12,11 @@ class Compare : public QWidget
     Q_OBJECT
 
 public:
-    explicit Compare(QWidget *parent = nullptr);
+    explicit Compare(QWidget* parent = nullptr);
     ~Compare();
 
 private:
-    Ui::Compare *ui;
+    Ui::Compare* ui;
 };
 
-#endif // COMPARECONTROL_H
+#endif   // COMPARECONTROL_H

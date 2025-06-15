@@ -1,9 +1,14 @@
 #include "ClientCore.h"
 
+#include <InfoMsg.h>
+#include <InfoPack.hpp>
 #include <QDebug>
 
 ClientCore::ClientCore(QObject* parent) : QObject(parent)
 {
+    socket_ = new QTcpSocket(this);
+    connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
+    connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);
 }
 
 ClientCore::~ClientCore()
@@ -22,6 +27,7 @@ bool ClientCore::Connect(const QString& ip, quint16 port)
         qCritical() << QString(tr("%1:%2 connect failed...")).arg(ip).arg(port);
         return false;
     }
+    qInfo() << QString(tr("%1:%2 connected success.")).arg(ip).arg(port);
     return true;
 }
 
@@ -49,6 +55,21 @@ void ClientCore::onDisconnected()
 
 void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
 {
+    switch (frame->type) {
+    case FrameBufferType::FBT_SER_MSG_ASKCLIENTS: {
+        InfoClientVec info = infoUnpack<InfoClientVec>(frame->data);
+        clientsCall_(info);
+        break;
+    }
+    case FrameBufferType::FBT_SER_MSG_YOURID: {
+        ownID_ = frame->data;
+        qInfo() << QString(tr("own id: %1")).arg(ownID_);
+        break;
+    }
+    default:
+        qWarning() << QString(tr("unknown frame type: %1")).arg(frame->type);
+        break;
+    }
 }
 
 bool ClientCore::Send(QSharedPointer<FrameBuffer> frame)
@@ -79,14 +100,17 @@ bool ClientCore::Send(const char* data, qint64 len)
 
 void ClientCore::SetClientsCall(const std::function<void(const InfoClientVec& clients)>& call)
 {
+    clientsCall_ = call;
 }
 
 void ClientCore::SetPathCall(const std::function<void(const QString& path)>& call)
 {
+    pathCall_ = call;
 }
 
 void ClientCore::SetFileCall(const std::function<void(const DirFileInfoVec& files)>& call)
 {
+    fileCall_ = call;
 }
 
 void ClientCore::SetRemoteID(const QString& id)

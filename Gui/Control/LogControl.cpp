@@ -43,7 +43,7 @@ void LogPrint::Info(const QString& message)
 }
 void LogPrint::Warn(const QString& message)
 {
-    Print(message, Qt::yellow);
+    Print(message, Qt::gray);
 }
 void LogPrint::Error(const QString& message)
 {

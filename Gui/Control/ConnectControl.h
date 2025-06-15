@@ -17,7 +17,6 @@ enum ConnectState {
     CS_CONNECTED,
 };
 
-class LogPrint;
 class Connecter : public QWidget
 {
     Q_OBJECT
@@ -28,7 +27,6 @@ public:
 
 public:
     void SetClientCore(ClientCore* clientCore);
-    void SetLogPrint(LogPrint* log);
     void SetRemoteCall(const std::function<void(const QString& id)>& call);
     void HandleClients(const InfoClientVec& clients);
 
@@ -44,10 +42,7 @@ private:
     std::string getCurClient();
 
 private:
-    std::thread thConnect_;
     Ui::Connecter* ui;
-    LogPrint* log_;
-    bool thRun_{false};
     bool connceted_{false};
     std::thread thContext_;
     std::function<void(const QString& id)> remoteCall_;
@@ -55,7 +50,35 @@ private:
 
 private:
     QMenu* menu_;
+    QThread* th_;
+    QThread* mainTh_;
     QStandardItemModel* model_;
+};
+
+class ConnectWorker : public QObject
+{
+    Q_OBJECT
+public:
+    explicit ConnectWorker(ClientCore* clientCore, QObject* parent = nullptr)
+        : QObject(parent), clientCore_(clientCore)
+    {
+    }
+
+public slots:
+    void doConnect(const QString& ip, int port, QThread* parentThread)
+    {
+        emit connecting();
+        bool connected = clientCore_->Connect(ip, port);
+        clientCore_->moveToThread(parentThread);
+        emit connectResult(connected);
+    }
+
+signals:
+    void connectResult(bool success);
+    void connecting();
+
+private:
+    ClientCore* clientCore_;
 };
 
 #endif   // CONNECTCONTROL_H

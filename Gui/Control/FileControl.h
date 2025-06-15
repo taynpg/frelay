@@ -10,7 +10,6 @@ namespace Ui {
 class FileManager;
 }
 
-class LogPrint;
 class FileManager : public QWidget
 {
     Q_OBJECT
@@ -21,7 +20,6 @@ public:
 
 public:
     void SetModeStr(const QString& modeStr, int type = 0, ClientCore* clientCore = nullptr);
-    void SetLogPrint(LogPrint* log);
 
 private:
     void InitControl();
@@ -36,7 +34,6 @@ private:
 
 private:
     Ui::FileManager* ui;
-    LogPrint* log_;
     QString curRoot_;
     std::shared_ptr<DirFileHelper> fileHelper_;
 };

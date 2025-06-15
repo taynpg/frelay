@@ -4,11 +4,10 @@
 #include <InfoPack.hpp>
 #include <future>
 
-#include "Control/LogControl.h"
 #include "GuiUtil/Public.h"
 #include "ui_ConnectControl.h"
 
-Connecter::Connecter(QWidget* parent) : QWidget(parent), ui(new Ui::Connecter)
+Connecter::Connecter(QWidget* parent) : QWidget(parent), ui(new Ui::Connecter), th_(nullptr)
 {
     ui->setupUi(this);
     InitControl();
@@ -16,9 +15,6 @@ Connecter::Connecter(QWidget* parent) : QWidget(parent), ui(new Ui::Connecter)
 
 Connecter::~Connecter()
 {
-    if (thConnect_.joinable()) {
-        thConnect_.join();
-    }
     delete ui;
 }
 
@@ -26,11 +22,6 @@ void Connecter::SetClientCore(ClientCore* clientCore)
 {
     clientCore_ = clientCore;
     clientCore_->SetClientsCall([this](const InfoClientVec& clients) { HandleClients(clients); });
-}
-
-void Connecter::SetLogPrint(LogPrint* log)
-{
-    log_ = log;
 }
 
 void Connecter::SetRemoteCall(const std::function<void(const QString& id)>& call)
@@ -42,7 +33,7 @@ void Connecter::HandleClients(const InfoClientVec& clients)
 {
     model_->removeRows(0, ui->listView->model()->rowCount());
     for (const auto& client : clients.vec) {
-        auto* item = new QStandardItem(client.name);
+        auto* item = new QStandardItem(client.id);
         model_->appendRow(item);
     }
 }
@@ -55,19 +46,30 @@ void Connecter::Connect()
         FTCommon::msg(this, tr("IP or Port is empty."));
         return;
     }
-    auto task = [this, ip, port]() {
-        emit sendConnect(ConnectState::CS_CONNECTING);
-        connceted_ = clientCore_->Connect(ip, port.toInt());
-        if (connceted_) {
-            emit sendConnect(ConnectState::CS_CONNECTED);
-        } else {
-            emit sendConnect(ConnectState::CS_DISCONNECT);
+
+    if (th_) {
+        if (th_->isRunning()) {
+            th_->quit();
+            th_->wait(1000);
         }
-    };
-    if (thConnect_.joinable()) {
-        thConnect_.join();
+        delete th_;
     }
-    thConnect_ = std::thread(task);
+
+    auto* worker = new ConnectWorker(clientCore_, nullptr);
+    th_ = new QThread();
+    worker->moveToThread(th_);
+    clientCore_->moveToThread(th_);
+
+    connect(th_, &QThread::started,
+            [this, worker, ip, port]() { worker->doConnect(ip, port.toInt(), this->parent()->thread()); });
+    connect(worker, &ConnectWorker::connecting, this, [this]() { setState(ConnectState::CS_CONNECTING); });
+    connect(worker, &ConnectWorker::connectResult, this, [this](bool success) {
+        emit sendConnect(success ? ConnectState::CS_CONNECTED : ConnectState::CS_DISCONNECT);
+        th_->quit();
+    });
+    connect(th_, &QThread::finished, worker, &QObject::deleteLater);
+    connect(th_, &QThread::finished, th_, &QObject::deleteLater);
+    th_->start();
 }
 
 void Connecter::setState(ConnectState cs)
@@ -76,7 +78,7 @@ void Connecter::setState(ConnectState cs)
     case CS_CONNECTING:
         ui->btnConnect->setEnabled(false);
         ui->btnDisconnect->setEnabled(false);
-        log_->Info(tr("Connecting..."));
+        qInfo() << QString(tr("Connecting..."));
         break;
     case CS_CONNECTED:
         ui->btnConnect->setEnabled(false);

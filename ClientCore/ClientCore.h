@@ -41,11 +41,14 @@ public:
 
 public:
     QMutex conMutex_;
+    QString ownID_;
     QString remoteID_;
     QTcpSocket* socket_;
     QByteArray recvBuffer_;
 
     std::function<void(const QString& path)> pathCall_;
+    std::function<void(const InfoClientVec& clients)> clientsCall_;
+    std::function<void(const DirFileInfoVec& files)> fileCall_;
 };
 
 #endif   // CLIENTCORE_H

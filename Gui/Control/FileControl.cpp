@@ -8,7 +8,6 @@
 #include <QTableWidgetItem>
 #include <RemoteFile.h>
 
-#include "LogControl.h"
 #include "ui_FileControl.h"
 
 FileManager::FileManager(QWidget* parent) : QWidget(parent), ui(new Ui::FileManager)
@@ -36,11 +35,6 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
         remotePtr->setClientCore(clientCore);
         fileHelper_ = remotePtr;
     }
-}
-
-void FileManager::SetLogPrint(LogPrint* log)
-{
-    log_ = log;
 }
 
 void FileManager::InitControl()

@@ -42,6 +42,7 @@ private:
     void replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame);
     bool sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame);
 
+    QString id_;
     QMap<QString, QSharedPointer<ClientInfo>> clients_;
     QReadWriteLock rwLock_;
     QTimer* monitorTimer_;

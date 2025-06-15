@@ -13,4 +13,4 @@ public:
     static QString GetAppPath();
 };
 
-#endif   // PUBLIC_H
+#endif   // PUBLIC_H 

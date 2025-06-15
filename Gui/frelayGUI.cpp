@@ -4,6 +4,8 @@
 
 #include "./ui_frelayGUI.h"
 
+static LogPrint* logPrint = nullptr;
+
 frelayGUI::frelayGUI(QWidget* parent) : QMainWindow(parent), ui(new Ui::frelayGUI)
 {
     ui->setupUi(this);
@@ -20,21 +22,17 @@ frelayGUI::~frelayGUI()
 
 void frelayGUI::InitControl()
 {
-    log_ = new LogPrint(this);
-
-    clientCore_ = new ClientCore(this);
+    logPrint = new LogPrint(this);
+    clientCore_ = new ClientCore();
 
     connecter_ = new Connecter(this);
     connecter_->SetClientCore(clientCore_);
-    connecter_->SetLogPrint(log_);
     connecter_->SetRemoteCall([this](const QString& id) { clientCore_->SetRemoteID(id); });
 
     localFile_ = new FileManager(this);
     remoteFile_ = new FileManager(this);
     localFile_->SetModeStr(tr("Local:"));
     remoteFile_->SetModeStr(tr("Remote:"), 1, clientCore_);
-    localFile_->SetLogPrint(log_);
-    remoteFile_->SetLogPrint(log_);
 
     tabWidget_ = new QTabWidget(this);
 }
@@ -57,7 +55,7 @@ void frelayGUI::ControlLayout()
 
     sTop->addWidget(tabWidget_);
     sTop->addWidget(connecter_);
-    tabWidget_->addTab(log_, tr("Log"));
+    tabWidget_->addTab(logPrint, tr("Log"));
 
     sFile->addWidget(localFile_);
     sFile->addWidget(remoteFile_);
@@ -65,6 +63,30 @@ void frelayGUI::ControlLayout()
     splitter->addWidget(sTop);
     splitter->addWidget(sFile);
     setCentralWidget(splitter);
+}
+
+void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg)
+{
+    Q_UNUSED(context);
+
+    switch (type) {
+    case QtDebugMsg:
+        logPrint->Debug(msg);
+        break;
+    case QtInfoMsg:
+        logPrint->Info(msg);
+        break;
+    case QtWarningMsg:
+        logPrint->Warn(msg);
+        break;
+    case QtCriticalMsg:
+    case QtFatalMsg:
+        logPrint->Error(msg);
+        break;
+    default:
+        logPrint->Error("Unknown QtMsgType type.");
+        break;
+    }
 }
 
 void frelayGUI::closeEvent(QCloseEvent* event)

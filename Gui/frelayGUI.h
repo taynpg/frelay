@@ -30,12 +30,14 @@ private:
     void ControlSignal();
     void ControlLayout();
 
+public:
+    static void ControlMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg);
+
 protected:
     void closeEvent(QCloseEvent* event) override;
 
 private:
     Ui::frelayGUI* ui;
-    LogPrint* log_;
     QTabWidget* tabWidget_;
     Connecter* connecter_;
     FileManager* localFile_;

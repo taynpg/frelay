@@ -7,6 +7,8 @@ int main(int argc, char* argv[])
 {
     QApplication a(argc, argv);
 
+    qInstallMessageHandler(frelayGUI::ControlMsgHander);
+
 #ifdef _WIN32
     QFont font("Microsoft YaHei", 9);
     a.setFont(font);

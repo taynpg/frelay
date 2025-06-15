@@ -10,6 +10,7 @@ Server::Server(QObject* parent) : QTcpServer(parent)
 {
     monitorTimer_ = new QTimer(this);
     connect(monitorTimer_, &QTimer::timeout, this, &Server::monitorClients);
+    connect(this, &Server::newConnection, this, &Server::onNewConnection);
 }
 
 Server::~Server()
@@ -26,6 +27,7 @@ bool Server::startServer(quint16 port)
 
     qDebug() << "Server started on port" << serverPort();
     monitorTimer_->start(30000);
+    id_ = QString("0.0.0.0:%1").arg(serverPort());
     return true;
 }
 
@@ -45,7 +47,11 @@ void Server::stopServer()
 void Server::onNewConnection()
 {
     QTcpSocket* clientSocket = nextPendingConnection();
-    QString clientId = QString("%1:%2").arg(clientSocket->peerAddress().toString()).arg(clientSocket->peerPort());
+
+    QHostAddress peerAddress = clientSocket->peerAddress();
+    quint32 ipv4 = peerAddress.toIPv4Address();
+    QString ipStr = QHostAddress(ipv4).toString();
+    QString clientId = QString("%1:%2").arg(ipStr).arg(clientSocket->peerPort());
 
     if (clients_.size() >= 100) {
         qWarning() << "Client connection refused (max limit reached):" << clientId;
@@ -55,6 +61,7 @@ void Server::onNewConnection()
 
     auto client = QSharedPointer<ClientInfo>::create();
     client->socket = clientSocket;
+    client->socket->setProperty("clientId", clientId);
     client->id = clientId;
     client->connectTime = QDateTime::currentSecsSinceEpoch();
 
@@ -69,9 +76,9 @@ void Server::onNewConnection()
     qDebug() << "Client connected:" << clientId;
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->type = FBT_SER_MSG_YOURID;
-    frame->fid = "server";
+    frame->fid = id_;
     frame->tid = clientId;
-    frame->data = QString("Welcome client %1").arg(clientId).toUtf8();
+    frame->data = clientId.toUtf8();
     sendData(clientSocket, frame);
 }
 
@@ -82,7 +89,10 @@ void Server::onClientDisconnected()
         return;
     }
 
-    QString clientId = QString("%1:%2").arg(socket->peerAddress().toString()).arg(socket->peerPort());
+    QHostAddress peerAddress = socket->peerAddress();
+    quint32 ipv4 = peerAddress.toIPv4Address();
+    QString ipStr = QHostAddress(ipv4).toString();
+    QString clientId = QString("%1:%2").arg(ipStr).arg(socket->peerPort());
 
     {
         QWriteLocker locker(&rwLock_);
@@ -100,12 +110,10 @@ void Server::onReadyRead()
         return;
     }
 
-    QString clientId = QString("%1:%2").arg(socket->peerAddress().toString()).arg(socket->peerPort());
-
     QSharedPointer<ClientInfo> client;
     {
         QReadLocker locker(&rwLock_);
-        client = clients_.value(clientId);
+        client = clients_.value(socket->property("clientId").toString());
     }
 
     if (client) {
@@ -147,7 +155,7 @@ bool Server::forwardData(QSharedPointer<ClientInfo> client, QSharedPointer<Frame
     } else {
         auto errorFrame = QSharedPointer<FrameBuffer>::create();
         errorFrame->type = FBT_SER_MSG_FORWARD_FAILED;
-        errorFrame->fid = "server";
+        errorFrame->fid = id_;
         errorFrame->tid = client->id;
         errorFrame->data = QString("Target client %1 not found").arg(frame->tid).toUtf8();
         return sendData(client->socket, errorFrame);
@@ -160,11 +168,12 @@ void Server::replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<Fram
     case FBT_SER_MSG_ASKCLIENTS: {
         QByteArray clientList = getClients();
         auto replyFrame = QSharedPointer<FrameBuffer>::create();
-        replyFrame->type = FBT_SER_MSG_RESPONSE;
-        replyFrame->fid = "server";
+        replyFrame->type = FBT_SER_MSG_ASKCLIENTS;
+        replyFrame->fid = id_;
         replyFrame->tid = client->id;
         replyFrame->data = clientList;
-        sendData(client->socket, replyFrame);
+        auto ret = sendData(client->socket, replyFrame);
+        qDebug() << "Reply client list:" << client->id << ret;
         break;
     }
     default:
