@@ -3,6 +3,9 @@
 
 #include <InfoClient.h>
 #include <InfoDirFile.h>
+#include <InfoMsg.h>
+#include <InfoPack.hpp>
+#include <LocalFile.h>
 #include <Protocol.h>
 #include <QDataStream>
 #include <QHostAddress>
@@ -24,6 +27,14 @@ public:
     void Disconnect();
     bool Send(QSharedPointer<FrameBuffer> frame);
     bool Send(const char* data, qint64 len);
+    template <typename T> bool Send(const T& info, FrameBufferType type, const QString& tid)
+    {
+        auto f = QSharedPointer<FrameBuffer>::create();
+        f->tid = tid;
+        f->data = infoPack<T>(info);
+        f->type = type;
+        return Send(f);
+    }
 
 private:
     void onReadyRead();
@@ -45,6 +56,8 @@ public:
     QString remoteID_;
     QTcpSocket* socket_;
     QByteArray recvBuffer_;
+
+    LocalFile localFile_;
 
     std::function<void(const QString& path)> pathCall_;
     std::function<void(const InfoClientVec& clients)> clientsCall_;

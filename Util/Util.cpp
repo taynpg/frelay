@@ -2,7 +2,9 @@
 
 #include <QDateTime>
 #include <QDebug>
+#include <QDir>
 #include <QMutex>
+#include <QStandardPaths>
 #include <iostream>
 #include <spdlog/fmt/bundled/color.h>
 #include <spdlog/fmt/fmt.h>
@@ -19,6 +21,16 @@ static std::shared_ptr<spdlog::logger> logger;
 
 Util::Util()
 {
+}
+
+QString Util::GetUserHome()
+{
+    QString homePath = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
+    if (homePath.isEmpty()) {
+        qWarning() << "Failed to get user home directory";
+        homePath = QDir::homePath();
+    }
+    return homePath;
 }
 
 void Util::InitLogger(const QString& logPath, const QString& mark)

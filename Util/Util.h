@@ -11,12 +11,13 @@ public:
     Util();
 
 public:
+    static QString GetUserHome();
     static void InitLogger(const QString& logPath, const QString& mark);
     static void ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 };
 
-class DirFileHelper
-{
+class DirFileHelper : public QObject {
+    Q_OBJECT
 public:
     DirFileHelper() = default;
     virtual ~DirFileHelper() = default;

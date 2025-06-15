@@ -1,7 +1,5 @@
 #include "ClientCore.h"
 
-#include <InfoMsg.h>
-#include <InfoPack.hpp>
 #include <QDebug>
 
 ClientCore::ClientCore(QObject* parent) : QObject(parent)
@@ -66,6 +64,41 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         qInfo() << QString(tr("own id: %1")).arg(ownID_);
         break;
     }
+    case FrameBufferType::FBT_CLI_ANS_DIRFILE: {
+        DirFileInfoVec info = infoUnpack<DirFileInfoVec>(frame->data);
+        fileCall_(info);
+        break;
+    }
+    case FrameBufferType::FBT_CLI_ASK_DIRFILE: {
+        DirFileInfoVec vec;
+        InfoMsg info = infoUnpack<InfoMsg>(frame->data);
+        vec.root = info.msg;
+        if (!localFile_.GetDirFile(info.msg, vec)) {
+            qWarning() << QString(tr("get dir file failed use %1")).arg(info.msg);
+            return;
+        }
+        if (!Send<DirFileInfoVec>(vec, FBT_CLI_ANS_DIRFILE, frame->fid)) {
+            qCritical() << QString(tr("send dir file result failed."));
+            return;
+        }
+        break;
+    }
+    case FrameBufferType::FBT_CLI_ASK_HOME: {
+        InfoMsg info;
+        info.msg = Util::GetUserHome();
+        auto data = infoPack<InfoMsg>(info);
+        if (!Send<InfoMsg>(info, FBT_CLI_ANS_HOME, frame->fid)) {
+            qCritical() << QString(tr("send home failed."));
+            return;
+        }
+        break;
+    }
+    case FrameBufferType::FBT_CLI_ANS_HOME: {
+        InfoMsg info = infoUnpack<InfoMsg>(frame->data);
+        qInfo() << QString(tr("home: %1")).arg(info.msg);
+        pathCall_(info.msg);
+        break;
+    }
     default:
         qWarning() << QString(tr("unknown frame type: %1")).arg(frame->type);
         break;
@@ -115,6 +148,7 @@ void ClientCore::SetFileCall(const std::function<void(const DirFileInfoVec& file
 
 void ClientCore::SetRemoteID(const QString& id)
 {
+    remoteID_ = id;
 }
 
 QString ClientCore::GetRemoteID()

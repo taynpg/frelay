@@ -158,6 +158,7 @@
         "hash_map": "cpp",
         "qreadwritelock": "cpp",
         "qdatastream": "cpp",
-        "qhostaddress": "cpp"
+        "qhostaddress": "cpp",
+        "qthread": "cpp"
     }
 }

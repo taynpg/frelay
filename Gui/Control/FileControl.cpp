@@ -148,17 +148,7 @@ void FileManager::ShowFile(const DirFileInfoVec& info)
         ui->tableWidget->setItem(i, 4, item);
     }
     ui->tableWidget->resizeColumnToContents(0);
-
-    if (info.vec.empty()) {
-        return;
-    }
-
-    QString fp = info.vec[0].fullPath;
-    QDir dir(fp);
-    dir.cdUp();
-    fp = dir.path();
-    curRoot_ = fp;
-
+    curRoot_ = info.root;
     ShowPath(curRoot_);
 }
 

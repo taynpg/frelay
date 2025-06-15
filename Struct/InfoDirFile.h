@@ -33,6 +33,7 @@ QDataStream& operator>>(QDataStream& data, DirFileInfo& info);
 
 struct DirFileInfoVec {
     QVector<DirFileInfo> vec;
+    QString root;
 
     void serialize(QDataStream& data) const
     {
@@ -40,6 +41,7 @@ struct DirFileInfoVec {
         for (const auto& info : vec) {
             data << info;
         }
+        data << root;
     }
     void deserialize(QDataStream& data)
     {
@@ -49,6 +51,7 @@ struct DirFileInfoVec {
         for (quint32 i = 0; i < size; ++i) {
             data >> vec[i];
         }
+        data >> root;
     }
 };
 

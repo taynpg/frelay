@@ -40,6 +40,12 @@ QSharedPointer<FrameBuffer> Protocol::ParseBuffer(QByteArray& buffer)
     stream.readRawData(fidBytes.data(), 32);
     stream.readRawData(tidBytes.data(), 32);
 
+    auto b2id = [](const QByteArray& binary, int fixLen) {
+        const int nullPos = binary.indexOf('\0');
+        const int len = (nullPos >= 0) ? qMin(nullPos, fixLen) : fixLen;
+        return QString::fromUtf8(binary.constData(), len);
+    };
+
     quint32 dataLen;
     stream >> dataLen;
 
@@ -60,8 +66,8 @@ QSharedPointer<FrameBuffer> Protocol::ParseBuffer(QByteArray& buffer)
     }
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->type = type;
-    frame->fid = QString::fromUtf8(fidBytes).trimmed();
-    frame->tid = QString::fromUtf8(tidBytes).trimmed();
+    frame->fid = b2id(fidBytes, 32);
+    frame->tid = b2id(tidBytes, 32);
     frame->data = data;
     buffer.remove(0, headerPos + totalFrameSize);
     return frame;
@@ -74,7 +80,7 @@ QByteArray Protocol::PackBuffer(const QSharedPointer<FrameBuffer>& frame)
 
     if (frame.isNull()) {
         return QByteArray();
-    } 
+    }
 
     QByteArray packet;
     QDataStream stream(&packet, QIODevice::WriteOnly);

@@ -1,6 +1,7 @@
 #include "RemoteFile.h"
 
 #include <InfoPack.hpp>
+
 #include "LocalFile.h"
 
 void RemoteFile::setClientCore(ClientCore* cliCore)
@@ -13,19 +14,12 @@ void RemoteFile::setClientCore(ClientCore* cliCore)
 bool RemoteFile::GetHome()
 {
     InfoMsg info;
-    auto frame = QSharedPointer<FrameBuffer>::create();
-    frame->data = infoPack(info);
-    frame->type = FBT_CLI_ASK_HOME;
-    frame->tid = cliCore_->GetRemoteID();
-    return cliCore_->Send(frame);
+    return cliCore_->Send<InfoMsg>(info, FBT_CLI_ASK_HOME, cliCore_->GetRemoteID());
 }
 
 bool RemoteFile::GetDirFile(const QString& dir)
 {
     InfoMsg info;
-    auto frame = QSharedPointer<FrameBuffer>::create();
-    frame->data = infoPack(info);
-    frame->type = FBT_CLI_ASK_DIRFILE;
-    frame->tid = cliCore_->GetRemoteID();
-    return cliCore_->Send(frame);
+    info.msg = dir;
+    return cliCore_->Send<InfoMsg>(info, FBT_CLI_ASK_DIRFILE, cliCore_->GetRemoteID());
 }
