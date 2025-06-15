@@ -24,6 +24,7 @@ bool LocalFile::GetDirFile(const QString& dir)
 bool LocalFile::GetDirFile(const QString& dir, DirFileInfoVec& vec)
 {
     vec.vec.clear();
+    vec.root = dir;
 
     QDir qdir(dir);
     if (!qdir.exists()) {

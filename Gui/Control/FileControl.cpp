@@ -172,13 +172,13 @@ void FileManager::evtUp()
 {
     QString path(curRoot_);
     QDir dir(path);
-    dir.cdUp();
+    if (!dir.cdUp()) {
+        return;
+    }
     path = dir.path();
-
     if (path.isEmpty()) {
         return;
     }
-
     auto r = fileHelper_->GetDirFile(path);
     if (r) {
         curRoot_ = path;

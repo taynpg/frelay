@@ -72,7 +72,6 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     case FrameBufferType::FBT_CLI_ASK_DIRFILE: {
         DirFileInfoVec vec;
         InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-        vec.root = info.msg;
         if (!localFile_.GetDirFile(info.msg, vec)) {
             qWarning() << QString(tr("get dir file failed use %1")).arg(info.msg);
             return;
