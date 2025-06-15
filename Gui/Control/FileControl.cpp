@@ -172,10 +172,7 @@ void FileManager::evtUp()
 {
     QString path(curRoot_);
     QDir dir(path);
-    if (!dir.cdUp()) {
-        return;
-    }
-    path = dir.path();
+    path = QDir::cleanPath(dir.absolutePath() + "/..");
     if (path.isEmpty()) {
         return;
     }
