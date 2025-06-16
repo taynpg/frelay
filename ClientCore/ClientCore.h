@@ -1,4 +1,4 @@
-#ifndef CLIENTCORE_H
+﻿#ifndef CLIENTCORE_H
 #define CLIENTCORE_H
 
 #include <InfoClient.h>
@@ -48,7 +48,7 @@ public:
     void SetClientsCall(const std::function<void(const InfoClientVec& clients)>& call);
     void SetPathCall(const std::function<void(const QString& path)>& call);
     void SetFileCall(const std::function<void(const DirFileInfoVec& files)>& call);
-    void SetFrameCall(FrameBufferType type, const std::function<void(FrameBuffer*)>& call);
+    void SetFrameCall(FrameBufferType type, const std::function<void(QSharedPointer<FrameBuffer>)>& call);
     void SetRemoteID(const QString& id);
     QString GetRemoteID();
 
@@ -65,7 +65,7 @@ public:
     std::function<void(const InfoClientVec& clients)> clientsCall_;
     std::function<void(const DirFileInfoVec& files)> fileCall_;
 
-    std::array<std::function<void(FrameBuffer*)>, 256> frameCall_;
+    std::array<std::function<void(QSharedPointer<FrameBuffer>)>, 256> frameCall_;
 };
 
 #endif   // CLIENTCORE_H

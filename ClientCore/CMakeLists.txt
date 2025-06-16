@@ -17,6 +17,8 @@ ClientCore.cpp
 ClientCore.h
 RemoteFile.h
 RemoteFile.cpp
+FileTrans.h 
+FileTrans.cpp
 )
 
 add_library(ClientCore STATIC ${SOURCES})

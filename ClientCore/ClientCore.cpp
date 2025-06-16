@@ -1,4 +1,4 @@
-#include "ClientCore.h"
+﻿#include "ClientCore.h"
 
 #include <QDebug>
 
@@ -99,7 +99,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         break;
     }
     default:
-        qWarning() << QString(tr("unknown frame type: %1")).arg(frame->type);
+        frameCall_[static_cast<uint32_t>(frame->type)](frame);
         break;
     }
 }
@@ -150,7 +150,7 @@ void ClientCore::SetRemoteID(const QString& id)
     remoteID_ = id;
 }
 
-void ClientCore::SetFrameCall(FrameBufferType type, const std::function<void(FrameBuffer*)>& call)
+void ClientCore::SetFrameCall(FrameBufferType type, const std::function<void(QSharedPointer<FrameBuffer>)>& call)
 {
     frameCall_[type] = call;
 }

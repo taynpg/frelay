@@ -1,4 +1,4 @@
-# Prerequisites
+﻿# Prerequisites
 *.d
 
 # Compiled Object files
@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+out
 
 # Precompiled Headers
 *.gch

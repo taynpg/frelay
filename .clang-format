@@ -1,8 +1,8 @@
-BasedOnStyle: LLVM
+﻿BasedOnStyle: LLVM
 IndentWidth: 4
 PointerAlignment: Left
 AccessModifierOffset: -4
-ReflowComments: Always
+ReflowComments: true
 SpacesBeforeTrailingComments: 3
 AllowShortFunctionsOnASingleLine: None
 BreakBeforeBraces: Custom
