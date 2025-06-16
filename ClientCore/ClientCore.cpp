@@ -150,6 +150,11 @@ void ClientCore::SetRemoteID(const QString& id)
     remoteID_ = id;
 }
 
+void ClientCore::SetFrameCall(FrameBufferType type, const std::function<void(FrameBuffer*)>& call)
+{
+    frameCall_[type] = call;
+}
+
 QString ClientCore::GetRemoteID()
 {
     return remoteID_;

@@ -13,6 +13,7 @@
 #include <QMutexLocker>
 #include <QTcpSocket>
 #include <QThread>
+#include <array>
 
 class ClientCore : public QObject
 {
@@ -47,6 +48,7 @@ public:
     void SetClientsCall(const std::function<void(const InfoClientVec& clients)>& call);
     void SetPathCall(const std::function<void(const QString& path)>& call);
     void SetFileCall(const std::function<void(const DirFileInfoVec& files)>& call);
+    void SetFrameCall(FrameBufferType type, const std::function<void(FrameBuffer*)>& call);
     void SetRemoteID(const QString& id);
     QString GetRemoteID();
 
@@ -62,6 +64,8 @@ public:
     std::function<void(const QString& path)> pathCall_;
     std::function<void(const InfoClientVec& clients)> clientsCall_;
     std::function<void(const DirFileInfoVec& files)> fileCall_;
+
+    std::array<std::function<void(FrameBuffer*)>, 256> frameCall_;
 };
 
 #endif   // CLIENTCORE_H
