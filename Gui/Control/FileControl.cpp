@@ -1,4 +1,4 @@
-#include "FileControl.h"
+﻿#include "FileControl.h"
 
 #include <LocalFile.h>
 #include <QDateTime>
@@ -57,10 +57,23 @@ void FileManager::InitControl()
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     // ui->tableWidget->setStyleSheet("QTableWidget::item:hover { background-color: transparent; }");
 
+    ui->tableWidget->setDragEnabled(true);
+    ui->tableWidget->viewport()->setAcceptDrops(true);
+    ui->tableWidget->setDropIndicatorShown(true);
+    ui->tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    ui->tableWidget->setDragDropMode(QAbstractItemView::DragDrop);
+
     connect(ui->btnHome, &QPushButton::clicked, this, &FileManager::evtHome);
     connect(ui->btnVisit, &QPushButton::clicked, this, &FileManager::evtFile);
     connect(ui->tableWidget, &QTableWidget::cellDoubleClicked, this, &FileManager::doubleClick);
     connect(ui->btnUp, &QPushButton::clicked, this, &FileManager::evtUp);
+}
+
+void FileManager::InitMenu(bool remote)
+{
+    if (remote) {
+        auto acDown = new QAction(tr("Download"));
+    }
 }
 
 void FileManager::ShowPath(const QString& path)

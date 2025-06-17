@@ -1,10 +1,11 @@
-#ifndef FILECONTROL_H
+﻿#ifndef FILECONTROL_H
 #define FILECONTROL_H
 
 #include <ClientCore.h>
 #include <InfoDirFile.h>
 #include <QWidget>
 #include <Util.h>
+#include <QMenu>
 
 namespace Ui {
 class FileManager;
@@ -23,6 +24,7 @@ public:
 
 private:
     void InitControl();
+    void InitMenu(bool remote = false);
     void ShowPath(const QString& path);
     void ShowFile(const DirFileInfoVec& info);
     void doubleClick(int row, int column);
@@ -35,6 +37,8 @@ private:
 private:
     Ui::FileManager* ui;
     QString curRoot_;
+    QMenu* localMenu_;
+    QMenu* remoteMenu_;
     std::shared_ptr<DirFileHelper> fileHelper_;
 };
 
