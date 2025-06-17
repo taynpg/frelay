@@ -27,6 +27,9 @@ enum class TaskState {
 
 struct DoTransTask {
     QFile file;
+    quint64 totalSize{0};
+    quint64 tranSize{0};
+    quint32 permission{};
     TaskState state = TaskState::STATE_NONE;
     TransTask task;
 };
@@ -58,14 +61,14 @@ public:
 
 private:
     void fbtReqSend(QSharedPointer<FrameBuffer> frame);
-    void fbtReqRecv(QSharedPointer<FrameBuffer> frame);
+    void fbtReqDown(QSharedPointer<FrameBuffer> frame);
     void fbtTransDone(QSharedPointer<FrameBuffer> frame);
-    void fbtAnsRecvSuccess(QSharedPointer<FrameBuffer> frame);
-    void fbtAnsRecvFailed(QSharedPointer<FrameBuffer> frame);
-    void fbtFileTrans(QSharedPointer<FrameBuffer> frame);
-    void fbtAnsSendFailed(QSharedPointer<FrameBuffer> frame);
-    void fbtAnsSendSuccess(QSharedPointer<FrameBuffer> frame);
-    void fbtFileTransFailed(QSharedPointer<FrameBuffer> frame);
+    void fbtCanDown(QSharedPointer<FrameBuffer> frame);
+    void fbtCanotDown(QSharedPointer<FrameBuffer> frame);
+    void fbtFileBuffer(QSharedPointer<FrameBuffer> frame);
+    void fbtCanotSend(QSharedPointer<FrameBuffer> frame);
+    void fbtCanSend(QSharedPointer<FrameBuffer> frame);
+    void fbtTransFailed(QSharedPointer<FrameBuffer> frame);
 
 private:
     void SendFile(const QSharedPointer<DoTransTask>& task);

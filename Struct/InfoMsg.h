@@ -10,20 +10,23 @@
 struct InfoMsg {
     qint32 mark{};
     QString msg;
-    QString path;
+    QString fromPath;
+    QString toPath;
+    quint64 size{};
+    quint32 permissions{};
 
     void serialize(QDataStream& data) const
     {
-        data << mark << msg << path;
+        data << mark << msg << fromPath << toPath << size << permissions;
     }
 
     void deserialize(QDataStream& data)
     {
-        data >> mark >> msg >> path;
+        data >> mark >> msg >> fromPath >> toPath >> size >> permissions;
     }
 };
 
 QDataStream& operator<<(QDataStream& data, const InfoMsg& info);
 QDataStream& operator>>(QDataStream& data, InfoMsg& info);
 
-#endif  // INFO_MSG_H
+#endif   // INFO_MSG_H

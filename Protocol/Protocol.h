@@ -11,7 +11,8 @@ constexpr quint32 CHUNK_BUF_SIZE = 1 * 1024 * 1024;
 // used for communication with the server.
 // Contents beyond 30 are only forwarded.
 enum FrameBufferType : uint16_t {
-    FBT_SER_MSG_ASKCLIENTS = 0,
+    FBT_NONE = 0,
+    FBT_SER_MSG_ASKCLIENTS,
     FBT_SER_MSG_YOURID,
     FBT_SER_MSG_RESPONSE,
     FBT_SER_MSG_FORWARD_FAILED,
@@ -22,21 +23,21 @@ enum FrameBufferType : uint16_t {
     FBT_CLI_ASK_HOME,
     FBT_CLI_ANS_HOME,
     FBT_CLI_REQ_SEND,
-    FBT_CLI_ANSSEND_SUCCESS,
-    FBT_CLI_ANSSEND_FAILED,
-    FBT_CLI_REQ_RECV,
-    FBT_CLI_ANSRECV_SUCCESS,
-    FBT_CLI_ANSRECV_FAILED,
-    FBT_CLI_FILETRANS,
+    FBT_CLI_CAN_SEND,
+    FBT_CLI_CANOT_SEND,
+    FBT_CLI_REQ_DOWN,
+    FBT_CLI_CAN_DOWN,
+    FBT_CLI_CANOT_DOWN,
+    FBT_CLI_FILE_BUFFER,
     FBT_CLI_TRANS_DONE,
-    FBT_CLI_FILETRANS_FAILED
+    FBT_CLI_TRANS_FAILED
 };
 
 struct FrameBuffer {
     QByteArray data;
     QString fid;
     QString tid;
-    FrameBufferType type;
+    FrameBufferType type = FBT_NONE;
 };
 
 class Protocol

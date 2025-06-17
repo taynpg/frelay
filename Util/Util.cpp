@@ -1,4 +1,4 @@
-#include "Util.h"
+﻿#include "Util.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -43,6 +43,34 @@ void Util::InitLogger(const QString& logPath, const QString& mark)
     logger = std::make_shared<spdlog::logger>(mark.toStdString(), sinks.begin(), sinks.end());
     logger->set_level(spdlog::level::debug);
     spdlog::register_logger(logger);
+}
+
+#include <QDir>
+#include <QFileInfo>
+
+QString Util::Get2FilePath(const QString& file, const QString& directory)
+{
+    if (file.isEmpty() || directory.isEmpty()) {
+        return QString();
+    }
+
+    QFileInfo fileInfo(file);
+    QDir dir(directory);
+
+    if (!fileInfo.isFile()) {
+        qWarning() << "Path A is not a file:" << file;
+        return QString();
+    }
+    if (!dir.exists()) {
+        qWarning() << "Path B is not a valid directory:" << directory;
+        return QString();
+    }
+
+    QString fileName = fileInfo.fileName();
+    QString cleanPathB = QDir::cleanPath(directory);
+    QString newPath = cleanPathB + QDir::separator() + fileName;
+    newPath = QDir::cleanPath(newPath);
+    return newPath;
 }
 
 void Util::ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg)
