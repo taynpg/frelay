@@ -27,6 +27,8 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
 {
     // judget is same client's same file.
 
+    // judget if file exits etc.
+
     // send
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
     auto doTask = QSharedPointer<DoTransTask>::create();
@@ -123,6 +125,8 @@ void FileTrans::fbtFileTrans(QSharedPointer<FrameBuffer> frame)
 
 void FileTrans::fbtAnsSendFailed(QSharedPointer<FrameBuffer> frame)
 {
+    InfoMsg info = infoUnpack<InfoMsg>(frame->data);
+    qCritical() << QString(tr("request file:%1 failed. reason:%2")).arg(info.path).arg(info.msg);
 }
 
 void FileTrans::fbtAnsSendSuccess(QSharedPointer<FrameBuffer> frame)

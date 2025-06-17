@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+﻿cmake_minimum_required(VERSION 3.16)
 
 project(frelay VERSION 0.1.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
@@ -32,5 +32,6 @@ add_subdirectory(Server)
 add_subdirectory(ClientCore)
 add_subdirectory(Util)
 add_subdirectory(Gui)
+add_subdirectory(Console)
 add_subdirectory(Struct)
 add_subdirectory(Test)
