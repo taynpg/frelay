@@ -1,9 +1,11 @@
-#ifndef PROTOCOL_H
+﻿#ifndef PROTOCOL_H
 #define PROTOCOL_H
 
 #include <QByteArray>
 #include <QSharedPointer>
 #include <QString>
+
+constexpr quint32 CHUNK_BUF_SIZE = 1 * 1024 * 1024;
 
 // It is specified here that the first 30 contents (inclusive) are
 // used for communication with the server.
@@ -20,13 +22,14 @@ enum FrameBufferType : uint16_t {
     FBT_CLI_ASK_HOME,
     FBT_CLI_ANS_HOME,
     FBT_CLI_REQ_SEND,
-    FBT_CLI_ANSREQ_SUCCESS,
-    FBT_CLI_ANSREQ_FAILED,
+    FBT_CLI_ANSSEND_SUCCESS,
+    FBT_CLI_ANSSEND_FAILED,
     FBT_CLI_REQ_RECV,
     FBT_CLI_ANSRECV_SUCCESS,
     FBT_CLI_ANSRECV_FAILED,
     FBT_CLI_FILETRANS,
-    FBT_CLI_TRANS_DONE
+    FBT_CLI_TRANS_DONE,
+    FBT_CLI_FILETRANS_FAILED
 };
 
 struct FrameBuffer {

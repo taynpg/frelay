@@ -1,4 +1,4 @@
-#include <QApplication>
+﻿#include <QApplication>
 #include <QFile>
 
 #include "frelayGUI.h"
@@ -12,6 +12,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
     QFont font("Microsoft YaHei", 9);
     a.setFont(font);
+    a.setWindowIcon(QIcon(":/ico/main.ico"));
     a.setStyle("Windows");
 #endif
 

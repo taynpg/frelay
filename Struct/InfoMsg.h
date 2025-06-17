@@ -1,4 +1,4 @@
-#ifndef INFO_MSG_H
+﻿#ifndef INFO_MSG_H
 #define INFO_MSG_H
 
 #include <QBuffer>
@@ -10,15 +10,16 @@
 struct InfoMsg {
     qint32 mark{};
     QString msg;
+    QString path;
 
     void serialize(QDataStream& data) const
     {
-        data << mark << msg;
+        data << mark << msg << path;
     }
 
     void deserialize(QDataStream& data)
     {
-        data >> mark >> msg;
+        data >> mark >> msg >> path;
     }
 };
 

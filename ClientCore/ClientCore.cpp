@@ -122,7 +122,12 @@ bool ClientCore::Send(const char* data, qint64 len)
         qCritical() << QString("client %1 not connected...").arg(remoteID_);
         return false;
     }
-    qint64 bytesWritten = socket_->write(data, len);
+
+    qint64 bytesWritten = -1;
+    {
+        QMutexLocker locker(&sockMut_);
+        bytesWritten = socket_->write(data, len);
+    }
     if (bytesWritten == -1 || !socket_->waitForBytesWritten(5000)) {
         qCritical() << QString("Send data to server failed. %1").arg(socket_->errorString());
         return false;

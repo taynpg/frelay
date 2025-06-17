@@ -56,6 +56,8 @@ public:
     QMutex conMutex_;
     QString ownID_;
     QString remoteID_;
+
+    QMutex sockMut_;
     QTcpSocket* socket_;
     QByteArray recvBuffer_;
 

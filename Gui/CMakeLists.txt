@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+﻿cmake_minimum_required(VERSION 3.16)
 
 project(frelayGUI VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
@@ -22,6 +22,7 @@ Control/ConnectControl.h Control/ConnectControl.cpp Control/ConnectControl.ui
 Control/CompareControl.h Control/CompareControl.cpp Control/CompareControl.ui
 GuiUtil/Public.h GuiUtil/Public.cpp
 Control/Transform.h Control/Transform.cpp Control/Transform.ui
+../Res/frelay.qrc ../Res/ico.rc
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
