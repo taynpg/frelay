@@ -33,7 +33,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
 
     // recv is single thread recv, judge idle
     if (downTask_.state == TaskState::STATE_RUNNING) {
-        info.msg = QString(tr("busy"));
+        info.msg = QString(tr("busy..."));
         clientCore_->Send<InfoMsg>(info, FBT_CLI_CANOT_SEND, frame->fid);
         return;
     }
@@ -99,20 +99,12 @@ void FileTrans::fbtTransDone(QSharedPointer<FrameBuffer> frame)
     qCritical() << QString(tr("recv file:%1 done sigal, but file not opened.")).arg(info.msg);
 }
 
+// the other party indicates that can download, ready to receive the file.
 void FileTrans::fbtCanDown(QSharedPointer<FrameBuffer> frame)
 {
-    // ready to send
-    InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    auto doTask = QSharedPointer<DoTransTask>::create();
-    doTask->file.setFileName(info.fromPath);
-    if (!doTask->file.open(QIODevice::ReadOnly)) {
-        qCritical() << QString(tr("open file failed: %1")).arg(info.fromPath);
-        return;
-    }
-    doTask->task.isUpload = true;
-    doTask->task.localPath = "";
-    doTask->task.remoteId = frame->fid;
-    SendFile(doTask);
+    // ready to recv file.
+    auto info = infoUnpack<InfoMsg>(frame->data);
+    qDebug() << QString(tr("start trans file:%1.")).arg(info.fromPath);
 }
 
 void FileTrans::fbtCanotDown(QSharedPointer<FrameBuffer> frame)
