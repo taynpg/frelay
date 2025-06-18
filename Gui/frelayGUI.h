@@ -35,6 +35,9 @@ private:
 public:
     static void ControlMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 
+public slots:
+    void HandleTask(const QVector<TransTask>& tasks);
+
 protected:
     void closeEvent(QCloseEvent* event) override;
 

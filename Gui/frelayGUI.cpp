@@ -44,11 +44,12 @@ void frelayGUI::InitControl()
     localFile_ = new FileManager(this);
     remoteFile_ = new FileManager(this);
     localFile_->SetModeStr(tr("Local:"));
-    localFile_->SetOtherSidePathCall([this]() { return remoteFile_->GetCurRoot(); });
     remoteFile_->SetModeStr(tr("Remote:"), 1, clientCore_);
-    remoteFile_->SetOtherSidePathCall([this]() { return localFile_->GetCurRoot(); });
 
     tabWidget_ = new QTabWidget(this);
+
+    connect(localFile_, &FileManager::sigSendTasks, this, &frelayGUI::HandleTask);
+    connect(remoteFile_, &FileManager::sigSendTasks, this, &frelayGUI::HandleTask);
 }
 
 void frelayGUI::ControlSignal()
@@ -102,6 +103,12 @@ void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& conte
         logPrint->Error("Unknown QtMsgType type.");
         break;
     }
+}
+
+void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
+{
+    transform_->SetTasks(tasks);
+    transform_->exec();
 }
 
 void frelayGUI::closeEvent(QCloseEvent* event)

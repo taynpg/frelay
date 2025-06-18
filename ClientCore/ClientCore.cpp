@@ -98,6 +98,9 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         pathCall_(info.msg);
         break;
     }
+    case FrameBufferType::FBT_SER_MSG_FORWARD_FAILED: {
+        break;
+    }
     default:
         frameCall_[static_cast<uint32_t>(frame->type)](frame);
         break;

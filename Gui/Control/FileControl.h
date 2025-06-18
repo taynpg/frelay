@@ -2,6 +2,7 @@
 #define FILECONTROL_H
 
 #include <ClientCore.h>
+#include <FileTrans.h>
 #include <InfoDirFile.h>
 #include <QWidget>
 #include <Util.h>
@@ -21,8 +22,10 @@ public:
 
 public:
     void SetModeStr(const QString& modeStr, int type = 0, ClientCore* clientCore = nullptr);
-    void SetOtherSidePathCall(const std::function<QString()>& call);
     QString GetCurRoot();
+
+signals:
+    void sigSendTasks(const QVector<TransTask>& tasks);
 
 private:
     void InitControl();

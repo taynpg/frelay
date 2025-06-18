@@ -18,7 +18,6 @@ signals:
 public:
     void setIsRemote(bool isRemote);
     void setBasePathCall(const std::function<QString()>& call);
-    void setOtherSidePathCall(const std::function<QString()>& call);
     void setOwnIDCall(const std::function<QString()>& call);
     void setRemoteIDCall(const std::function<QString()>& call);
 

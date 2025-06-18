@@ -26,11 +26,6 @@ void CustomTableWidget::setBasePathCall(const std::function<QString()>& call)
     basePathCall_ = call;
 }
 
-void CustomTableWidget::setOtherSidePathCall(const std::function<QString()>& call)
-{
-    otherSideCall_ = call;
-}
-
 QString FileManager::GetCurRoot()
 {
     return curRoot_;
@@ -74,10 +69,10 @@ void CustomTableWidget::dragEnterEvent(QDragEnterEvent* event)
             task.remoteId = ridCall_();
             if (isRemote_) {
                 task.remotePath = basePathCall_();
-                task.localPath = Util::Join(otherSideCall_(), df.name);
+                task.localPath = Util::Join(dirinfo.root, df.name);
             }
             else {
-                task.remotePath = Util::Join(otherSideCall_(), df.name);
+                task.remotePath = Util::Join(dirinfo.root, df.name);
                 task.localPath = basePathCall_();
             }
             tasks.push_back(task);
@@ -106,6 +101,7 @@ void CustomTableWidget::mouseMoveEvent(QMouseEvent* event)
         if (item->column() == 1) {
             DirFileInfo df;
             df.name = item->text();
+            v.vec.push_back(df);
         }
     }
     mimeData->setData("application/x-custom-data", infoPack<DirFileInfoVec>(v));

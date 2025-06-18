@@ -42,11 +42,6 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
     ui->tableWidget->setBasePathCall([this]() { return curRoot_; });
 }
 
-void FileManager::SetOtherSidePathCall(const std::function<QString()>& call)
-{
-    ui->tableWidget->setOtherSidePathCall(call);
-}
-
 void FileManager::InitControl()
 {
     QStringList headers;
@@ -77,6 +72,8 @@ void FileManager::InitControl()
     connect(ui->btnVisit, &QPushButton::clicked, this, &FileManager::evtFile);
     connect(ui->tableWidget, &QTableWidget::cellDoubleClicked, this, &FileManager::doubleClick);
     connect(ui->btnUp, &QPushButton::clicked, this, &FileManager::evtUp);
+    connect(ui->tableWidget, &CustomTableWidget::sigTasks, this,
+            [this](const QVector<TransTask>& tasks) { emit sigSendTasks(tasks); });
 }
 
 void FileManager::InitMenu(bool remote)
