@@ -24,6 +24,7 @@ GuiUtil/Public.h GuiUtil/Public.cpp
 Control/Transform.h Control/Transform.cpp Control/Transform.ui
 ../Res/frelay.qrc ../Res/ico.rc
 Control/cusTableWidget.cpp Control/cusTableWidget.h
+Control/cpTableWidget.h Control/cpTableWidget.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
