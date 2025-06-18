@@ -102,8 +102,8 @@ void TransForm::handleUI(const TransTask& task)
 void TransForm::showEvent(QShowEvent* event)
 {
     QDialog::showEvent(event);
-    workTh_ = new TranFromTh(this);
-    fileTrans_->moveToThread(workTh_);
+    workTh_ = new TranFromTh(this, this);
+    //fileTrans_->moveToThread(workTh_);
     connect(workTh_, &QThread::finished, fileTrans_, &QObject::deleteLater);
     workTh_->start();
 }

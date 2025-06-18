@@ -66,7 +66,7 @@ void FileManager::InitControl()
     ui->tableWidget->viewport()->setAcceptDrops(true);
     ui->tableWidget->setDropIndicatorShown(true);
     ui->tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    ui->tableWidget->setDragDropMode(QAbstractItemView::NoDragDrop);
+    ui->tableWidget->setDragDropMode(QAbstractItemView::DragDrop);
 
     connect(ui->btnHome, &QPushButton::clicked, this, &FileManager::evtHome);
     connect(ui->btnVisit, &QPushButton::clicked, this, &FileManager::evtFile);
