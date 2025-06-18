@@ -33,6 +33,7 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
         remotePtr->registerPathCall([this](const QString& path) { ShowPath(path); });
         remotePtr->registerFileCall([this](const DirFileInfoVec& info) { ShowFile(info); });
         remotePtr->setClientCore(clientCore);
+        fileTrans_ = new FileTrans(clientCore);
         fileHelper_ = remotePtr;
     }
 }
@@ -61,7 +62,7 @@ void FileManager::InitControl()
     ui->tableWidget->viewport()->setAcceptDrops(true);
     ui->tableWidget->setDropIndicatorShown(true);
     ui->tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    ui->tableWidget->setDragDropMode(QAbstractItemView::DragDrop);
+    ui->tableWidget->setDragDropMode(QAbstractItemView::NoDragDrop);
 
     connect(ui->btnHome, &QPushButton::clicked, this, &FileManager::evtHome);
     connect(ui->btnVisit, &QPushButton::clicked, this, &FileManager::evtFile);

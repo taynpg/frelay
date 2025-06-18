@@ -6,6 +6,7 @@
 #include <QWidget>
 #include <Util.h>
 #include <QMenu>
+#include <FileTrans.h>
 
 namespace Ui {
 class FileManager;
@@ -39,6 +40,7 @@ private:
     QString curRoot_;
     QMenu* localMenu_;
     QMenu* remoteMenu_;
+    FileTrans* fileTrans_;
     std::shared_ptr<DirFileHelper> fileHelper_;
 };
 
