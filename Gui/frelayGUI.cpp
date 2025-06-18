@@ -35,6 +35,7 @@ void frelayGUI::InitControl()
     clientCore_ = new ClientCore();
 
     compare_ = new Compare(this);
+    transform_ = new TransForm(this);
 
     connecter_ = new Connecter(this);
     connecter_->SetClientCore(clientCore_);

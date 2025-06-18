@@ -11,6 +11,7 @@
 #include "Control/FileControl.h"
 #include "Control/LogControl.h"
 #include "Control/CompareControl.h"
+#include "Form/Transform.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -44,6 +45,7 @@ private:
     FileManager* localFile_;
     FileManager* remoteFile_;
     ClientCore* clientCore_;
+    TransForm* transform_;
     Compare* compare_;
 };
 #endif   // FRELAYGUI_H

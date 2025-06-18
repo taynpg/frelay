@@ -21,7 +21,7 @@ Control/FileControl.h Control/FileControl.cpp Control/FileControl.ui
 Control/ConnectControl.h Control/ConnectControl.cpp Control/ConnectControl.ui
 Control/CompareControl.h Control/CompareControl.cpp Control/CompareControl.ui
 GuiUtil/Public.h GuiUtil/Public.cpp
-Control/Transform.h Control/Transform.cpp Control/Transform.ui
+Form/Transform.h Form/Transform.cpp Form/Transform.ui
 ../Res/frelay.qrc ../Res/ico.rc
 Control/cusTableWidget.cpp Control/cusTableWidget.h
 Control/cpTableWidget.h Control/cpTableWidget.cpp

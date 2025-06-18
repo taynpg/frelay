@@ -1,4 +1,4 @@
-#include "ConnectControl.h"
+﻿#include "ConnectControl.h"
 
 #include <InfoMsg.h>
 #include <InfoPack.hpp>
@@ -6,7 +6,6 @@
 
 #include "GuiUtil/Public.h"
 #include "ui_ConnectControl.h"
-#include "Transform.h"
 
 Connecter::Connecter(QWidget* parent) : QWidget(parent), ui(new Ui::Connecter), th_(nullptr)
 {
