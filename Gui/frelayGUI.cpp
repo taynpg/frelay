@@ -34,6 +34,8 @@ void frelayGUI::InitControl()
     logPrint = new LogPrint(this);
     clientCore_ = new ClientCore();
 
+    compare_ = new Compare(this);
+
     connecter_ = new Connecter(this);
     connecter_->SetClientCore(clientCore_);
     connecter_->SetRemoteCall([this](const QString& id) { clientCore_->SetRemoteID(id); });
@@ -65,6 +67,7 @@ void frelayGUI::ControlLayout()
     sTop->addWidget(tabWidget_);
     sTop->addWidget(connecter_);
     tabWidget_->addTab(logPrint, tr("Log"));
+    tabWidget_->addTab(compare_, tr("Compare"));
 
     sFile->addWidget(localFile_);
     sFile->addWidget(remoteFile_);

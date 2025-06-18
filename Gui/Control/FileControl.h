@@ -38,8 +38,7 @@ private:
 private:
     Ui::FileManager* ui;
     QString curRoot_;
-    QMenu* localMenu_;
-    QMenu* remoteMenu_;
+    QMenu* menu_;
     FileTrans* fileTrans_;
     std::shared_ptr<DirFileHelper> fileHelper_;
 };

@@ -73,7 +73,10 @@ void FileManager::InitControl()
 void FileManager::InitMenu(bool remote)
 {
     if (remote) {
-        auto acDown = new QAction(tr("Download"));
+        //auto acDown = new QAction(tr("Download"));
+    }
+    else {
+        //auto acUp = new QAction(tr("Upload"));
     }
 }
 
