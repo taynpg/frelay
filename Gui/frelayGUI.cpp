@@ -1,10 +1,10 @@
 ﻿#include "frelayGUI.h"
 
-#include <QSplitter>
 #include <QLabel>
+#include <QSplitter>
+#include <fversion.h>
 
 #include "./ui_frelayGUI.h"
-#include <fversion.h>
 
 static LogPrint* logPrint = nullptr;
 
@@ -44,7 +44,9 @@ void frelayGUI::InitControl()
     localFile_ = new FileManager(this);
     remoteFile_ = new FileManager(this);
     localFile_->SetModeStr(tr("Local:"));
+    localFile_->SetOtherSidePathCall([this]() { return remoteFile_->GetCurRoot(); });
     remoteFile_->SetModeStr(tr("Remote:"), 1, clientCore_);
+    remoteFile_->SetOtherSidePathCall([this]() { return localFile_->GetCurRoot(); });
 
     tabWidget_ = new QTabWidget(this);
 }

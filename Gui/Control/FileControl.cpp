@@ -29,12 +29,22 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
         fileHelper_->registerPathCall([this](const QString& path) { ShowPath(path); });
         fileHelper_->registerFileCall([this](const DirFileInfoVec& info) { ShowFile(info); });
     } else {
+        cliCore_ = clientCore;
         auto remotePtr = std::make_shared<RemoteFile>();
         remotePtr->registerPathCall([this](const QString& path) { ShowPath(path); });
         remotePtr->registerFileCall([this](const DirFileInfoVec& info) { ShowFile(info); });
         remotePtr->setClientCore(clientCore);
+        ui->tableWidget->setIsRemote(true);
+        ui->tableWidget->setOwnIDCall([this]() { return cliCore_->GetOwnID(); });
+        ui->tableWidget->setRemoteIDCall([this]() { return cliCore_->GetRemoteID(); });
         fileHelper_ = remotePtr;
     }
+    ui->tableWidget->setBasePathCall([this]() { return curRoot_; });
+}
+
+void FileManager::SetOtherSidePathCall(const std::function<QString()>& call)
+{
+    ui->tableWidget->setOtherSidePathCall(call);
 }
 
 void FileManager::InitControl()
@@ -72,10 +82,9 @@ void FileManager::InitControl()
 void FileManager::InitMenu(bool remote)
 {
     if (remote) {
-        //auto acDown = new QAction(tr("Download"));
-    }
-    else {
-        //auto acUp = new QAction(tr("Upload"));
+        // auto acDown = new QAction(tr("Download"));
+    } else {
+        // auto acUp = new QAction(tr("Upload"));
     }
 }
 

@@ -21,6 +21,8 @@ public:
 
 public:
     void SetModeStr(const QString& modeStr, int type = 0, ClientCore* clientCore = nullptr);
+    void SetOtherSidePathCall(const std::function<QString()>& call);
+    QString GetCurRoot();
 
 private:
     void InitControl();
@@ -38,6 +40,7 @@ private:
     Ui::FileManager* ui;
     QString curRoot_;
     QMenu* menu_;
+    ClientCore* cliCore_;
     std::shared_ptr<DirFileHelper> fileHelper_;
 };
 

@@ -33,6 +33,11 @@ QString Util::GetUserHome()
     return homePath;
 }
 
+QString Util::Join(const QString& path, const QString& name)
+{
+    return QDir::cleanPath(path + QDir::separator() + name);
+}
+
 void Util::InitLogger(const QString& logPath, const QString& mark)
 {
     auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath.toStdString(), 1024 * 1024 * 50, 3);

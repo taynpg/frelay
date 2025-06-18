@@ -62,9 +62,6 @@ public:
     qint32 GetSendProgress();
     qint32 GetDownProgress();
 
-signals:
-    void sigError(const QString& err);
-
 private:
     void fbtReqSend(QSharedPointer<FrameBuffer> frame);
     void fbtReqDown(QSharedPointer<FrameBuffer> frame);
@@ -81,8 +78,8 @@ private:
     void SendFile(const QSharedPointer<DoTransTask>& task);
 
 private:
-    DoTransTask downTask_;
-    DoTransTask sendTask_;
+    QSharedPointer<DoTransTask> downTask_;
+    QSharedPointer<DoTransTask> sendTask_;
 
     QMutex lMut_;
     QMutex rMut_;

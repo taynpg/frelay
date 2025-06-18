@@ -51,6 +51,7 @@ public:
     void SetFrameCall(FrameBufferType type, const std::function<void(QSharedPointer<FrameBuffer>)>& call);
     void SetRemoteID(const QString& id);
     QString GetRemoteID();
+    QString GetOwnID();
 
 public:
     QMutex conMutex_;

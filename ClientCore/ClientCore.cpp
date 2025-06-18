@@ -164,3 +164,8 @@ QString ClientCore::GetRemoteID()
 {
     return remoteID_;
 }
+
+QString ClientCore::GetOwnID()
+{
+    return ownID_;
+}
