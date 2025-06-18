@@ -52,12 +52,18 @@ private:
 class FileTrans : public QObject
 {
     Q_OBJECT
+
 public:
     FileTrans(ClientCore* clientCore);
 
 public:
-    void SetTasks(const QVector<TransTask>& tasks);
-    void RegisterFrameCall();
+    void ReqSendFile(const TransTask& task);
+    void ReqDownFile(const TransTask& task);
+    qint32 GetSendProgress();
+    qint32 GetDownProgress();
+
+signals:
+    void sigError(const QString& err);
 
 private:
     void fbtReqSend(QSharedPointer<FrameBuffer> frame);
@@ -71,19 +77,18 @@ private:
     void fbtTransFailed(QSharedPointer<FrameBuffer> frame);
 
 private:
+    void RegisterFrameCall();
     void SendFile(const QSharedPointer<DoTransTask>& task);
 
 private:
     DoTransTask downTask_;
+    DoTransTask sendTask_;
 
     QMutex lMut_;
     QMutex rMut_;
-    QVector<TransTask> localTasks_;
-    QVector<TransTask> remoteTasks_;
 
     ClientCore* clientCore_;
     QMutex sthMut_;
-    QVector<QThread*> sendThreads_;
     QMap<QString, QThread*> upTasks_;
 };
 

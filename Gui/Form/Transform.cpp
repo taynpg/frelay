@@ -1,4 +1,5 @@
 ﻿#include "Transform.h"
+
 #include <QMessageBox>
 
 #include "ui_Transform.h"
@@ -16,4 +17,23 @@ TransForm::~TransForm()
 void TransForm::SetClientCore(ClientCore* clientCore)
 {
     clientCore_ = clientCore;
+    fileTrans_ = new FileTrans(clientCore_);
+}
+
+void TransForm::SetTasks(const QVector<TransTask>& tasks)
+{
+    tasks_ = tasks;
+}
+
+void TransForm::startTask()
+{
+    for (auto& task : tasks_) {
+        
+    }
+}
+
+void TransForm::showEvent(QShowEvent* event)
+{
+    QDialog::showEvent(event);
+    startTask();
 }

@@ -1,13 +1,81 @@
 ﻿#include "FileTrans.h"
+#include <QFileInfo>
 
 FileTrans::FileTrans(ClientCore* clientCore) : clientCore_(clientCore)
 {
     RegisterFrameCall();
 }
 
-void FileTrans::SetTasks(const QVector<TransTask>& tasks)
+/*
+ *   When the local client actively sends a file, it cannot simultaneously perform download operations.
+ *   Passive sending is an exception, primarily to monitor the sending progress. In contrast,
+ *   the progress of passive sending is monitored by the requesting download side,
+ *   so there is no need to track the progress locally.
+ */
+void FileTrans::ReqSendFile(const TransTask& task)
 {
-    localTasks_ = tasks;
+    // TODO: check if running...
+
+    // start
+    InfoMsg info;
+    info.toPath = task.remotePath;
+    info.fromPath = task.localPath;
+
+    QFileInfo fileInfo(info.fromPath);
+    if (fileInfo.exists()) {
+        qint64 size = fileInfo.size();
+        info.permissions = static_cast<quint32>(fileInfo.permissions());
+        info.size = size;
+    } else {
+        sigError(QString(tr("File [%1] not exit.")).arg(info.fromPath));
+        return;
+    }
+    
+    if (!clientCore_->Send<InfoMsg>(info, FBT_CLI_REQ_SEND, task.remoteId)) {
+        sigError(QString(tr("send req send failed: %1")).arg(info.msg));
+        sendTask_.state = TaskState::STATE_NONE;
+        return;
+	}
+    sendTask_.state = TaskState::STATE_RUNNING;
+    sendTask_.totalSize = info.size;
+    sendTask_.tranSize = 0;
+}
+
+void FileTrans::ReqDownFile(const TransTask& task)
+{
+    // TODO: check if running...
+
+    // start
+    InfoMsg info;
+    info.toPath = task.localPath;
+    info.fromPath = task.remotePath;
+
+    if (!clientCore_->Send<InfoMsg>(info, FBT_CLI_REQ_DOWN, task.remoteId)) {
+        sigError(QString(tr("send req send failed: %1")).arg(info.msg));
+        sendTask_.state = TaskState::STATE_NONE;
+        return;
+    }
+    sendTask_.state = TaskState::STATE_RUNNING;
+}
+
+qint32 FileTrans::GetSendProgress()
+{
+    if (sendTask_.state != TaskState::STATE_RUNNING) {
+        return -1;
+    }
+
+    double per = (sendTask_.tranSize * 100.0) / sendTask_.totalSize;
+    return per;
+}
+
+qint32 FileTrans::GetDownProgress()
+{
+    if (downTask_.state != TaskState::STATE_RUNNING) {
+        return -1;
+    }
+
+    double per = (downTask_.tranSize * 100.0) / downTask_.totalSize;
+    return per;
 }
 
 void FileTrans::RegisterFrameCall()
@@ -152,7 +220,8 @@ void FileTrans::SendFile(const QSharedPointer<DoTransTask>& task)
     auto* sendThread = new SendThread(clientCore_);
     sendThread->setTask(task);
     QMutexLocker locker(&sthMut_);
-    sendThreads_.push_back(sendThread);
+    // TODO: check if already exist
+    upTasks_[task->task.localId] = sendThread;
     sendThread->run();
 }
 

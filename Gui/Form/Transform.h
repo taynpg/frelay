@@ -4,6 +4,7 @@
 #include <ClientCore.h>
 #include <QDialog>
 #include <QFile>
+#include <FileTrans.h>
 
 namespace Ui {
 class TransForm;
@@ -19,9 +20,18 @@ public:
 
 public:
     void SetClientCore(ClientCore* clientCore);
+    void SetTasks(const QVector<TransTask>& tasks);
 
 private:
-    ClientCore* clientCore_;
+    void startTask();
+
+protected:
+    void showEvent(QShowEvent* event) override;
+
+private:
+    QVector<TransTask> tasks_;
+    FileTrans* fileTrans_{};
+    ClientCore* clientCore_{};
     Ui::TransForm* ui;
 };
 

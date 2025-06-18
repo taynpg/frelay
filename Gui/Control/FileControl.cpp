@@ -33,7 +33,6 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
         remotePtr->registerPathCall([this](const QString& path) { ShowPath(path); });
         remotePtr->registerFileCall([this](const DirFileInfoVec& info) { ShowFile(info); });
         remotePtr->setClientCore(clientCore);
-        fileTrans_ = new FileTrans(clientCore);
         fileHelper_ = remotePtr;
     }
 }
