@@ -1,8 +1,10 @@
-#include "frelayGUI.h"
+﻿#include "frelayGUI.h"
 
 #include <QSplitter>
+#include <QLabel>
 
 #include "./ui_frelayGUI.h"
+#include <fversion.h>
 
 static LogPrint* logPrint = nullptr;
 
@@ -13,6 +15,13 @@ frelayGUI::frelayGUI(QWidget* parent) : QMainWindow(parent), ui(new Ui::frelayGU
     ControlSignal();
     ControlLayout();
     resize(1500, 800);
+
+    setWindowTitle(QString(tr("frelay %1")).arg(VERSION_NUM));
+
+    QLabel* permanent = new QLabel(this);
+    permanent->setFrameStyle(QFrame::Box | QFrame::Sunken);
+    permanent->setText(QString("%1 on %2").arg(VERSION_GIT_COMMIT).arg(VERSION_GIT_BRANCH));
+    this->statusBar()->addPermanentWidget(permanent);
 }
 
 frelayGUI::~frelayGUI()

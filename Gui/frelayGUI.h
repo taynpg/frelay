@@ -1,4 +1,4 @@
-#ifndef FRELAYGUI_H
+﻿#ifndef FRELAYGUI_H
 #define FRELAYGUI_H
 
 #include <ClientCore.h>
