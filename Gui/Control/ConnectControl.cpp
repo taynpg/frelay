@@ -21,7 +21,7 @@ Connecter::~Connecter()
 void Connecter::SetClientCore(ClientCore* clientCore)
 {
     clientCore_ = clientCore;
-    clientCore_->SetClientsCall([this](const InfoClientVec& clients) { HandleClients(clients); });
+    connect(clientCore_, &ClientCore::sigClients, this, &Connecter::HandleClients);
 }
 
 void Connecter::SetRemoteCall(const std::function<void(const QString& id)>& call)

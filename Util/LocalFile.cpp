@@ -1,13 +1,17 @@
-#include "LocalFile.h"
+﻿#include "LocalFile.h"
 
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
 
+LocalFile::LocalFile(QObject* parent) : DirFileHelper(parent)
+{
+}
+
 bool LocalFile::GetHome()
 {
     auto home = Util::GetUserHome();
-    pathCall_(home);
+    emit sigHome(home);
     return true;
 }
 
@@ -17,7 +21,7 @@ bool LocalFile::GetDirFile(const QString& dir)
     if (!GetDirFile(dir, vec)) {
         return false;
     }
-    fileCall_(vec);
+    emit sigDirFile(vec);
     return true;
 }
 

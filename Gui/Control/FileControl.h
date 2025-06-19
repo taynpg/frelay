@@ -6,6 +6,7 @@
 #include <InfoDirFile.h>
 #include <QWidget>
 #include <Util.h>
+#include <QMutex>
 #include <QMenu>
 
 namespace Ui {
@@ -45,6 +46,8 @@ private:
     QString curRoot_;
     QMenu* menu_;
     ClientCore* cliCore_;
+    QMutex cbMut_;
+    QMutex tbMut_;
     std::shared_ptr<DirFileHelper> fileHelper_;
 };
 

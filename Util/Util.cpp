@@ -109,12 +109,7 @@ QString DirFileHelper::GetErr() const
     return QString();
 }
 
-void DirFileHelper::registerPathCall(const std::function<void(const QString& path)>& call)
+DirFileHelper::DirFileHelper(QObject* parent) : QObject(parent)
 {
-    pathCall_ = call;
-}
 
-void DirFileHelper::registerFileCall(const std::function<void(const DirFileInfoVec& vec)>& call)
-{
-    fileCall_ = call;
 }

@@ -57,7 +57,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     switch (frame->type) {
     case FrameBufferType::FBT_SER_MSG_ASKCLIENTS: {
         InfoClientVec info = infoUnpack<InfoClientVec>(frame->data);
-        clientsCall_(info);
+        emit sigClients(info);
         break;
     }
     case FrameBufferType::FBT_SER_MSG_YOURID: {
@@ -67,7 +67,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     }
     case FrameBufferType::FBT_CLI_ANS_DIRFILE: {
         DirFileInfoVec info = infoUnpack<DirFileInfoVec>(frame->data);
-        fileCall_(info);
+        emit sigFiles(info);
         break;
     }
     case FrameBufferType::FBT_CLI_ASK_DIRFILE: {
@@ -96,14 +96,51 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     case FrameBufferType::FBT_CLI_ANS_HOME: {
         InfoMsg info = infoUnpack<InfoMsg>(frame->data);
         qInfo() << QString(tr("home: %1")).arg(info.msg);
-        pathCall_(info.msg);
+        emit sigPath(info.msg);
         break;
     }
     case FrameBufferType::FBT_SER_MSG_FORWARD_FAILED: {
         break;
     }
+    case FrameBufferType::FBT_CLI_REQ_SEND: {
+        emit sigReqSend(frame);
+        break;
+    }
+    case FrameBufferType::FBT_CLI_REQ_DOWN: {
+        emit sigReqDown(frame);
+        break;
+    }
+    case FrameBufferType::FBT_CLI_TRANS_DONE: {
+        sigTransDone(frame);
+        break;
+        break;
+    }
+    case FrameBufferType::FBT_CLI_CAN_SEND: {
+        sigCanSend(frame);
+        break;
+    }
+    case FrameBufferType::FBT_CLI_CANOT_SEND: {
+        sigCanotSend(frame);
+        break;
+    }
+    case FBT_CLI_CANOT_DOWN: {
+        sigCanotDown(frame);
+        break;
+    }
+    case FBT_CLI_CAN_DOWN: {
+        sigCanDown(frame);
+        break;
+    }
+    case FBT_CLI_FILE_BUFFER: {
+        sigFileBuffer(frame);
+        break;
+    }
+    case FBT_CLI_TRANS_FAILED: {
+        sigTransFailed(frame);
+        break;
+    }
     default:
-        frameCall_[static_cast<uint32_t>(frame->type)](frame);
+        qCritical() << QString("unknown frame type: %1").arg(frame->type);
         break;
     }
 }
@@ -139,29 +176,9 @@ bool ClientCore::Send(const char* data, qint64 len)
     return true;
 }
 
-void ClientCore::SetClientsCall(const std::function<void(const InfoClientVec& clients)>& call)
-{
-    clientsCall_ = call;
-}
-
-void ClientCore::SetPathCall(const std::function<void(const QString& path)>& call)
-{
-    pathCall_ = call;
-}
-
-void ClientCore::SetFileCall(const std::function<void(const DirFileInfoVec& files)>& call)
-{
-    fileCall_ = call;
-}
-
 void ClientCore::SetRemoteID(const QString& id)
 {
     remoteID_ = id;
-}
-
-void ClientCore::SetFrameCall(FrameBufferType type, const std::function<void(QSharedPointer<FrameBuffer>)>& call)
-{
-    frameCall_[type] = call;
 }
 
 QString ClientCore::GetRemoteID()

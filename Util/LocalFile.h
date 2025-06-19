@@ -1,4 +1,4 @@
-#ifndef LOCALFILE_H
+﻿#ifndef LOCALFILE_H
 #define LOCALFILE_H
 
 #include <InfoDirFile.h>
@@ -8,7 +8,7 @@
 class LocalFile : public DirFileHelper
 {
 public:
-    LocalFile() = default;
+    LocalFile(QObject* parent = nullptr);
     ~LocalFile() override = default;
 
 public:

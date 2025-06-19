@@ -89,6 +89,9 @@ void frelayGUI::ControlLayout()
 void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
     Q_UNUSED(context);
+    if (!logPrint) {
+        return;
+    }
 
     switch (type) {
     case QtDebugMsg:

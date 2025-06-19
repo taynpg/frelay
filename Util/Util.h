@@ -22,18 +22,18 @@ class DirFileHelper : public QObject
 {
     Q_OBJECT
 public:
-    DirFileHelper() = default;
+    DirFileHelper(QObject* parent = nullptr);
     virtual ~DirFileHelper() = default;
 
 public:
     QString GetErr() const;
-    void registerPathCall(const std::function<void(const QString& path)>& call);
-    void registerFileCall(const std::function<void(const DirFileInfoVec& vec)>& call);
+
+signals:
+    void sigHome(const QString& path);
+    void sigDirFile(const DirFileInfoVec& dirFile);
 
 protected:
     QString err_;
-    std::function<void(const QString& path)> pathCall_;
-    std::function<void(const DirFileInfoVec& info)> fileCall_;
 
 public:
     virtual bool GetHome() = 0;

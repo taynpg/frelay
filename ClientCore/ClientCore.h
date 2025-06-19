@@ -67,6 +67,18 @@ public:
 
 signals:
     void sigDisconnect();
+    void sigPath(const QString& path);
+    void sigClients(const InfoClientVec& clients);
+    void sigFiles(const DirFileInfoVec& files);
+    void sigReqSend(QSharedPointer<FrameBuffer> frame);
+    void sigReqDown(QSharedPointer<FrameBuffer> frame);
+    void sigTransDone(QSharedPointer<FrameBuffer> frame);
+    void sigCanSend(QSharedPointer<FrameBuffer> frame);
+    void sigCanotSend(QSharedPointer<FrameBuffer> frame);
+    void sigCanotDown(QSharedPointer<FrameBuffer> frame);
+    void sigCanDown(QSharedPointer<FrameBuffer> frame);
+    void sigFileBuffer(QSharedPointer<FrameBuffer> frame);
+    void sigTransFailed(QSharedPointer<FrameBuffer> frame);
 
 private:
     void onReadyRead();
@@ -76,10 +88,6 @@ private:
     void UseFrame(QSharedPointer<FrameBuffer> frame);
 
 public:
-    void SetClientsCall(const std::function<void(const InfoClientVec& clients)>& call);
-    void SetPathCall(const std::function<void(const QString& path)>& call);
-    void SetFileCall(const std::function<void(const DirFileInfoVec& files)>& call);
-    void SetFrameCall(FrameBufferType type, const std::function<void(QSharedPointer<FrameBuffer>)>& call);
     void SetRemoteID(const QString& id);
     QString GetRemoteID();
     QString GetOwnID();
@@ -94,11 +102,6 @@ public:
     QByteArray recvBuffer_;
 
     LocalFile localFile_;
-
-    std::function<void(const QString& path)> pathCall_;
-    std::function<void(const InfoClientVec& clients)> clientsCall_;
-    std::function<void(const DirFileInfoVec& files)> fileCall_;
-
     std::array<std::function<void(QSharedPointer<FrameBuffer>)>, 256> frameCall_;
 };
 
@@ -124,8 +127,8 @@ signals:
 
 private:
     QString ip_;
-    qint16 port_;
-    ClientCore* core_;
+    qint16 port_{};
+    ClientCore* core_{};
 };
 
 #endif   // CLIENTCORE_H

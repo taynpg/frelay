@@ -1,4 +1,4 @@
-#ifndef REMOTE_FILE_H
+﻿#ifndef REMOTE_FILE_H
 #define REMOTE_FILE_H
 
 #include <InfoMsg.h>
@@ -9,7 +9,7 @@
 class RemoteFile : public DirFileHelper
 {
 public:
-    RemoteFile() = default;
+    RemoteFile(QObject* parent = nullptr);
     ~RemoteFile() override = default;
 
 public:
@@ -20,7 +20,7 @@ public:
     bool GetDirFile(const QString& dir) override;
 
 private:
-    ClientCore* cliCore_;
+    ClientCore* cliCore_{};
 };
 
 #endif   // REMOTE_FILE_H

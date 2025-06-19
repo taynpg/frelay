@@ -26,13 +26,9 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
     ui->lbMode->setText(modeStr);
     if (type == 0) {
         fileHelper_ = std::make_shared<LocalFile>();
-        fileHelper_->registerPathCall([this](const QString& path) { ShowPath(path); });
-        fileHelper_->registerFileCall([this](const DirFileInfoVec& info) { ShowFile(info); });
     } else {
         cliCore_ = clientCore;
         auto remotePtr = std::make_shared<RemoteFile>();
-        remotePtr->registerPathCall([this](const QString& path) { ShowPath(path); });
-        remotePtr->registerFileCall([this](const DirFileInfoVec& info) { ShowFile(info); });
         remotePtr->setClientCore(clientCore);
         ui->tableWidget->setIsRemote(true);
         ui->tableWidget->setOwnIDCall([this]() { return cliCore_->GetOwnID(); });
@@ -40,6 +36,9 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
         fileHelper_ = remotePtr;
     }
     ui->tableWidget->setBasePathCall([this]() { return curRoot_; });
+
+    connect(fileHelper_.get(), &DirFileHelper::sigHome, this, &FileManager::ShowPath);
+    connect(fileHelper_.get(), &DirFileHelper::sigDirFile, this, &FileManager::ShowFile);
 }
 
 void FileManager::SetOtherSideCall(const std::function<QString()>& call)
@@ -92,6 +91,7 @@ void FileManager::InitMenu(bool remote)
 
 void FileManager::ShowPath(const QString& path)
 {
+    QMutexLocker locker(&cbMut_);
     int existingIndex = ui->comboBox->findText(path);
     if (existingIndex != -1) {
         ui->comboBox->removeItem(existingIndex);
@@ -104,8 +104,8 @@ void FileManager::ShowPath(const QString& path)
 
 void FileManager::ShowFile(const DirFileInfoVec& info)
 {
-    QAbstractItemModel* const mdl = ui->tableWidget->model();
-    mdl->removeRows(0, mdl->rowCount());
+    QMutexLocker locker(&tbMut_);
+    ui->tableWidget->setRowCount(0);
     ui->tableWidget->setRowCount(info.vec.size());
 
     for (int i = 0; i < info.vec.size(); ++i) {

@@ -81,9 +81,8 @@ private:
     void fbtTransFailed(QSharedPointer<FrameBuffer> frame);
 
 private:
-    void RegisterFrameCall();
+    void RegisterSignal();
     void SendFile(const QSharedPointer<DoTransTask>& task);
-    QFuture<bool> sendFrameAsync(const QSharedPointer<FrameBuffer>& frame);
 
 private:
     QSharedPointer<DoTransTask> downTask_;
