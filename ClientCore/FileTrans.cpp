@@ -52,6 +52,7 @@ void FileTrans::ReqSendFile(const TransTask& task)
     sendTask_->state = TaskState::STATE_RUNNING;
     sendTask_->totalSize = info.size;
     sendTask_->tranSize = 0;
+    sendTask_->task = task;
 }
 
 void FileTrans::ReqDownFile(const TransTask& task)
@@ -269,14 +270,15 @@ SendThread::SendThread(ClientCore* clientCore) : cliCore_(clientCore)
 void SendThread::run()
 {
     // task's file shoule be already opened.
-    auto frame = QSharedPointer<FrameBuffer>::create();
-    frame->tid = task_->task.remoteId;
-    frame->type = FBT_CLI_FILE_BUFFER;
-    frame->call = [this](QSharedPointer<FrameBuffer> frame) { sendCall(frame); };
-
     isSuccess_ = true;
     while (!task_->file.atEnd()) {
+
+        auto frame = QSharedPointer<FrameBuffer>::create();
+        frame->tid = task_->task.remoteId;
+        frame->type = FBT_CLI_FILE_BUFFER;
+        frame->call = [this](QSharedPointer<FrameBuffer> frame) { sendCall(frame); };
         frame->data.resize(CHUNK_BUF_SIZE);
+
         auto br = task_->file.read(frame->data.data(), CHUNK_BUF_SIZE);
         if (br == -1) {
             qCritical() << QString(tr("read file failed: %1")).arg(task_->file.errorString());
@@ -303,6 +305,15 @@ void SendThread::run()
             break;
         }
     }
+
+    while (curSendCount_ > 0) {
+        QThread::msleep(1);
+        // shoule add abort action mark.
+    }
+
+    InfoMsg info;
+    auto f = cliCore_->GetBuffer(info, FBT_CLI_TRANS_DONE, task_->task.remoteId);
+    ClientCore::asyncInvoke(cliCore_, [this, f]() { return cliCore_->Send(f); });
     task_->file.close();
 }
 

@@ -39,6 +39,7 @@ private:
 
 protected:
     void showEvent(QShowEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;   
 
 private:
     bool exis_{ false };
@@ -57,7 +58,6 @@ public:
     explicit TranFromTh(TransForm* tf, QObject* parent = nullptr) : QThread(parent), tf_(tf)
     {
     }
-
 protected:
     void run() override
     {

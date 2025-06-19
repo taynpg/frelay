@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     QFont font("Microsoft YaHei", 9);
     a.setFont(font);
     a.setWindowIcon(QIcon(":/ico/main.ico"));
-    //a.setStyle("Windows");
+    a.setStyle("Windows");
 #endif
 
     frelayGUI w;

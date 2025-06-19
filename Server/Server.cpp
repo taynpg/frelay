@@ -1,4 +1,4 @@
-#include "Server.h"
+﻿#include "Server.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -130,7 +130,6 @@ void Server::processClientData(QSharedPointer<ClientInfo> client)
             break;
         }
         frame->fid = client->id;
-
         if (frame->type <= 30) {
             frame->tid = "server";
             replyRequest(client, frame);
@@ -145,6 +144,7 @@ void Server::processClientData(QSharedPointer<ClientInfo> client)
 bool Server::forwardData(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame)
 {
     QSharedPointer<ClientInfo> targetClient;
+
     {
         QReadLocker locker(&rwLock_);
         targetClient = clients_.value(frame->tid);

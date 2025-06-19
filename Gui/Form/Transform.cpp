@@ -29,8 +29,8 @@ void TransForm::SetClientCore(ClientCore* clientCore)
 
 void TransForm::SetTasks(const QVector<TransTask>& tasks)
 {
-    exis_ = true;
     tasks_ = tasks;
+    exis_ = false;
 }
 
 void TransForm::startTask()
@@ -75,6 +75,8 @@ void TransForm::startTask()
             }
         }
     }
+    tasks_.clear();
+    qDebug() << "TransForm::startTask exit....";
 }
 
 void TransForm::setProgress(double val)
@@ -111,7 +113,13 @@ void TransForm::showEvent(QShowEvent* event)
 {
     QDialog::showEvent(event);
     workTh_ = new TranFromTh(this, this);
-    fileTrans_->moveToThread(workTh_);
-    connect(workTh_, &QThread::finished, fileTrans_, &QObject::deleteLater);
+    //fileTrans_->moveToThread(workTh_);
+    connect(workTh_, &QThread::finished, workTh_, &QObject::deleteLater);
     workTh_->start();
+}
+
+void TransForm::closeEvent(QCloseEvent* event)
+{
+    exis_ = true;
+	QDialog::closeEvent(event);
 }

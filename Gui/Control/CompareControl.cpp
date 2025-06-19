@@ -1,4 +1,4 @@
-#include "CompareControl.h"
+﻿#include "CompareControl.h"
 
 #include "ui_CompareControl.h"
 

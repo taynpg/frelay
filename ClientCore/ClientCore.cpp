@@ -100,6 +100,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         break;
     }
     case FrameBufferType::FBT_SER_MSG_FORWARD_FAILED: {
+        qCritical() << QString(tr("************************** forward failed."));
         break;
     }
     case FrameBufferType::FBT_CLI_REQ_SEND: {
@@ -111,31 +112,31 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         break;
     }
     case FrameBufferType::FBT_CLI_TRANS_DONE: {
-        sigTransDone(frame);
+        emit sigTransDone(frame);
         break;
     }
     case FrameBufferType::FBT_CLI_CAN_SEND: {
-        sigCanSend(frame);
+        emit sigCanSend(frame);
         break;
     }
     case FrameBufferType::FBT_CLI_CANOT_SEND: {
-        sigCanotSend(frame);
+        emit sigCanotSend(frame);
         break;
     }
     case FBT_CLI_CANOT_DOWN: {
-        sigCanotDown(frame);
+        emit sigCanotDown(frame);
         break;
     }
     case FBT_CLI_CAN_DOWN: {
-        sigCanDown(frame);
+        emit sigCanDown(frame);
         break;
     }
     case FBT_CLI_FILE_BUFFER: {
-        sigFileBuffer(frame);
+        emit sigFileBuffer(frame);
         break;
     }
     case FBT_CLI_TRANS_FAILED: {
-        sigTransFailed(frame);
+        emit sigTransFailed(frame);
         break;
     }
     default:
