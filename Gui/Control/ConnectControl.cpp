@@ -95,6 +95,12 @@ void Connecter::setState(ConnectState cs)
     }
 }
 
+void Connecter::Disconnect()
+{
+    sockWorker_->quit();
+    qWarning() << QString(tr("Disconnected..."));
+}
+
 void Connecter::RefreshClient()
 {
     InfoMsg info;
@@ -138,6 +144,7 @@ void Connecter::InitControl()
     ui->listView->setContextMenuPolicy(Qt::CustomContextMenu);
 
     connect(ui->listView, &QListView::customContextMenuRequested, this, &Connecter::ShowContextMenu);
+    connect(ui->btnDisconnect, &QPushButton::clicked, this, &Connecter::Disconnect);
 
     menu_ = new QMenu(this);
     QAction* acUseThis = menu_->addAction(tr("UseThis"));

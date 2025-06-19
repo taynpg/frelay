@@ -1,4 +1,4 @@
-#ifndef CONNECTCONTROL_H
+﻿#ifndef CONNECTCONTROL_H
 #define CONNECTCONTROL_H
 
 #include <ClientCore.h>
@@ -38,6 +38,7 @@ private:
     void Connect();
     void setState(ConnectState cs);
     void RefreshClient();
+    void Disconnect();
     void ShowContextMenu(const QPoint& pos);
     std::string getCurClient();
 

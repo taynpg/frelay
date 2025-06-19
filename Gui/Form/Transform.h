@@ -41,6 +41,7 @@ protected:
     void showEvent(QShowEvent* event) override;
 
 private:
+    bool exis_{ false };
     TranFromTh* workTh_{};
     QVector<TransTask> tasks_;
     FileTrans* fileTrans_{};

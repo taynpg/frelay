@@ -4,10 +4,6 @@
 
 ClientCore::ClientCore(QObject* parent) : QObject(parent)
 {
-    qRegisterMetaType<QSharedPointer<FrameBuffer>>("QSharedPointer<FrameBuffer>");
-    qRegisterMetaType<InfoClientVec>("InfoClientVec");
-    qRegisterMetaType<DirFileInfoVec>("DirFileInfoVec");
-
     socket_ = new QTcpSocket(this);
     connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);

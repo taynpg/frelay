@@ -16,6 +16,8 @@ TransForm::TransForm(QWidget* parent) : QDialog(parent), ui(new Ui::TransForm)
 
 TransForm::~TransForm()
 {
+    exis_ = true;
+    QThread::msleep(10);
     delete ui;
 }
 
@@ -27,6 +29,7 @@ void TransForm::SetClientCore(ClientCore* clientCore)
 
 void TransForm::SetTasks(const QVector<TransTask>& tasks)
 {
+    exis_ = true;
     tasks_ = tasks;
 }
 
@@ -37,6 +40,9 @@ void TransForm::startTask()
         if (task.isUpload) {
             fileTrans_->ReqSendFile(task);
             while (true) {
+                if (exis_) {
+                    return;
+                }
                 auto progress = fileTrans_->GetSendProgress();
                 if (progress < 0) {
                     emit sigFailed();
@@ -52,6 +58,9 @@ void TransForm::startTask()
         } else {
             fileTrans_->ReqDownFile(task);
             while (true) {
+                if (exis_) {
+                    return;
+                }
                 auto progress = fileTrans_->GetDownProgress();
                 if (progress < 0) {
                     emit sigFailed();
@@ -90,8 +99,7 @@ void TransForm::handleUI(const TransTask& task)
         ui->edTo->setText(task.remoteId);
         ui->pedFrom->setPlainText(task.localPath);
         ui->pedTo->setPlainText(task.remotePath);
-    }
-    else {
+    } else {
         ui->edFrom->setText(task.localId);
         ui->edTo->setText(task.remoteId);
         ui->pedFrom->setPlainText(task.remotePath);
