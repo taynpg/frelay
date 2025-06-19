@@ -4,6 +4,10 @@
 
 ClientCore::ClientCore(QObject* parent) : QObject(parent)
 {
+    qRegisterMetaType<QSharedPointer<FrameBuffer>>("QSharedPointer<FrameBuffer>");
+    qRegisterMetaType<InfoClientVec>("InfoClientVec");
+    qRegisterMetaType<DirFileInfoVec>("DirFileInfoVec");
+
     socket_ = new QTcpSocket(this);
     connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);
@@ -112,7 +116,6 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     }
     case FrameBufferType::FBT_CLI_TRANS_DONE: {
         sigTransDone(frame);
-        break;
         break;
     }
     case FrameBufferType::FBT_CLI_CAN_SEND: {

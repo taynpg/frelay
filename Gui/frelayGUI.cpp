@@ -8,6 +8,7 @@
 #include "Control/LogControl.h"
 
 static LogPrint* logPrint = nullptr;
+static QMutex logMut;
 
 frelayGUI::frelayGUI(QWidget* parent) : QMainWindow(parent), ui(new Ui::frelayGUI)
 {
@@ -27,7 +28,9 @@ frelayGUI::frelayGUI(QWidget* parent) : QMainWindow(parent), ui(new Ui::frelayGU
 
 frelayGUI::~frelayGUI()
 {
+    QMutexLocker locker(&logMut);
     delete ui;
+    logPrint = nullptr;
 }
 
 void frelayGUI::InitControl()
@@ -89,6 +92,9 @@ void frelayGUI::ControlLayout()
 void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
     Q_UNUSED(context);
+
+    QMutexLocker locker(&logMut);
+
     if (!logPrint) {
         return;
     }

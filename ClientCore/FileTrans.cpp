@@ -290,7 +290,7 @@ void SendThread::run()
             // shoule add abort action mark.
         }
 
-        QMetaObject::invokeMethod(this, [this, frame] {
+        QMetaObject::invokeMethod(cliCore_, [this, frame] {
             frame->sendRet = cliCore_->Send(frame);
             if (frame->call) {
                 frame->call(frame);

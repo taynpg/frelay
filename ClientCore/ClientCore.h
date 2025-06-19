@@ -102,7 +102,6 @@ public:
     QByteArray recvBuffer_;
 
     LocalFile localFile_;
-    std::array<std::function<void(QSharedPointer<FrameBuffer>)>, 256> frameCall_;
 };
 
 class SocketWorker : public QThread

@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QSharedPointer>
 #include <QString>
+#include <QMetaType>
 
 constexpr quint32 CHUNK_BUF_SIZE = 1 * 1024 * 1024;
 
@@ -51,5 +52,6 @@ public:
     static QSharedPointer<FrameBuffer> ParseBuffer(QByteArray& buffer);
     static QByteArray PackBuffer(const QSharedPointer<FrameBuffer>& frame);
 };
+
 
 #endif   // PROTOCOL_H

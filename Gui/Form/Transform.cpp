@@ -103,7 +103,7 @@ void TransForm::showEvent(QShowEvent* event)
 {
     QDialog::showEvent(event);
     workTh_ = new TranFromTh(this, this);
-    //fileTrans_->moveToThread(workTh_);
+    fileTrans_->moveToThread(workTh_);
     connect(workTh_, &QThread::finished, fileTrans_, &QObject::deleteLater);
     workTh_->start();
 }

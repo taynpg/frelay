@@ -1,6 +1,7 @@
-#include "LogControl.h"
+﻿#include "LogControl.h"
 
 #include <QDateTime>
+#include <QListWidgetItem>
 #include <QStandardItem>
 #include <iomanip>
 #include <sstream>
@@ -15,8 +16,6 @@ LogPrint::LogPrint(QWidget* parent) : QWidget(parent), ui(new Ui::LogPrint)
 
 void LogPrint::InitControl()
 {
-    model_ = new QStandardItemModel(this);
-    ui->listView->setModel(model_);
 }
 
 std::string LogPrint::now_str()
@@ -56,8 +55,8 @@ void LogPrint::Debug(const QString& message)
 void LogPrint::Print(const QString& message, const QBrush& color)
 {
     auto timeStr = QString("%1%2").arg(QString::fromStdString(now_str())).arg(message);
-    auto* item = new QStandardItem(timeStr);
+    QListWidgetItem* item = new QListWidgetItem(timeStr);
     item->setForeground(color);
-    model_->appendRow(item);
-    ui->listView->scrollToBottom();
+    ui->listWidget->addItem(item);
+    ui->listWidget->scrollToBottom();
 }
