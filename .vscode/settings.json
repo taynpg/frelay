@@ -24,8 +24,8 @@
         "-Wno-dev"
     ],
     "cmake.environment": {
-        "QT_LIB_ROOT": "C:/Qt/6.8.3",
-        "PATH": "${env:PATH};C:/Qt/6.8.3/bin"
+        "QT_LIB_ROOT": "D:/Dev/Qt6/msvc2022_64",
+        "PATH": "${env:PATH};D:/Dev/Qt6/msvc2022_64/bin"
     },
     // "cmake.environment": {
     //     "QT_LIB_ROOT": "C:/Qt/Qt5.14.2/5.14.2/msvc2017_64",
@@ -159,6 +159,7 @@
         "qreadwritelock": "cpp",
         "qdatastream": "cpp",
         "qhostaddress": "cpp",
-        "qthread": "cpp"
+        "qthread": "cpp",
+        "qobject": "cpp"
     }
 }

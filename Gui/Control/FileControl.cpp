@@ -42,6 +42,11 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
     ui->tableWidget->setBasePathCall([this]() { return curRoot_; });
 }
 
+void FileManager::SetOtherSideCall(const std::function<QString()>& call)
+{
+    ui->tableWidget->setOtherSideCall(call);
+}
+
 void FileManager::InitControl()
 {
     QStringList headers;

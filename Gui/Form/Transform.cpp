@@ -33,20 +33,20 @@ void TransForm::SetTasks(const QVector<TransTask>& tasks)
 void TransForm::startTask()
 {
     for (auto& task : tasks_) {
-        sigSetUi(task);
+        emit sigSetUi(task);
         if (task.isUpload) {
             fileTrans_->ReqSendFile(task);
             while (true) {
                 auto progress = fileTrans_->GetSendProgress();
                 if (progress < 0) {
-                    sigFailed();
+                    emit sigFailed();
                     break;
                 }
                 if (progress >= 100.0) {
-                    sigDone();
+                    emit sigDone();
                     break;
                 }
-                sigProgress(progress);
+                emit sigProgress(progress);
                 QThread::msleep(10);
             }
         } else {
@@ -54,14 +54,14 @@ void TransForm::startTask()
             while (true) {
                 auto progress = fileTrans_->GetDownProgress();
                 if (progress < 0) {
-                    sigFailed();
+                    emit sigFailed();
                     break;
                 }
                 if (progress >= 100.0) {
-                    sigDone();
+                    emit sigDone();
                     break;
                 }
-                sigProgress(progress);
+                emit sigProgress(progress);
                 QThread::msleep(10);
             }
         }

@@ -7,7 +7,7 @@
 #include "GuiUtil/Public.h"
 #include "ui_ConnectControl.h"
 
-Connecter::Connecter(QWidget* parent) : QWidget(parent), ui(new Ui::Connecter), th_(nullptr)
+Connecter::Connecter(QWidget* parent) : QWidget(parent), ui(new Ui::Connecter)
 {
     ui->setupUi(this);
     InitControl();
@@ -47,29 +47,32 @@ void Connecter::Connect()
         return;
     }
 
-    if (th_) {
-        if (th_->isRunning()) {
-            th_->quit();
-            th_->wait(1000);
-        }
-        delete th_;
-    }
+    sockWorker_ = new SocketWorker(clientCore_, nullptr);
+    clientCore_->moveToThread(sockWorker_);
 
-    auto* worker = new ConnectWorker(clientCore_, nullptr);
-    th_ = new QThread();
-    worker->moveToThread(th_);
-    clientCore_->moveToThread(th_);
-
-    connect(th_, &QThread::started,
-            [this, worker, ip, port]() { worker->doConnect(ip, port.toInt(), this->parent()->thread()); });
-    connect(worker, &ConnectWorker::connecting, this, [this]() { setState(ConnectState::CS_CONNECTING); });
-    connect(worker, &ConnectWorker::connectResult, this, [this](bool success) {
-        emit sendConnect(success ? ConnectState::CS_CONNECTED : ConnectState::CS_DISCONNECT);
-        th_->quit();
+    connect(sockWorker_, &SocketWorker::conSuccess, this, [this]() {
+        setState(ConnectState::CS_CONNECTED);
+        qInfo() << QString(tr("Connected."));
     });
-    connect(th_, &QThread::finished, worker, &QObject::deleteLater);
-    connect(th_, &QThread::finished, th_, &QObject::deleteLater);
-    th_->start();
+
+    connect(sockWorker_, &SocketWorker::conFailed, this, [this]() {
+        setState(ConnectState::CS_DISCONNECT);
+        qInfo() << QString(tr("Connect failed."));
+    });
+
+    connect(sockWorker_, &SocketWorker::connecting, this, [this]() {
+        setState(ConnectState::CS_CONNECTING);
+        qInfo() << QString(tr("Connecting..."));
+    });
+
+    connect(sockWorker_, &SocketWorker::disconnected, this, [this]() {
+        setState(ConnectState::CS_DISCONNECT);
+        qInfo() << QString(tr("Disconnected."));
+    });
+
+    connect(sockWorker_, &QThread::finished, sockWorker_, &QObject::deleteLater);
+    sockWorker_->SetConnectInfo(ip, port.toInt());
+    sockWorker_->start();
 }
 
 void Connecter::setState(ConnectState cs)
@@ -78,7 +81,6 @@ void Connecter::setState(ConnectState cs)
     case CS_CONNECTING:
         ui->btnConnect->setEnabled(false);
         ui->btnDisconnect->setEnabled(false);
-        qInfo() << QString(tr("Connecting..."));
         break;
     case CS_CONNECTED:
         ui->btnConnect->setEnabled(false);
@@ -99,7 +101,8 @@ void Connecter::RefreshClient()
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->data = infoPack(info);
     frame->type = FBT_SER_MSG_ASKCLIENTS;
-    if (!clientCore_->Send(frame)) {
+    auto sendRet = ClientCore::asyncInvoke(clientCore_, [this, frame]() { return clientCore_->Send(frame); });
+    if (!sendRet) {
         qCritical() << QString(tr("send ask client list failed."));
         return;
     }

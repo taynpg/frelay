@@ -14,12 +14,13 @@ void RemoteFile::setClientCore(ClientCore* cliCore)
 bool RemoteFile::GetHome()
 {
     InfoMsg info;
-    return cliCore_->Send<InfoMsg>(info, FBT_CLI_ASK_HOME, cliCore_->GetRemoteID());
+    auto frame = cliCore_->GetBuffer(info, FBT_CLI_ASK_HOME, cliCore_->GetRemoteID());
+    return ClientCore::asyncInvoke(cliCore_, [this, frame]() { return cliCore_->Send(frame); });
 }
 
 bool RemoteFile::GetDirFile(const QString& dir)
 {
     InfoMsg info;
-    info.msg = dir;
-    return cliCore_->Send<InfoMsg>(info, FBT_CLI_ASK_DIRFILE, cliCore_->GetRemoteID());
+    auto frame = cliCore_->GetBuffer(info, FBT_CLI_ASK_DIRFILE, cliCore_->GetRemoteID());
+    return ClientCore::asyncInvoke(cliCore_, [this, frame]() { return cliCore_->Send(frame); });
 }

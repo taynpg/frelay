@@ -5,8 +5,12 @@
 #include <QMap>
 #include <QMutex>
 #include <QVector>
+#include <QFuture>
+#include <QPromise>
 
 #include "ClientCore.h"
+
+constexpr int MAX_SEND_TASK = 10;
 
 struct TransTask {
     bool isUpload{false};
@@ -43,9 +47,12 @@ public:
 public:
     void run() override;
     void setTask(const QSharedPointer<DoTransTask>& task);
+    void sendCall(QSharedPointer<FrameBuffer> frame);
 
 private:
+    bool isSuccess_{ false };
     ClientCore* cliCore_;
+    quint32 curSendCount_{0};
     QSharedPointer<DoTransTask> task_;
 };
 
@@ -76,6 +83,7 @@ private:
 private:
     void RegisterFrameCall();
     void SendFile(const QSharedPointer<DoTransTask>& task);
+    QFuture<bool> sendFrameAsync(const QSharedPointer<FrameBuffer>& frame);
 
 private:
     QSharedPointer<DoTransTask> downTask_;

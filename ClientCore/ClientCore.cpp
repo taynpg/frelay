@@ -49,6 +49,7 @@ void ClientCore::onReadyRead()
 void ClientCore::onDisconnected()
 {
     qCritical() << QString("client %1 disconnected...").arg(remoteID_);
+    emit sigDisconnect();
 }
 
 void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
@@ -171,4 +172,33 @@ QString ClientCore::GetRemoteID()
 QString ClientCore::GetOwnID()
 {
     return ownID_;
+}
+
+SocketWorker::SocketWorker(ClientCore* core, QObject* parent) : QThread(parent), core_(core)
+{
+    connect(core_, &ClientCore::sigDisconnect, this, [this]() {
+        emit disconnected();
+        thread()->quit();
+    });
+}
+
+SocketWorker::~SocketWorker()
+{
+}
+
+void SocketWorker::SetConnectInfo(const QString& ip, qint16 port)
+{
+    ip_ = ip;
+    port_ = port;
+}
+
+void SocketWorker::run()
+{
+    emit connecting();
+    if (!core_->Connect(ip_, port_)) {
+        emit conFailed();
+        return;
+    }
+    emit conSuccess();
+    exec();
 }

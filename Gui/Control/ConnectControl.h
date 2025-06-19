@@ -50,35 +50,8 @@ private:
 
 private:
     QMenu* menu_;
-    QThread* th_;
-    QThread* mainTh_;
+    SocketWorker* sockWorker_{};
     QStandardItemModel* model_;
-};
-
-class ConnectWorker : public QObject
-{
-    Q_OBJECT
-public:
-    explicit ConnectWorker(ClientCore* clientCore, QObject* parent = nullptr)
-        : QObject(parent), clientCore_(clientCore)
-    {
-    }
-
-public slots:
-    void doConnect(const QString& ip, int port, QThread* parentThread)
-    {
-        emit connecting();
-        bool connected = clientCore_->Connect(ip, port);
-        clientCore_->moveToThread(parentThread);
-        emit connectResult(connected);
-    }
-
-signals:
-    void connectResult(bool success);
-    void connecting();
-
-private:
-    ClientCore* clientCore_;
 };
 
 #endif   // CONNECTCONTROL_H

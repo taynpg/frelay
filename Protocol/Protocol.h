@@ -38,6 +38,8 @@ struct FrameBuffer {
     QString fid;
     QString tid;
     FrameBufferType type = FBT_NONE;
+    bool sendRet;
+    std::function<void(QSharedPointer<FrameBuffer>)> call{};
 };
 
 class Protocol

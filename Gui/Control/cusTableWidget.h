@@ -20,6 +20,7 @@ public:
     void setBasePathCall(const std::function<QString()>& call);
     void setOwnIDCall(const std::function<QString()>& call);
     void setRemoteIDCall(const std::function<QString()>& call);
+    void setOtherSideCall(const std::function<QString()>& call);
 
 protected:
     void dropEvent(QDropEvent* event) override;

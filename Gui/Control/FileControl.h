@@ -22,6 +22,7 @@ public:
 
 public:
     void SetModeStr(const QString& modeStr, int type = 0, ClientCore* clientCore = nullptr);
+    void SetOtherSideCall(const std::function<QString()>& call);
     QString GetCurRoot();
 
 signals:

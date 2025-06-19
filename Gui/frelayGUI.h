@@ -5,11 +5,9 @@
 #include <QFile>
 #include <QMainWindow>
 #include <QTabWidget>
-#include <thread>
 
 #include "Control/ConnectControl.h"
 #include "Control/FileControl.h"
-#include "Control/LogControl.h"
 #include "Control/CompareControl.h"
 #include "Form/Transform.h"
 

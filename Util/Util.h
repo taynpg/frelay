@@ -1,8 +1,8 @@
 ﻿#ifndef UTIL_H
 #define UTIL_H
 
-#include <QObject>
 #include <InfoDirFile.h>
+#include <QObject>
 
 class Util : public QObject
 {
@@ -18,7 +18,8 @@ public:
     static void ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 };
 
-class DirFileHelper : public QObject {
+class DirFileHelper : public QObject
+{
     Q_OBJECT
 public:
     DirFileHelper() = default;

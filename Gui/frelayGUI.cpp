@@ -5,6 +5,7 @@
 #include <fversion.h>
 
 #include "./ui_frelayGUI.h"
+#include "Control/LogControl.h"
 
 static LogPrint* logPrint = nullptr;
 
@@ -20,7 +21,7 @@ frelayGUI::frelayGUI(QWidget* parent) : QMainWindow(parent), ui(new Ui::frelayGU
 
     QLabel* permanent = new QLabel(this);
     permanent->setFrameStyle(QFrame::Box | QFrame::Sunken);
-    permanent->setText(QString("%1 on %2").arg(VERSION_GIT_COMMIT).arg(VERSION_GIT_BRANCH));
+    permanent->setText(QString("%1 on %2").arg(VERSION_GIT_COMMIT, VERSION_GIT_BRANCH));
     this->statusBar()->addPermanentWidget(permanent);
 }
 
@@ -44,8 +45,11 @@ void frelayGUI::InitControl()
 
     localFile_ = new FileManager(this);
     remoteFile_ = new FileManager(this);
+
     localFile_->SetModeStr(tr("Local:"));
+    localFile_->SetOtherSideCall([this]() { return remoteFile_->GetCurRoot(); });
     remoteFile_->SetModeStr(tr("Remote:"), 1, clientCore_);
+    remoteFile_->SetOtherSideCall([this]() { return localFile_->GetCurRoot(); });
 
     tabWidget_ = new QTabWidget(this);
 
