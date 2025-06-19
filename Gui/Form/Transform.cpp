@@ -91,7 +91,7 @@ void TransForm::handleFailed()
 
 void TransForm::handleDone()
 {
-    ui->progressBar->setValue(0);
+    ui->progressBar->setValue(100);
 }
 
 void TransForm::handleUI(const TransTask& task)

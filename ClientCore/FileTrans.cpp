@@ -149,6 +149,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
     downTask_->permission = info.permissions;
 
     info.msg = QString(tr("open recv file success: %1")).arg(newerPath);
+    qInfo() << info.msg;
     auto f = clientCore_->GetBuffer(info, FBT_CLI_CAN_SEND, frame->fid);
     if (!ClientCore::asyncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); })) {
         qCritical() << QString(tr("open recv file:%2 success, but reply %2 failed.")).arg(info.msg, frame->fid);
@@ -185,7 +186,8 @@ void FileTrans::fbtTransDone(QSharedPointer<FrameBuffer> frame)
     if (downTask_->file.isOpen()) {
         downTask_->file.close();
         downTask_->state = TaskState::STATE_FINISH;
-        qInfo() << QString(tr("recv file:%1 success.")).arg(downTask_->file.fileName());
+        info.msg = QString(tr("recv file:%1 success.")).arg(downTask_->file.fileName());
+        qInfo() << info.msg;
         auto f = clientCore_->GetBuffer(info, FBT_CLI_CAN_DOWN, frame->fid);
         ClientCore::asyncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); });
         return;
