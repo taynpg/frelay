@@ -100,7 +100,10 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         break;
     }
     case FrameBufferType::FBT_SER_MSG_FORWARD_FAILED: {
-        qCritical() << QString(tr("************************** forward failed."));
+        qCritical() << QString(tr("*** forward failed. fid:%1, tid:%2, type:%3"))
+                           .arg(frame->fid)
+                           .arg(frame->tid)
+                           .arg(static_cast<uint32_t>(frame->type));
         break;
     }
     case FrameBufferType::FBT_CLI_REQ_SEND: {

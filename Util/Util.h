@@ -15,6 +15,7 @@ public:
     static void InitLogger(const QString& logPath, const QString& mark);
     static QString Get2FilePath(const QString& file, const QString& directory);
     static QString Join(const QString& path, const QString& name);
+    static QString GetCurConfigPath(const QString& sub);
     static void ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 };
 

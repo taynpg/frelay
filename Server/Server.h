@@ -1,4 +1,4 @@
-// Server.h
+﻿// Server.h
 #ifndef SERVER_H
 #define SERVER_H
 
@@ -7,6 +7,7 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTimer>
+#include <crashelper.h>
 
 #include "Protocol.h"
 

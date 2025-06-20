@@ -30,6 +30,7 @@ include_directories(${PROJECT_BINARY_DIR})
 
 add_definitions(-DFMT_HEADER_ONLY)
 include_directories(3rd)
+add_subdirectory(crashelper)
 add_subdirectory(Protocol)
 add_subdirectory(Server)
 add_subdirectory(ClientCore)

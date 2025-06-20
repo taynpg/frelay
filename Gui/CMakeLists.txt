@@ -56,6 +56,7 @@ target_link_libraries(frelayGUI PRIVATE
     ClientCore Protocol 
     Util
     Struct
+    crashelper
 )
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
     target_link_libraries(frelayGUI PRIVATE ws2_32 wsock32)

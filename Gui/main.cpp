@@ -1,10 +1,24 @@
 ﻿#include <QApplication>
+#include <QDir>
 #include <QFile>
 
 #include "frelayGUI.h"
 
+#ifndef ZZXXCC
+#include <crashelper.h>
+#endif
+
 int main(int argc, char* argv[])
 {
+    auto configDir = Util::GetCurConfigPath("frelay");
+#ifdef _WIN32
+    backward::SetDumpFileSavePath(configDir + "/dumpfile");
+    backward::SetDumpLogSavePath(configDir + "/dumplog");
+#else
+    backward::SetDumpLogSavePath(configDir + QDir::separator() + "dumplog");
+#endif
+
+    CRASHELPER_MARK_ENTRY();
     QApplication a(argc, argv);
 
     qInstallMessageHandler(frelayGUI::ControlMsgHander);

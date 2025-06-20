@@ -33,6 +33,33 @@ QString Util::GetUserHome()
     return homePath;
 }
 
+QString Util::GetCurConfigPath(const QString& sub)
+{
+    // Get user's home directory
+    QString homePath = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
+    if (homePath.isEmpty()) {
+        qWarning() << "Failed to get user home directory";
+        return QString();
+    }
+
+    auto configPath = QDir(homePath).absoluteFilePath(".config");
+    // Append subdirectory if provided
+    if (!sub.isEmpty()) {
+        configPath = QDir(configPath).absoluteFilePath(sub);
+    }
+
+    // Create the directory if it doesn't exist
+    QDir dir(configPath);
+    if (!dir.exists()) {
+        if (!dir.mkpath(".")) {
+            qWarning() << "Failed to create config directory:" << configPath;
+            return QString();
+        }
+    }
+
+    return QDir::cleanPath(configPath);
+}
+
 QString Util::Join(const QString& path, const QString& name)
 {
     return QDir::cleanPath(path + QDir::separator() + name);
@@ -111,5 +138,4 @@ QString DirFileHelper::GetErr() const
 
 DirFileHelper::DirFileHelper(QObject* parent) : QObject(parent)
 {
-
 }
