@@ -139,6 +139,10 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         emit sigTransFailed(frame);
         break;
     }
+    case FBT_CLI_FILE_INFO: {
+        emit sigFileInfo(frame);
+        break;
+    }
     default:
         qCritical() << QString("unknown frame type: %1").arg(frame->type);
         break;

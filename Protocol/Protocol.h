@@ -31,7 +31,8 @@ enum FrameBufferType : uint16_t {
     FBT_CLI_CANOT_DOWN,
     FBT_CLI_FILE_BUFFER,
     FBT_CLI_TRANS_DONE,
-    FBT_CLI_TRANS_FAILED
+    FBT_CLI_TRANS_FAILED,
+    FBT_CLI_FILE_INFO
 };
 
 struct FrameBuffer {

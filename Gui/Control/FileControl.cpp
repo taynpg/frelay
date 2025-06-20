@@ -23,18 +23,20 @@ FileManager::~FileManager()
 
 void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clientCore)
 {
+    cliCore_ = clientCore;
+
     ui->lbMode->setText(modeStr);
     if (type == 0) {
         fileHelper_ = std::make_shared<LocalFile>();
     } else {
-        cliCore_ = clientCore;
         auto remotePtr = std::make_shared<RemoteFile>();
         remotePtr->setClientCore(clientCore);
         ui->tableWidget->setIsRemote(true);
-        ui->tableWidget->setOwnIDCall([this]() { return cliCore_->GetOwnID(); });
-        ui->tableWidget->setRemoteIDCall([this]() { return cliCore_->GetRemoteID(); });
         fileHelper_ = remotePtr;
     }
+
+    ui->tableWidget->setOwnIDCall([this]() { return cliCore_->GetOwnID(); });
+    ui->tableWidget->setRemoteIDCall([this]() { return cliCore_->GetRemoteID(); });
     ui->tableWidget->setBasePathCall([this]() { return curRoot_; });
 
     connect(fileHelper_.get(), &DirFileHelper::sigHome, this, &FileManager::ShowPath);

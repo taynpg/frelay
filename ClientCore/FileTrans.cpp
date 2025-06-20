@@ -64,6 +64,8 @@ void FileTrans::ReqDownFile(const TransTask& task)
     info.toPath = task.localPath;
     info.fromPath = task.remotePath;
 
+    downTask_->task = task;
+    downTask_->totalSize = 0;
     downTask_->file.setFileName(Util::Get2FilePath(task.remotePath, task.localPath));
     if (!downTask_->file.open(QIODevice::WriteOnly)) {
         qCritical() << QString(tr("open file [%1] failed.")).arg(downTask_->file.fileName());
@@ -73,29 +75,38 @@ void FileTrans::ReqDownFile(const TransTask& task)
     auto frame = clientCore_->GetBuffer(info, FBT_CLI_REQ_DOWN, task.remoteId);
     if (!ClientCore::asyncInvoke(clientCore_, [this, frame]() { return clientCore_->Send(frame); })) {
         qCritical() << QString(tr("send req send failed: %1")).arg(info.msg);
-        sendTask_->state = TaskState::STATE_NONE;
-        sendTask_->file.close();
+        downTask_->state = TaskState::STATE_NONE;
+        downTask_->file.close();
         return;
     }
-    sendTask_->state = TaskState::STATE_RUNNING;
+    downTask_->state = TaskState::STATE_RUNNING;
 }
 
 qint32 FileTrans::GetSendProgress()
 {
+    if (sendTask_->state == TaskState::STATE_FINISH) {
+        downTask_->state == TaskState::STATE_NONE;
+        return 100;
+    }
     if (sendTask_->state != TaskState::STATE_RUNNING) {
         return -1;
     }
-
     double per = (sendTask_->tranSize * 100.0) / sendTask_->totalSize;
     return per;
 }
 
 qint32 FileTrans::GetDownProgress()
 {
+    if (downTask_->state == TaskState::STATE_FINISH) {
+        downTask_->state == TaskState::STATE_NONE;
+        return 100;
+    }
     if (downTask_->state != TaskState::STATE_RUNNING) {
         return -1;
     }
-
+    if (downTask_->totalSize == 0) {
+        return 0;
+    }
     double per = (downTask_->tranSize * 100.0) / downTask_->totalSize;
     return per;
 }
@@ -110,6 +121,7 @@ void FileTrans::RegisterSignal()
     connect(clientCore_, &ClientCore::sigCanotDown, this, [this](QSharedPointer<FrameBuffer> frame) { fbtCanotDown(frame); });
     connect(clientCore_, &ClientCore::sigCanDown, this, [this](QSharedPointer<FrameBuffer> frame) { fbtCanDown(frame); });
     connect(clientCore_, &ClientCore::sigFileBuffer, this, [this](QSharedPointer<FrameBuffer> frame) { fbtFileBuffer(frame); });
+    connect(clientCore_, &ClientCore::sigFileInfo, this, [this](QSharedPointer<FrameBuffer> frame) { fbtFileInfo(frame); });
     connect(clientCore_, &ClientCore::sigTransFailed, this, [this](QSharedPointer<FrameBuffer> frame) { fbtTransFailed(frame); });
 }
 
@@ -174,6 +186,25 @@ void FileTrans::fbtReqDown(QSharedPointer<FrameBuffer> frame)
         qCritical() << QString(tr("open file failed: %1")).arg(info.fromPath);
         return;
     }
+
+    QFileInfo fileInfo(info.fromPath);
+    if (fileInfo.exists()) {
+        qint64 size = fileInfo.size();
+        info.permissions = static_cast<quint32>(fileInfo.permissions());
+        info.size = size;
+    } else {
+        qCritical() << QString(tr("File [%1] not exit.")).arg(info.fromPath);
+        doTask->file.close();
+        return;
+    }
+
+    // reply fileinfo
+    auto f = clientCore_->GetBuffer(info, FBT_CLI_FILE_INFO, frame->fid);
+    if (!ClientCore::asyncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); })) {
+        qCritical() << QString(tr("send file %1 info failed.")).arg(info.fromPath);
+        doTask->file.close();
+        return;
+    }
     doTask->task.isUpload = true;
     doTask->task.localPath = info.fromPath;
     doTask->task.remoteId = frame->fid;
@@ -228,6 +259,15 @@ void FileTrans::fbtFileBuffer(QSharedPointer<FrameBuffer> frame)
         downTask_->file.close();
     }
     downTask_->tranSize += ws;
+}
+
+void FileTrans::fbtFileInfo(QSharedPointer<FrameBuffer> frame)
+{
+    InfoMsg info = infoUnpack<InfoMsg>(frame->data);
+    qInfo() << QString(tr("prepare downfile's size is:%1, perm:%2")).arg(info.size, info.permissions);
+    downTask_->totalSize = info.size;
+    downTask_->tranSize = 0;
+    downTask_->permission = info.permissions;
 }
 
 void FileTrans::fbtCanotSend(QSharedPointer<FrameBuffer> frame)

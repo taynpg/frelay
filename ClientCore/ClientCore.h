@@ -79,6 +79,7 @@ signals:
     void sigCanDown(QSharedPointer<FrameBuffer> frame);
     void sigFileBuffer(QSharedPointer<FrameBuffer> frame);
     void sigTransFailed(QSharedPointer<FrameBuffer> frame);
+    void sigFileInfo(QSharedPointer<FrameBuffer> frame);
 
 private:
     void onReadyRead();

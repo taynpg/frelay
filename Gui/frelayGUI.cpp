@@ -46,7 +46,7 @@ void frelayGUI::InitControl()
     localFile_ = new FileManager(this);
     remoteFile_ = new FileManager(this);
 
-    localFile_->SetModeStr(tr("Local:"));
+    localFile_->SetModeStr(tr("Local:"), 0, clientCore_);
     localFile_->SetOtherSideCall([this]() { return remoteFile_->GetCurRoot(); });
     remoteFile_->SetModeStr(tr("Remote:"), 1, clientCore_);
     remoteFile_->SetOtherSideCall([this]() { return localFile_->GetCurRoot(); });
@@ -90,9 +90,9 @@ void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& conte
 {
     Q_UNUSED(context);
 
-    if (!qApp || !qobject_cast<frelayGUI*>(qApp->activeWindow())) {
-        return;
-    }
+    //if (!qApp || !qobject_cast<frelayGUI*>(qApp->activeWindow())) {
+    //    return;
+    //}
 
     switch (type) {
     case QtDebugMsg:

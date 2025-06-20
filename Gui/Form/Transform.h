@@ -30,12 +30,14 @@ signals:
     void sigFailed();
     void sigDone();
     void sigSetUi(const TransTask& task);
+    void sigTaskNum(const QString& data);
 
 private:
 	void setProgress(double val);
     void handleFailed();
     void handleDone();
     void handleUI(const TransTask& task);
+    void showNum(const QString& data);
 
 protected:
     void showEvent(QShowEvent* event) override;
@@ -44,6 +46,7 @@ protected:
 private:
     bool exis_{ false };
     TranFromTh* workTh_{};
+    qint32 curTaskNum_{ 0 };
     QVector<TransTask> tasks_;
     FileTrans* fileTrans_{};
     ClientCore* clientCore_{};

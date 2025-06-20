@@ -12,10 +12,8 @@ public:
     ~CpTableWidget() override;
 
 protected:
+    void dropEvent(QDropEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event);
-
-protected:
-    QPoint startPos_;
 };
 
 #endif // CP_TABLEWIDET_H

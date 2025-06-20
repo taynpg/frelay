@@ -76,6 +76,7 @@ private:
     void fbtCanDown(QSharedPointer<FrameBuffer> frame);
     void fbtCanotDown(QSharedPointer<FrameBuffer> frame);
     void fbtFileBuffer(QSharedPointer<FrameBuffer> frame);
+    void fbtFileInfo(QSharedPointer<FrameBuffer> frame);
     void fbtCanotSend(QSharedPointer<FrameBuffer> frame);
     void fbtCanSend(QSharedPointer<FrameBuffer> frame);
     void fbtTransFailed(QSharedPointer<FrameBuffer> frame);

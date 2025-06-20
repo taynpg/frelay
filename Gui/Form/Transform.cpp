@@ -8,10 +8,18 @@ TransForm::TransForm(QWidget* parent) : QDialog(parent), ui(new Ui::TransForm)
 {
     ui->setupUi(this);
 
+    setWindowTitle(tr("TransProgress"));
+    ui->edFrom->setReadOnly(true);
+    ui->edTo->setReadOnly(true);
+    ui->pedFrom->setReadOnly(true);
+    ui->pedTo->setReadOnly(true);
+    ui->edTask->setReadOnly(true);
+
     connect(this, &TransForm::sigProgress, this, &TransForm::setProgress);
     connect(this, &TransForm::sigDone, this, &TransForm::handleDone);
     connect(this, &TransForm::sigFailed, this, &TransForm::handleFailed);
     connect(this, &TransForm::sigSetUi, this, &TransForm::handleUI);
+    connect(this, &TransForm::sigTaskNum, this, &TransForm::showNum);
 }
 
 TransForm::~TransForm()
@@ -35,7 +43,13 @@ void TransForm::SetTasks(const QVector<TransTask>& tasks)
 
 void TransForm::startTask()
 {
+    qInfo() << "TransForm::startTask enter....";
+    curTaskNum_ = 0;
     for (auto& task : tasks_) {
+
+        QString str = QString(tr("%1/%2")).arg(curTaskNum_).arg(tasks_.size());
+        emit sigTaskNum(str);
+
         emit sigSetUi(task);
         if (task.isUpload) {
             fileTrans_->ReqSendFile(task);
@@ -74,9 +88,13 @@ void TransForm::startTask()
                 QThread::msleep(10);
             }
         }
+        ++curTaskNum_;
+
+        str = QString(tr("%1/%2")).arg(curTaskNum_).arg(tasks_.size());
+        emit sigTaskNum(str);
     }
     tasks_.clear();
-    qDebug() << "TransForm::startTask exit....";
+    qInfo() << "TransForm::startTask exit....";
 }
 
 void TransForm::setProgress(double val)
@@ -109,11 +127,16 @@ void TransForm::handleUI(const TransTask& task)
     }
 }
 
+void TransForm::showNum(const QString& data)
+{
+    ui->edTask->setText(data);
+}
+
 void TransForm::showEvent(QShowEvent* event)
 {
     QDialog::showEvent(event);
     workTh_ = new TranFromTh(this, this);
-    //fileTrans_->moveToThread(workTh_);
+    // fileTrans_->moveToThread(workTh_);
     connect(workTh_, &QThread::finished, workTh_, &QObject::deleteLater);
     workTh_->start();
 }
@@ -121,5 +144,5 @@ void TransForm::showEvent(QShowEvent* event)
 void TransForm::closeEvent(QCloseEvent* event)
 {
     exis_ = true;
-	QDialog::closeEvent(event);
+    QDialog::closeEvent(event);
 }
