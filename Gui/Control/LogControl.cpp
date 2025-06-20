@@ -16,6 +16,7 @@ LogPrint::LogPrint(QWidget* parent) : QWidget(parent), ui(new Ui::LogPrint)
 
 void LogPrint::InitControl()
 {
+    ui->pedText->setReadOnly(true);
 }
 
 std::string LogPrint::now_str()
@@ -54,9 +55,10 @@ void LogPrint::Debug(const QString& message)
 }
 void LogPrint::Print(const QString& message, const QBrush& color)
 {
-    auto timeStr = QString("%1%2").arg(QString::fromStdString(now_str())).arg(message);
-    QListWidgetItem* item = new QListWidgetItem(timeStr);
-    item->setForeground(color);
-    ui->listWidget->addItem(item);
-    ui->listWidget->scrollToBottom();
+    QString timeStr = QString("%1%2").arg(QString::fromStdString(now_str())).arg(message);
+
+    QString coloredLog = QString("<span style='color:%1;'>%2</span>")
+                             .arg(color.color().name())
+                             .arg(timeStr.toHtmlEscaped());
+    ui->pedText->appendHtml(coloredLog);
 }
