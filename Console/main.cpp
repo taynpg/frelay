@@ -2,6 +2,7 @@
 #include <Util.h>
 
 #include "Console.h"
+#include "Helper.h"
 
 #ifndef COMPILER_USE_MINGW
 #include <crashelper.h>
@@ -9,6 +10,10 @@
 
 int main(int argc, char* argv[])
 {
+    if (argc < 3) {
+        std::cerr << "Usage arg is ip port." << std::endl;
+        return 0;
+    }
 
 #ifndef COMPILER_USE_MINGW
     auto configDir = Util::GetCurConfigPath("frelay");
@@ -24,6 +29,13 @@ int main(int argc, char* argv[])
 
     Util::InitLogger("frelayConsole.log", "frelayConsole");
     qInstallMessageHandler(Util::ConsoleMsgHander);
+
+    auto* core = new ClientCore();
+    auto* helper = new ConsoleHelper();
+
+    helper->SetIpPort(argv[1], QString("%1").arg(argv[2]).toInt());
+    helper->RunWorker(core);
+    helper->Connect();
 
     return app.exec();
 }

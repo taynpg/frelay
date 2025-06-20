@@ -12,8 +12,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network)
 
-add_executable(frelayConsole Console.h Console.cpp main.cpp ../Res/ico.rc)
-target_link_libraries(frelayConsole PRIVATE Protocol Util)
+add_executable(frelayConsole Console.h Console.cpp main.cpp Helper.h Helper.cpp ../Res/ico.rc)
+target_link_libraries(frelayConsole PRIVATE Protocol Util ClientCore)
 
 if(NOT DEFINED COMPILER_USE_MINGW)
 target_link_libraries(frelayConsole PRIVATE crashelper)
