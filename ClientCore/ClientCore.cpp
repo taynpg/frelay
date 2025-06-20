@@ -8,7 +8,7 @@ ClientCore::ClientCore(QObject* parent) : QObject(parent)
 
 void ClientCore::Instance()
 {
-    qDebug() << "Instance() thread:" << QThread::currentThread();
+    //qDebug() << "Instance() thread:" << QThread::currentThread();
     socket_ = new QTcpSocket(this);
     connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);
@@ -237,7 +237,7 @@ SocketWorker::~SocketWorker()
 
 void SocketWorker::run()
 {
-    qDebug() << "SocketWorker thread:" << QThread::currentThread();
+    //qDebug() << "SocketWorker thread:" << QThread::currentThread();
     core_->Instance();
     exec();
 }

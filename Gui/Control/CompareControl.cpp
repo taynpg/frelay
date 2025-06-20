@@ -37,7 +37,7 @@ void Compare::InitTabWidget()
      ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
      ui->tableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
 
-    ui->tableWidget->setDragEnabled(true);
+    ui->tableWidget->setDragEnabled(false);
     ui->tableWidget->viewport()->setAcceptDrops(true);
     ui->tableWidget->setDropIndicatorShown(true);
     ui->tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);

@@ -47,9 +47,9 @@ void frelayGUI::InitControl()
     remoteFile_ = new FileManager(this);
 
     localFile_->SetModeStr(tr("Local:"), 0, clientCore_);
-    localFile_->SetOtherSideCall([this]() { return remoteFile_->GetCurRoot(); });
+    localFile_->SetOtherSideCall([this]() { return remoteFile_->GetRoot(); });
     remoteFile_->SetModeStr(tr("Remote:"), 1, clientCore_);
-    remoteFile_->SetOtherSideCall([this]() { return localFile_->GetCurRoot(); });
+    remoteFile_->SetOtherSideCall([this]() { return localFile_->GetRoot(); });
 
     tabWidget_ = new QTabWidget(this);
 

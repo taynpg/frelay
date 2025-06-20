@@ -22,9 +22,9 @@ public:
     ~FileManager();
 
 public:
+    QString GetRoot();
     void SetModeStr(const QString& modeStr, int type = 0, ClientCore* clientCore = nullptr);
     void SetOtherSideCall(const std::function<QString()>& call);
-    QString GetCurRoot();
 
 signals:
     void sigSendTasks(const QVector<TransTask>& tasks);
@@ -35,6 +35,7 @@ private:
     void ShowPath(const QString& path);
     void ShowFile(const DirFileInfoVec& info);
     void doubleClick(int row, int column);
+    void SetRoot(const QString& path);
 
 private:
     void evtHome();
@@ -42,8 +43,8 @@ private:
     void evtUp();
 
 private:
+    bool isRemote_;
     Ui::FileManager* ui;
-    QString curRoot_;
     QMenu* menu_;
     ClientCore* cliCore_;
     QMutex cbMut_;

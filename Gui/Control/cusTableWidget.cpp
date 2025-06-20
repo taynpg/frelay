@@ -27,11 +27,6 @@ void CustomTableWidget::setBasePathCall(const std::function<QString()>& call)
     basePathCall_ = call;
 }
 
-QString FileManager::GetCurRoot()
-{
-    return curRoot_;
-}
-
 void CustomTableWidget::setOwnIDCall(const std::function<QString()>& call)
 {
     oidCall_ = call;

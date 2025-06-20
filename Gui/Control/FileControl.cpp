@@ -27,17 +27,19 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
 
     ui->lbMode->setText(modeStr);
     if (type == 0) {
+        isRemote_ = false;
         fileHelper_ = std::make_shared<LocalFile>();
     } else {
         auto remotePtr = std::make_shared<RemoteFile>();
         remotePtr->setClientCore(clientCore);
+        isRemote_ = true;
         ui->tableWidget->setIsRemote(true);
         fileHelper_ = remotePtr;
     }
 
     ui->tableWidget->setOwnIDCall([this]() { return cliCore_->GetOwnID(); });
     ui->tableWidget->setRemoteIDCall([this]() { return cliCore_->GetRemoteID(); });
-    ui->tableWidget->setBasePathCall([this]() { return curRoot_; });
+    ui->tableWidget->setBasePathCall([this]() { return GetRoot(); });
 
     connect(fileHelper_.get(), &DirFileHelper::sigHome, this, &FileManager::ShowPath);
     connect(fileHelper_.get(), &DirFileHelper::sigDirFile, this, &FileManager::ShowFile);
@@ -177,15 +179,33 @@ void FileManager::ShowFile(const DirFileInfoVec& info)
         ui->tableWidget->setItem(i, 4, item);
     }
     ui->tableWidget->resizeColumnToContents(0);
-    curRoot_ = info.root;
-    ShowPath(curRoot_);
+    SetRoot(info.root);
+    ShowPath(GetRoot());
+}
+
+void FileManager::SetRoot(const QString& path)
+{
+    if (isRemote_) {
+        GlobalData::Ins()->SetRemoteRoot(path);
+    } else {
+        GlobalData::Ins()->SetLocalRoot(path);
+    }
+}
+
+QString FileManager::GetRoot()
+{
+    if (isRemote_) {
+        return GlobalData::Ins()->GetRemoteRoot();
+    } else {
+        return GlobalData::Ins()->GetLocalRoot();
+    }
 }
 
 void FileManager::evtHome()
 {
     auto r = fileHelper_->GetHome();
     auto curPath = ui->comboBox->currentText();
-    curRoot_ = curPath;
+    SetRoot(curPath);
     qDebug() << QString(tr("%1 get home ret:%2").arg(__FUNCTION__).arg(r));
 }
 
@@ -193,13 +213,13 @@ void FileManager::evtFile()
 {
     auto curPath = ui->comboBox->currentText();
     auto r = fileHelper_->GetDirFile(curPath);
-    curRoot_ = curPath;
+    SetRoot(curPath);
     qDebug() << QString(tr("%1 get files ret:%2").arg(__FUNCTION__).arg(r));
 }
 
 void FileManager::evtUp()
 {
-    QString path(curRoot_);
+    QString path(GetRoot());
     QDir dir(path);
     path = QDir::cleanPath(dir.absolutePath() + "/..");
     if (path.isEmpty()) {
@@ -207,8 +227,8 @@ void FileManager::evtUp()
     }
     auto r = fileHelper_->GetDirFile(path);
     if (r) {
-        curRoot_ = path;
-        ShowPath(curRoot_);
+        SetRoot(path);
+        ShowPath(GetRoot());
     }
 }
 
@@ -226,7 +246,7 @@ void FileManager::doubleClick(int row, int column)
         return;
     }
 
-    QDir dir(curRoot_);
+    QDir dir(GetRoot());
     QString np = dir.filePath(item->text());
     fileHelper_->GetDirFile(np);
 }

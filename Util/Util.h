@@ -2,7 +2,29 @@
 #define UTIL_H
 
 #include <InfoDirFile.h>
+#include <QMutex>
 #include <QObject>
+
+class GlobalData
+{
+public:
+    static GlobalData* Ins();
+    ~GlobalData() = default;
+
+public:
+    void SetLocalRoot(const QString& root);
+    void SetRemoteRoot(const QString& root);
+    QString GetLocalRoot() const;
+    QString GetRemoteRoot() const;
+
+private:
+    GlobalData() = default;
+
+public:
+    QMutex mutex_;
+    QString LocalRoot_;
+    QString RemoteRoot_;
+};
 
 class Util : public QObject
 {

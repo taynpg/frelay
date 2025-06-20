@@ -128,3 +128,31 @@ QString DirFileHelper::GetErr() const
 DirFileHelper::DirFileHelper(QObject* parent) : QObject(parent)
 {
 }
+
+GlobalData* GlobalData::Ins()
+{
+    static GlobalData instance;
+    return &instance;
+}
+
+void GlobalData::SetLocalRoot(const QString& root)
+{
+    QMutexLocker locker(&mutex_);
+	LocalRoot_ = root;
+}
+
+void GlobalData::SetRemoteRoot(const QString& root)
+{
+    QMutexLocker locker(&mutex_);
+	RemoteRoot_ = root;
+}
+
+QString GlobalData::GetLocalRoot() const
+{
+    return LocalRoot_;
+}
+
+QString GlobalData::GetRemoteRoot() const
+{
+    return RemoteRoot_;
+}
