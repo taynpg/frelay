@@ -162,7 +162,7 @@ void Connecter::InitControl()
         }
         auto name = item->text();
         ui->elbClient->setText(name);
-        ui->elbClient->setStyleSheet("color: blue;");
+        ui->elbClient->setStyleSheet("color: green;");
         remoteCall_(name);
     });
 

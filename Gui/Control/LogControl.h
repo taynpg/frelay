@@ -1,13 +1,24 @@
-#ifndef LOGCONTROL_H
+﻿#ifndef LOGCONTROL_H
 #define LOGCONTROL_H
 
 #include <QBrush>
+#include <QGuiApplication>
+#include <QMap>
+#include <QMutex>
 #include <QStandardItemModel>
+#include <QStyleHints>
 #include <QWidget>
 
 namespace Ui {
 class LogPrint;
 }
+
+enum PrintType { PT_INFO, PT_WARN, PT_ERROR, PT_DEBUG };
+
+struct LogEntry {
+    QString message;
+    PrintType level;
+};
 
 class LogPrint : public QWidget
 {
@@ -25,13 +36,22 @@ public:
 
 public:
     std::string now_str();
+    void ColorChange(Qt::ColorScheme scheme);
 
 private:
     void InitControl();
-    void Print(const QString& message, const QBrush& color);
+    void InitColor();
+    void RePrintLog();
+    void Print(const QString& message, PrintType type, bool recordHis = true);
 
 private:
+    QMutex mutex_;
+    bool isLightMode_{true};
     Ui::LogPrint* ui;
+    QMap<PrintType, QBrush> lightMap_;
+    QMap<PrintType, QBrush> darkMap_;
+    QVector<LogEntry> logEntries_;
+    QStyleHints* styleHints_{};
     QStandardItemModel* model_;
 };
 

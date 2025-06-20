@@ -26,7 +26,7 @@ bool Server::startServer(quint16 port)
     }
 
     qDebug() << "Server started on port" << serverPort();
-    monitorTimer_->start(30000);
+    monitorTimer_->start(300000);
     id_ = QString("0.0.0.0:%1").arg(serverPort());
     return true;
 }
