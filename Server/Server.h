@@ -7,7 +7,6 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTimer>
-#include <crashelper.h>
 
 #include "Protocol.h"
 

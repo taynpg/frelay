@@ -13,5 +13,10 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network)
 
 add_executable(frelayServer Server.h Server.cpp main.cpp ../Res/server.rc)
-target_link_libraries(frelayServer PRIVATE Protocol Util crashelper)
+target_link_libraries(frelayServer PRIVATE Protocol Util)
+
+if(NOT DEFINED COMPILER_USE_MINGW)
+target_link_libraries(frelayServer PRIVATE crashelper)
+endif()
+
 target_link_libraries(frelayServer PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network)

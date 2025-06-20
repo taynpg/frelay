@@ -10,6 +10,12 @@ if (MSVC)
 add_compile_options(/utf-8)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
+message(STATUS "frelay use MINGW compiler.")
+set(COMPILER_USE_MINGW ON)
+add_definitions(-DCOMPILER_USE_MINGW)
+endif()
+
 if(WIN32)
 execute_process(COMMAND cmd /c ver
     OUTPUT_VARIABLE VER_OUTPUT
