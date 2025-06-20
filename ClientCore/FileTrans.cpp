@@ -18,7 +18,13 @@ FileTrans::FileTrans(ClientCore* clientCore) : clientCore_(clientCore)
 void FileTrans::ReqSendFile(const TransTask& task)
 {
     // TODO: check if running...
-
+    if (sendTask_->file.isOpen()) {
+        qWarning() << QString(tr("file [%1] is running.")).arg(sendTask_->file.fileName());
+        while (sendTask_->file.isOpen()) {
+            QThread::msleep(1);
+        }
+        qWarning() << QString(tr("file [%1] is exit running.")).arg(sendTask_->file.fileName());
+    }
     // start
     InfoMsg info;
     info.toPath = task.remotePath;
@@ -85,20 +91,26 @@ void FileTrans::ReqDownFile(const TransTask& task)
 qint32 FileTrans::GetSendProgress()
 {
     if (sendTask_->state == TaskState::STATE_FINISH) {
-        downTask_->state == TaskState::STATE_NONE;
+        sendTask_->state = TaskState::STATE_NONE;
         return 100;
     }
     if (sendTask_->state != TaskState::STATE_RUNNING) {
         return -1;
     }
+
+    // wait file state ok.
     double per = (sendTask_->tranSize * 100.0) / sendTask_->totalSize;
-    return per;
+    qint32 rt = static_cast<qint32>(per);
+    if (rt >= 100) {
+        return 99;
+    }
+    return rt;
 }
 
 qint32 FileTrans::GetDownProgress()
 {
     if (downTask_->state == TaskState::STATE_FINISH) {
-        downTask_->state == TaskState::STATE_NONE;
+        downTask_->state = TaskState::STATE_NONE;
         return 100;
     }
     if (downTask_->state != TaskState::STATE_RUNNING) {
@@ -107,8 +119,13 @@ qint32 FileTrans::GetDownProgress()
     if (downTask_->totalSize == 0) {
         return 0;
     }
+    // wait file state ok.
     double per = (downTask_->tranSize * 100.0) / downTask_->totalSize;
-    return per;
+    qint32 rt = static_cast<qint32>(per);
+    if (rt >= 100) {
+        return 99;
+    }
+    return rt;
 }
 
 void FileTrans::RegisterSignal()
@@ -357,6 +374,7 @@ void SendThread::run()
     auto f = cliCore_->GetBuffer(info, FBT_CLI_TRANS_DONE, task_->task.remoteId);
     ClientCore::asyncInvoke(cliCore_, [this, f]() { return cliCore_->Send(f); });
     task_->file.close();
+    task_->state = TaskState::STATE_FINISH;
 }
 
 void SendThread::setTask(const QSharedPointer<DoTransTask>& task)

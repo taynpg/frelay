@@ -80,29 +80,18 @@ void Util::InitLogger(const QString& logPath, const QString& mark)
 #include <QDir>
 #include <QFileInfo>
 
+// do not check exit
 QString Util::Get2FilePath(const QString& file, const QString& directory)
 {
     if (file.isEmpty() || directory.isEmpty()) {
         return QString();
     }
 
-    QFileInfo fileInfo(file);
-    QDir dir(directory);
+    QString fileName = QFileInfo(file).fileName();
+    QString cleanDir = QDir::cleanPath(directory);
+    QString fullPath = QDir(cleanDir).filePath(fileName);
 
-    if (!fileInfo.isFile()) {
-        qWarning() << "Path A is not a file:" << file;
-        return QString();
-    }
-    if (!dir.exists()) {
-        qWarning() << "Path B is not a valid directory:" << directory;
-        return QString();
-    }
-
-    QString fileName = fileInfo.fileName();
-    QString cleanPathB = QDir::cleanPath(directory);
-    QString newPath = cleanPathB + QDir::separator() + fileName;
-    newPath = QDir::cleanPath(newPath);
-    return newPath;
+    return QDir::cleanPath(fullPath);
 }
 
 void Util::ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg)
