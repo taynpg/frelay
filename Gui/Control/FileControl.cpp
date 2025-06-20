@@ -39,15 +39,9 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
 
     ui->tableWidget->setOwnIDCall([this]() { return cliCore_->GetOwnID(); });
     ui->tableWidget->setRemoteIDCall([this]() { return cliCore_->GetRemoteID(); });
-    ui->tableWidget->setBasePathCall([this]() { return GetRoot(); });
 
     connect(fileHelper_.get(), &DirFileHelper::sigHome, this, &FileManager::ShowPath);
     connect(fileHelper_.get(), &DirFileHelper::sigDirFile, this, &FileManager::ShowFile);
-}
-
-void FileManager::SetOtherSideCall(const std::function<QString()>& call)
-{
-    ui->tableWidget->setOtherSideCall(call);
 }
 
 void FileManager::InitControl()

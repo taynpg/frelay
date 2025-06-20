@@ -22,11 +22,6 @@ void CustomTableWidget::setIsRemote(bool isRemote)
     isRemote_ = isRemote;
 }
 
-void CustomTableWidget::setBasePathCall(const std::function<QString()>& call)
-{
-    basePathCall_ = call;
-}
-
 void CustomTableWidget::setOwnIDCall(const std::function<QString()>& call)
 {
     oidCall_ = call;
@@ -35,11 +30,6 @@ void CustomTableWidget::setOwnIDCall(const std::function<QString()>& call)
 void CustomTableWidget::setRemoteIDCall(const std::function<QString()>& call)
 {
     ridCall_ = call;
-}
-
-void CustomTableWidget::setOtherSideCall(const std::function<QString()>& call)
-{
-    otherSideCall_ = call;
 }
 
 void CustomTableWidget::dropEvent(QDropEvent* event)
@@ -65,11 +55,11 @@ void CustomTableWidget::dropEvent(QDropEvent* event)
         task.localId = oidCall_();
         task.remoteId = ridCall_();
         if (isRemote_) {
-            task.remotePath = basePathCall_();
-            task.localPath = Util::Join(otherSideCall_(), roleData[Qt::DisplayRole].toString());
+            task.remotePath = GlobalData::Ins()->GetRemoteRoot();
+            task.localPath = Util::Join(GlobalData::Ins()->GetLocalRoot(), roleData[Qt::DisplayRole].toString());
         } else {
-            task.localPath = basePathCall_();
-            task.remotePath = Util::Join(otherSideCall_(), roleData[Qt::DisplayRole].toString());
+            task.localPath = GlobalData::Ins()->GetLocalRoot();
+            task.remotePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), roleData[Qt::DisplayRole].toString());
         }
         tasks.push_back(task);
     }

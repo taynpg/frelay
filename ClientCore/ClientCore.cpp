@@ -20,7 +20,7 @@ ClientCore::~ClientCore()
 
 void ClientCore::DoConnect(const QString& ip, quint16 port)
 {
-    qDebug() << "doConnect thread:" << QThread::currentThread();
+    //qDebug() << "doConnect thread:" << QThread::currentThread();
     emit connecting();
     if (!Connect(ip, port)) {
         emit conFailed();

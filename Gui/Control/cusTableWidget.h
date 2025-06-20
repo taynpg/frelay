@@ -17,10 +17,8 @@ signals:
 
 public:
     void setIsRemote(bool isRemote);
-    void setBasePathCall(const std::function<QString()>& call);
     void setOwnIDCall(const std::function<QString()>& call);
     void setRemoteIDCall(const std::function<QString()>& call);
-    void setOtherSideCall(const std::function<QString()>& call);
 
 protected:
     void dropEvent(QDropEvent* event) override;
@@ -29,8 +27,6 @@ protected:
 protected:
     bool isRemote_{false};
     QPoint startPos_;
-    std::function<QString()> basePathCall_;
-    std::function<QString()> otherSideCall_;
     std::function<QString()> oidCall_;
     std::function<QString()> ridCall_;
 };
