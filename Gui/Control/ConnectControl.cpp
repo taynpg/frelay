@@ -47,6 +47,7 @@ void Connecter::RunWorker(ClientCore* clientCore)
     });
 
     connect(this, &Connecter::sigDoConnect, clientCore_, &ClientCore::DoConnect);
+    connect(this, &Connecter::sigDisConnect, clientCore_, &ClientCore::Disconnect);
     connect(sockWorker_, &QThread::finished, sockWorker_, &QObject::deleteLater);
 
     sockWorker_->start();
@@ -99,8 +100,8 @@ void Connecter::setState(ConnectState cs)
 
 void Connecter::Disconnect()
 {
-    sockWorker_->quit();
-    qWarning() << QString(tr("Disconnected..."));
+    qWarning() << QString(tr("Disconnected requeset..."));
+    emit sigDisConnect();
 }
 
 void Connecter::RefreshClient()

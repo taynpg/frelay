@@ -48,6 +48,13 @@ bool ClientCore::Connect(const QString& ip, quint16 port)
 
 void ClientCore::Disconnect()
 {
+    QMutexLocker locker(&conMutex_);
+    if (socket_ && socket_->state() != QAbstractSocket::UnconnectedState) {
+        socket_->disconnectFromHost();
+        if (socket_->state() != QAbstractSocket::UnconnectedState) {
+            socket_->waitForDisconnected(1000);
+        }
+    }
     connected_ = false;
 }
 
@@ -219,9 +226,9 @@ QString ClientCore::GetOwnID()
 
 SocketWorker::SocketWorker(ClientCore* core, QObject* parent) : QThread(parent), core_(core)
 {
-    connect(core_, &ClientCore::sigDisconnect, this, [this]() {
-        thread()->quit();
-    });
+    //connect(core_, &ClientCore::sigDisconnect, this, [this]() {
+    //    thread()->quit();
+    //});
 }
 
 SocketWorker::~SocketWorker()

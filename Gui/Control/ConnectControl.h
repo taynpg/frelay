@@ -33,6 +33,7 @@ public:
 signals:
     void sendConnect(ConnectState cs);
     void sigDoConnect(const QString& ip, quint16 port);
+    void sigDisConnect();
 
 private:
     void InitControl();
