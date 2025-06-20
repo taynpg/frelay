@@ -26,12 +26,13 @@ public:
     ~Connecter();
 
 public:
-    void SetClientCore(ClientCore* clientCore);
+    void RunWorker(ClientCore* clientCore);
     void SetRemoteCall(const std::function<void(const QString& id)>& call);
     void HandleClients(const InfoClientVec& clients);
 
 signals:
     void sendConnect(ConnectState cs);
+    void sigDoConnect(const QString& ip, quint16 port);
 
 private:
     void InitControl();

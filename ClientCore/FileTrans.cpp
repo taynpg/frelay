@@ -49,7 +49,7 @@ void FileTrans::ReqSendFile(const TransTask& task)
     }
 
     auto frame = clientCore_->GetBuffer(info, FBT_CLI_REQ_SEND, task.remoteId);
-    if (!ClientCore::asyncInvoke(clientCore_, [this, frame]() { return clientCore_->Send(frame); })) {
+    if (!ClientCore::syncInvoke(clientCore_, [this, frame]() { return clientCore_->Send(frame); })) {
         qCritical() << QString(tr("send req send failed: %1")).arg(info.msg);
         sendTask_->state = TaskState::STATE_NONE;
         sendTask_->file.close();
@@ -79,7 +79,7 @@ void FileTrans::ReqDownFile(const TransTask& task)
         return;
     }
     auto frame = clientCore_->GetBuffer(info, FBT_CLI_REQ_DOWN, task.remoteId);
-    if (!ClientCore::asyncInvoke(clientCore_, [this, frame]() { return clientCore_->Send(frame); })) {
+    if (!ClientCore::syncInvoke(clientCore_, [this, frame]() { return clientCore_->Send(frame); })) {
         qCritical() << QString(tr("send req send failed: %1")).arg(info.msg);
         downTask_->state = TaskState::STATE_NONE;
         downTask_->file.close();
@@ -154,7 +154,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
     if (downTask_->state == TaskState::STATE_RUNNING) {
         info.msg = QString(tr("busy..."));
         auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, frame->fid);
-        ClientCore::asyncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); });
+        ClientCore::syncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); });
         return;
     }
 
@@ -165,7 +165,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
         info.msg = QString(tr("open file failed: %1")).arg(newerPath);
         qCritical() << info.msg;
         auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, frame->fid);
-        if (!ClientCore::asyncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); })) {
+        if (!ClientCore::syncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); })) {
             qCritical() << QString(tr("open recv file:%2 failed, and reply %2 failed.")).arg(info.msg, f->fid);
             downTask_->file.close();
             return;
@@ -180,7 +180,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
     info.msg = QString(tr("open recv file success: %1")).arg(newerPath);
     qInfo() << info.msg;
     auto f = clientCore_->GetBuffer(info, FBT_CLI_CAN_SEND, frame->fid);
-    if (!ClientCore::asyncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); })) {
+    if (!ClientCore::syncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); })) {
         qCritical() << QString(tr("open recv file:%2 success, but reply %2 failed.")).arg(info.msg, frame->fid);
         downTask_->file.close();
         return;
@@ -217,7 +217,7 @@ void FileTrans::fbtReqDown(QSharedPointer<FrameBuffer> frame)
 
     // reply fileinfo
     auto f = clientCore_->GetBuffer(info, FBT_CLI_FILE_INFO, frame->fid);
-    if (!ClientCore::asyncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); })) {
+    if (!ClientCore::syncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); })) {
         qCritical() << QString(tr("send file %1 info failed.")).arg(info.fromPath);
         doTask->file.close();
         return;
@@ -237,7 +237,7 @@ void FileTrans::fbtTransDone(QSharedPointer<FrameBuffer> frame)
         info.msg = QString(tr("recv file:%1 success.")).arg(downTask_->file.fileName());
         qInfo() << info.msg;
         auto f = clientCore_->GetBuffer(info, FBT_CLI_CAN_DOWN, frame->fid);
-        ClientCore::asyncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); });
+        ClientCore::syncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); });
         return;
     }
     qCritical() << QString(tr("recv file:%1 done sigal, but file not opened.")).arg(info.msg);
@@ -272,7 +272,7 @@ void FileTrans::fbtFileBuffer(QSharedPointer<FrameBuffer> frame)
         InfoMsg info;
         info.msg = downTask_->file.errorString();
         auto f = clientCore_->GetBuffer(info, FBT_CLI_TRANS_FAILED, frame->fid);
-        ClientCore::asyncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); });
+        ClientCore::syncInvoke(clientCore_, [this, f]() { return clientCore_->Send(f); });
         downTask_->file.close();
     }
     downTask_->tranSize += ws;
@@ -372,7 +372,7 @@ void SendThread::run()
 
     InfoMsg info;
     auto f = cliCore_->GetBuffer(info, FBT_CLI_TRANS_DONE, task_->task.remoteId);
-    ClientCore::asyncInvoke(cliCore_, [this, f]() { return cliCore_->Send(f); });
+    ClientCore::syncInvoke(cliCore_, [this, f]() { return cliCore_->Send(f); });
     task_->file.close();
     task_->state = TaskState::STATE_FINISH;
 }

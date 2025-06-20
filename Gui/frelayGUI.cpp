@@ -40,7 +40,7 @@ void frelayGUI::InitControl()
     transform_->SetClientCore(clientCore_);
 
     connecter_ = new Connecter(this);
-    connecter_->SetClientCore(clientCore_);
+    connecter_->RunWorker(clientCore_);
     connecter_->SetRemoteCall([this](const QString& id) { clientCore_->SetRemoteID(id); });
 
     localFile_ = new FileManager(this);
@@ -88,30 +88,25 @@ void frelayGUI::ControlLayout()
 
 void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
-    Q_UNUSED(context);
-
-    //if (!qApp || !qobject_cast<frelayGUI*>(qApp->activeWindow())) {
-    //    return;
-    //}
-
-    switch (type) {
-    case QtDebugMsg:
-        logPrint->Debug(msg);
-        break;
-    case QtInfoMsg:
-        logPrint->Info(msg);
-        break;
-    case QtWarningMsg:
-        logPrint->Warn(msg);
-        break;
-    case QtCriticalMsg:
-    case QtFatalMsg:
-        logPrint->Error(msg);
-        break;
-    default:
-        logPrint->Error("Unknown QtMsgType type.");
-        break;
-    }
+    QMetaObject::invokeMethod(
+        qApp,
+        [type, msg]() {
+            switch (type) {
+            case QtDebugMsg:
+                logPrint->Debug(msg);
+                break;
+            case QtInfoMsg:
+                logPrint->Info(msg);
+                break;
+            case QtWarningMsg:
+                logPrint->Warn(msg);
+                break;
+            default:
+                logPrint->Error(msg);
+                break;
+            }
+        },
+        Qt::QueuedConnection);
 }
 
 void frelayGUI::HandleTask(const QVector<TransTask>& tasks)

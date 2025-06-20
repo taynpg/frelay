@@ -27,7 +27,9 @@ public:
     ~ClientCore();
 
 public:
+    void Instance();
     bool Connect(const QString& ip, quint16 port);
+    void DoConnect(const QString& ip, quint16 port);
     void Disconnect();
     bool Send(QSharedPointer<FrameBuffer> frame);
     bool Send(const char* data, qint64 len);
@@ -44,7 +46,12 @@ public:
         f->type = type;
         return f;
     }
-    template <typename Callable> static bool asyncInvoke(QObject* context, Callable&& func)
+    /*
+        When calling syncInvoke of ClientCore, the ClientCore should not be in the GUI's event loop thread. 
+        In other words, if a ClientCore instance is created in the GUI thread, it should be moved to another thread; 
+        otherwise, it will cause a deadlock and freeze the interface.
+    */
+    template <typename Callable> static bool syncInvoke(QObject* context, Callable&& func)
     {
         auto promise = QSharedPointer<QPromise<bool>>::create();
         QFuture<bool> future = promise->future();
@@ -81,6 +88,11 @@ signals:
     void sigTransFailed(QSharedPointer<FrameBuffer> frame);
     void sigFileInfo(QSharedPointer<FrameBuffer> frame);
 
+signals:
+    void conSuccess();
+    void connecting();
+    void conFailed();
+
 private:
     void onReadyRead();
     void onDisconnected();
@@ -99,9 +111,10 @@ public:
     QString remoteID_;
 
     QMutex sockMut_;
-    QTcpSocket* socket_;
+    QTcpSocket* socket_{};
     QByteArray recvBuffer_;
 
+    bool connected_{ false };
     LocalFile localFile_;
 };
 
@@ -113,21 +126,10 @@ public:
     SocketWorker(ClientCore* core, QObject* parent = nullptr);
     ~SocketWorker();
 
-public:
-    void SetConnectInfo(const QString& ip, qint16 port);
-
 protected:
     void run() override;
 
-signals:
-    void conSuccess();
-    void connecting();
-    void conFailed();
-    void disconnected();
-
 private:
-    QString ip_;
-    qint16 port_{};
     ClientCore* core_{};
 };
 

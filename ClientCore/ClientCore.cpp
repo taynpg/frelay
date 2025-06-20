@@ -4,6 +4,11 @@
 
 ClientCore::ClientCore(QObject* parent) : QObject(parent)
 {
+}
+
+void ClientCore::Instance()
+{
+    qDebug() << "Instance() thread:" << QThread::currentThread();
     socket_ = new QTcpSocket(this);
     connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);
@@ -11,6 +16,17 @@ ClientCore::ClientCore(QObject* parent) : QObject(parent)
 
 ClientCore::~ClientCore()
 {
+}
+
+void ClientCore::DoConnect(const QString& ip, quint16 port)
+{
+    qDebug() << "doConnect thread:" << QThread::currentThread();
+    emit connecting();
+    if (!Connect(ip, port)) {
+        emit conFailed();
+        return;
+    }
+    emit conSuccess();
 }
 
 bool ClientCore::Connect(const QString& ip, quint16 port)
@@ -26,11 +42,13 @@ bool ClientCore::Connect(const QString& ip, quint16 port)
         return false;
     }
     qInfo() << QString(tr("%1:%2 connected success.")).arg(ip).arg(port);
+    connected_ = true;
     return true;
 }
 
 void ClientCore::Disconnect()
 {
+    connected_ = false;
 }
 
 void ClientCore::onReadyRead()
@@ -48,6 +66,7 @@ void ClientCore::onReadyRead()
 
 void ClientCore::onDisconnected()
 {
+    connected_ = false;
     qCritical() << QString("client %1 disconnected...").arg(remoteID_);
     emit sigDisconnect();
 }
@@ -201,7 +220,6 @@ QString ClientCore::GetOwnID()
 SocketWorker::SocketWorker(ClientCore* core, QObject* parent) : QThread(parent), core_(core)
 {
     connect(core_, &ClientCore::sigDisconnect, this, [this]() {
-        emit disconnected();
         thread()->quit();
     });
 }
@@ -210,19 +228,9 @@ SocketWorker::~SocketWorker()
 {
 }
 
-void SocketWorker::SetConnectInfo(const QString& ip, qint16 port)
-{
-    ip_ = ip;
-    port_ = port;
-}
-
 void SocketWorker::run()
 {
-    emit connecting();
-    if (!core_->Connect(ip_, port_)) {
-        emit conFailed();
-        return;
-    }
-    emit conSuccess();
+    qDebug() << "SocketWorker thread:" << QThread::currentThread();
+    core_->Instance();
     exec();
 }

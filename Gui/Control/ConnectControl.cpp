@@ -18,10 +18,38 @@ Connecter::~Connecter()
     delete ui;
 }
 
-void Connecter::SetClientCore(ClientCore* clientCore)
+void Connecter::RunWorker(ClientCore* clientCore)
 {
     clientCore_ = clientCore;
     connect(clientCore_, &ClientCore::sigClients, this, &Connecter::HandleClients);
+
+    sockWorker_ = new SocketWorker(clientCore_, nullptr);
+    clientCore_->moveToThread(sockWorker_);
+
+    connect(clientCore_, &ClientCore::conSuccess, this, [this]() {
+        setState(ConnectState::CS_CONNECTED);
+        qInfo() << QString(tr("Connected."));
+    });
+
+    connect(clientCore_, &ClientCore::conFailed, this, [this]() {
+        setState(ConnectState::CS_DISCONNECT);
+        qInfo() << QString(tr("Connect failed."));
+    });
+
+    connect(clientCore_, &ClientCore::connecting, this, [this]() {
+        setState(ConnectState::CS_CONNECTING);
+        qInfo() << QString(tr("Connecting..."));
+    });
+
+    connect(clientCore_, &ClientCore::sigDisconnect, this, [this]() {
+        setState(ConnectState::CS_DISCONNECT);
+        qInfo() << QString(tr("Disconnected."));
+    });
+
+    connect(this, &Connecter::sigDoConnect, clientCore_, &ClientCore::DoConnect);
+    connect(sockWorker_, &QThread::finished, sockWorker_, &QObject::deleteLater);
+
+    sockWorker_->start();
 }
 
 void Connecter::SetRemoteCall(const std::function<void(const QString& id)>& call)
@@ -46,33 +74,7 @@ void Connecter::Connect()
         FTCommon::msg(this, tr("IP or Port is empty."));
         return;
     }
-
-    sockWorker_ = new SocketWorker(clientCore_, nullptr);
-    clientCore_->moveToThread(sockWorker_);
-
-    connect(sockWorker_, &SocketWorker::conSuccess, this, [this]() {
-        setState(ConnectState::CS_CONNECTED);
-        qInfo() << QString(tr("Connected."));
-    });
-
-    connect(sockWorker_, &SocketWorker::conFailed, this, [this]() {
-        setState(ConnectState::CS_DISCONNECT);
-        qInfo() << QString(tr("Connect failed."));
-    });
-
-    connect(sockWorker_, &SocketWorker::connecting, this, [this]() {
-        setState(ConnectState::CS_CONNECTING);
-        qInfo() << QString(tr("Connecting..."));
-    });
-
-    connect(sockWorker_, &SocketWorker::disconnected, this, [this]() {
-        setState(ConnectState::CS_DISCONNECT);
-        qInfo() << QString(tr("Disconnected."));
-    });
-
-    connect(sockWorker_, &QThread::finished, sockWorker_, &QObject::deleteLater);
-    sockWorker_->SetConnectInfo(ip, port.toInt());
-    sockWorker_->start();
+    emit sigDoConnect(ip, port.toInt());
 }
 
 void Connecter::setState(ConnectState cs)
@@ -107,7 +109,7 @@ void Connecter::RefreshClient()
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->data = infoPack(info);
     frame->type = FBT_SER_MSG_ASKCLIENTS;
-    auto sendRet = ClientCore::asyncInvoke(clientCore_, [this, frame]() { return clientCore_->Send(frame); });
+    auto sendRet = ClientCore::syncInvoke(clientCore_, [this, frame]() { return clientCore_->Send(frame); });
     if (!sendRet) {
         qCritical() << QString(tr("send ask client list failed."));
         return;
