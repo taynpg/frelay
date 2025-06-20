@@ -166,5 +166,5 @@ void Connecter::InitControl()
         remoteCall_(name);
     });
 
-    setMaximumSize(300, 300);
+    setMaximumWidth(300);
 }

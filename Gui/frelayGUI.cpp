@@ -83,6 +83,11 @@ void frelayGUI::ControlLayout()
 
     splitter->addWidget(sTop);
     splitter->addWidget(sFile);
+
+    QList<int> sizes;
+    sizes << height() * 2 / 5 << height() * 3 / 5;
+    splitter->setSizes(sizes);
+
     setCentralWidget(splitter);
 }
 

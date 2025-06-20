@@ -1,4 +1,4 @@
-#ifndef COMPARECONTROL_H
+﻿#ifndef COMPARECONTROL_H
 #define COMPARECONTROL_H
 
 #include <QWidget>
@@ -14,6 +14,10 @@ class Compare : public QWidget
 public:
     explicit Compare(QWidget* parent = nullptr);
     ~Compare();
+
+private:
+    void InitControl();
+    void InitTabWidget();
 
 private:
     Ui::Compare* ui;
