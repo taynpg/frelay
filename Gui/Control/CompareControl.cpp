@@ -41,5 +41,5 @@ void Compare::InitTabWidget()
     ui->tableWidget->viewport()->setAcceptDrops(true);
     ui->tableWidget->setDropIndicatorShown(true);
     ui->tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    ui->tableWidget->setDragDropMode(QAbstractItemView::DragDrop);
+    ui->tableWidget->setDragDropMode(QAbstractItemView::DropOnly);
 }

@@ -42,7 +42,6 @@ void CustomTableWidget::dropEvent(QDropEvent* event)
     QDataStream stream(&encoded, QIODevice::ReadOnly);
 
     QVector<TransTask> tasks;
-    QList<QTableWidgetItem*> draggedItems;
     while (!stream.atEnd()) {
         int row, col;
         QMap<int, QVariant> roleData;
