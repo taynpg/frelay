@@ -55,7 +55,7 @@ target_link_libraries(frelayGUI PRIVATE
     Qt${QT_VERSION_MAJOR}::Network
     ClientCore Protocol 
     Util
-    Struct
+    Struct SingleApplication::SingleApplication
 )
 
 if(NOT DEFINED COMPILER_USE_MINGW)

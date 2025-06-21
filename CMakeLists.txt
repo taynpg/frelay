@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PROJECT_URL "https://github.com/taynpg/frelay")
+set(QT_DEFAULT_MAJOR_VERSION 6)
+set(QAPPLICATION_CLASS QApplication)
 
 if (MSVC)
 add_compile_options(/utf-8)
@@ -36,6 +38,7 @@ include_directories(${PROJECT_BINARY_DIR})
 
 add_definitions(-DFMT_HEADER_ONLY)
 include_directories(3rd)
+add_subdirectory(3rd/SingleApplication-3.5.2)
 add_subdirectory(crashelper)
 add_subdirectory(Protocol)
 add_subdirectory(Server)

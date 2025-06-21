@@ -2,7 +2,6 @@
 #include <Util.h>
 
 #include "Console.h"
-#include "Helper.h"
 
 #ifndef COMPILER_USE_MINGW
 #include <crashelper.h>
@@ -21,7 +20,7 @@ int main(int argc, char* argv[])
     backward::SetDumpFileSavePath(configDir + "/dumpfile");
     backward::SetDumpLogSavePath(configDir + "/dumplog");
 #else
-    backward::SetDumpLogSavePath(configDir + QDir::separator() + "dumplog");
+    backward::SetDumpLogSavePath(configDir + "/dumplog");
 #endif
 #endif
 

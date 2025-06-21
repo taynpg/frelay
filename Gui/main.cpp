@@ -1,6 +1,7 @@
 ﻿#include <QApplication>
 #include <QDir>
 #include <QFile>
+#include <SingleApplication>
 
 #include "frelayGUI.h"
 
@@ -22,21 +23,28 @@ int main(int argc, char* argv[])
 #endif
 
     CRASHELPER_MARK_ENTRY();
-    QApplication a(argc, argv);
+    SingleApplication a(argc, argv);
+
+#ifdef _WIN32
+    QFont font("Microsoft YaHei", 9);
+    a.setFont(font);
+    // a.setStyle("fusion");
+    a.setStyle("windows");
+#endif
 
     qInstallMessageHandler(frelayGUI::ControlMsgHander);
     qRegisterMetaType<QSharedPointer<FrameBuffer>>("QSharedPointer<FrameBuffer>");
     qRegisterMetaType<InfoClientVec>("InfoClientVec");
     qRegisterMetaType<DirFileInfoVec>("DirFileInfoVec");
 
-#ifdef _WIN32
-    QFont font("Microsoft YaHei", 9);
-    a.setFont(font);
-    a.setWindowIcon(QIcon(":/ico/main.ico"));
-    a.setStyle("Windows");
-#endif
-
     frelayGUI w;
+
+    QObject::connect(&a, &SingleApplication::instanceStarted, &w, [&w]() {
+        w.showNormal();
+        w.raise();
+        w.activateWindow();
+    });
+
     w.show();
     return a.exec();
 }

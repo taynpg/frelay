@@ -112,7 +112,6 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     case FrameBufferType::FBT_CLI_ASK_HOME: {
         InfoMsg info;
         info.msg = Util::GetUserHome();
-        auto data = infoPack<InfoMsg>(info);
         if (!Send<InfoMsg>(info, FBT_CLI_ANS_HOME, frame->fid)) {
             qCritical() << QString(tr("send home failed."));
             return;
