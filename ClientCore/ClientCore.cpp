@@ -8,7 +8,7 @@ ClientCore::ClientCore(QObject* parent) : QObject(parent)
 
 void ClientCore::Instance()
 {
-    //qDebug() << "Instance() thread:" << QThread::currentThread();
+    // qDebug() << "Instance() thread:" << QThread::currentThread();
     socket_ = new QTcpSocket(this);
     connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);
@@ -20,7 +20,7 @@ ClientCore::~ClientCore()
 
 void ClientCore::DoConnect(const QString& ip, quint16 port)
 {
-    //qDebug() << "doConnect thread:" << QThread::currentThread();
+    // qDebug() << "doConnect thread:" << QThread::currentThread();
     emit connecting();
     if (!Connect(ip, port)) {
         emit conFailed();
@@ -88,6 +88,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     }
     case FrameBufferType::FBT_SER_MSG_YOURID: {
         ownID_ = frame->data;
+        GlobalData::Ins()->SetLocalID(ownID_);
         qInfo() << QString(tr("own id: %1")).arg(ownID_);
         break;
     }
@@ -210,6 +211,7 @@ bool ClientCore::Send(const char* data, qint64 len)
 
 void ClientCore::SetRemoteID(const QString& id)
 {
+    GlobalData::Ins()->SetRemoteID(id);
     remoteID_ = id;
 }
 
@@ -225,9 +227,9 @@ QString ClientCore::GetOwnID()
 
 SocketWorker::SocketWorker(ClientCore* core, QObject* parent) : QThread(parent), core_(core)
 {
-    //connect(core_, &ClientCore::sigDisconnect, this, [this]() {
-    //    thread()->quit();
-    //});
+    // connect(core_, &ClientCore::sigDisconnect, this, [this]() {
+    //     thread()->quit();
+    // });
 }
 
 SocketWorker::~SocketWorker()
@@ -236,7 +238,7 @@ SocketWorker::~SocketWorker()
 
 void SocketWorker::run()
 {
-    //qDebug() << "SocketWorker thread:" << QThread::currentThread();
+    // qDebug() << "SocketWorker thread:" << QThread::currentThread();
     core_->Instance();
     exec();
 }

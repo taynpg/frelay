@@ -138,13 +138,25 @@ GlobalData* GlobalData::Ins()
 void GlobalData::SetLocalRoot(const QString& root)
 {
     QMutexLocker locker(&mutex_);
-	LocalRoot_ = root;
+    LocalRoot_ = root;
+}
+
+void GlobalData::SetLocalID(const QString& id)
+{
+    QMutexLocker locker(&mutex_);
+    LocalID_ = id;
+}
+
+void GlobalData::SetRemoteID(const QString& id)
+{
+    QMutexLocker locker(&mutex_);
+    RemoteID_ = id;
 }
 
 void GlobalData::SetRemoteRoot(const QString& root)
 {
     QMutexLocker locker(&mutex_);
-	RemoteRoot_ = root;
+    RemoteRoot_ = root;
 }
 
 QString GlobalData::GetLocalRoot() const
@@ -152,7 +164,17 @@ QString GlobalData::GetLocalRoot() const
     return LocalRoot_;
 }
 
+QString GlobalData::GetLocalID() const
+{
+    return LocalID_;
+}
+
 QString GlobalData::GetRemoteRoot() const
 {
     return RemoteRoot_;
+}
+
+QString GlobalData::GetRemoteID() const
+{
+    return RemoteID_;
 }

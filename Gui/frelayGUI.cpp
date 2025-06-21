@@ -53,6 +53,7 @@ void frelayGUI::InitControl()
 
     connect(localFile_, &FileManager::sigSendTasks, this, &frelayGUI::HandleTask);
     connect(remoteFile_, &FileManager::sigSendTasks, this, &frelayGUI::HandleTask);
+    connect(compare_, &Compare::sigTasks, this, &frelayGUI::HandleTask);
 }
 
 void frelayGUI::ControlSignal()

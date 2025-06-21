@@ -13,9 +13,13 @@ public:
 
 public:
     void SetLocalRoot(const QString& root);
+    void SetLocalID(const QString& id);
     void SetRemoteRoot(const QString& root);
+    void SetRemoteID(const QString& id);
     QString GetLocalRoot() const;
+    QString GetLocalID() const;
     QString GetRemoteRoot() const;
+    QString GetRemoteID() const;
 
 private:
     GlobalData() = default;
@@ -24,6 +28,8 @@ public:
     QMutex mutex_;
     QString LocalRoot_;
     QString RemoteRoot_;
+    QString LocalID_;
+    QString RemoteID_;
 };
 
 class Util : public QObject
