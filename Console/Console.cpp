@@ -14,7 +14,8 @@ void ConsoleHelper::RunWorker(ClientCore* clientCore)
 
     sockWorker_ = new SocketWorker(clientCore_, nullptr);
     clientCore_->moveToThread(sockWorker_);
-
+    fileTrans_ = new FileTrans(clientCore_);
+    
     connect(clientCore_, &ClientCore::conSuccess, this, [this]() { qInfo() << QString(tr("Connected.")); });
     connect(clientCore_, &ClientCore::conFailed, this, [this]() { qInfo() << QString(tr("Connect failed.")); });
     connect(clientCore_, &ClientCore::connecting, this, [this]() { qInfo() << QString(tr("Connecting...")); });

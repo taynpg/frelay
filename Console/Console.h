@@ -2,6 +2,7 @@
 #define CONSOLE_H
 
 #include <ClientCore.h>
+#include <FileTrans.h>
 
 class ConsoleHelper : public QObject
 {
@@ -22,6 +23,7 @@ signals:
 private:
     QString ip_;
     quint16 port_{};
+    FileTrans* fileTrans_{};
     SocketWorker* sockWorker_{};
     ClientCore* clientCore_;
 };
