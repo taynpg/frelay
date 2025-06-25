@@ -88,6 +88,7 @@ void Connecter::setState(ConnectState cs)
     case CS_CONNECTED:
         ui->btnConnect->setEnabled(false);
         ui->btnDisconnect->setEnabled(true);
+        RefreshClient();
         break;
     case CS_DISCONNECT:
         ui->btnConnect->setEnabled(true);
