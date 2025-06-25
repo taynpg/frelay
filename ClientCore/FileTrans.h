@@ -46,7 +46,6 @@ public:
 public:
     void run() override;
     void setTask(const QSharedPointer<DoTransTask>& task);
-    void sendCall(QSharedPointer<FrameBuffer> frame);
 
 private:
     bool isSuccess_{false};

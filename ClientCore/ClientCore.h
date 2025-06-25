@@ -8,15 +8,12 @@
 #include <LocalFile.h>
 #include <Protocol.h>
 #include <QDataStream>
-#include <QFuture>
-#include <QFutureWatcher>
 #include <QHostAddress>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QQueue>
 #include <QTcpSocket>
 #include <QThread>
-#include <QtConcurrent/QtConcurrentRun>
 #include <array>
 
 class ClientCore : public QObject

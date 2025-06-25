@@ -236,8 +236,6 @@ void FileTrans::fbtTransDone(QSharedPointer<FrameBuffer> frame)
         downTask_->state = TaskState::STATE_FINISH;
         info.msg = QString(tr("recv file:%1 success.")).arg(downTask_->file.fileName());
         qInfo() << info.msg;
-        auto f = clientCore_->GetBuffer(info, FBT_CLI_CAN_DOWN, frame->fid);
-        ClientCore::syncInvoke(clientCore_, f);
         return;
     }
     qCritical() << QString(tr("recv file:%1 done sigal, but file not opened.")).arg(info.msg);
@@ -251,7 +249,7 @@ void FileTrans::fbtCanDown(QSharedPointer<FrameBuffer> frame)
     downTask_->permission = info.permissions;
     downTask_->totalSize = info.size;
     downTask_->tranSize = 0;
-    qDebug() << QString(tr("start trans file:%1.")).arg(info.fromPath);
+    qDebug() << QString(tr("Can Down trans file:%1.")).arg(info.fromPath);
 }
 
 void FileTrans::fbtCanotDown(QSharedPointer<FrameBuffer> frame)
@@ -299,7 +297,7 @@ void FileTrans::fbtCanotSend(QSharedPointer<FrameBuffer> frame)
 void FileTrans::fbtCanSend(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    qInfo() << QString(tr("start trans file:%1 to %2")).arg(info.fromPath, frame->fid);
+    qInfo() << QString(tr("Can Send start trans file:%1 to %2")).arg(info.fromPath, frame->fid);
     SendFile(sendTask_);
 }
 
@@ -330,12 +328,12 @@ void SendThread::run()
 {
     // task's file shoule be already opened.
     isSuccess_ = true;
+    bool invokeSuccess = false;
     while (!task_->file.atEnd()) {
 
         auto frame = QSharedPointer<FrameBuffer>::create();
         frame->tid = task_->task.remoteId;
         frame->type = FBT_CLI_FILE_BUFFER;
-        frame->call = [this](QSharedPointer<FrameBuffer> frame) { sendCall(frame); };
         frame->data.resize(CHUNK_BUF_SIZE);
 
         auto br = task_->file.read(frame->data.data(), CHUNK_BUF_SIZE);
@@ -345,32 +343,14 @@ void SendThread::run()
             break;
         }
         frame->data.resize(br);
-
-        while (curSendCount_ >= MAX_SEND_TASK) {
-            QThread::msleep(1);
-            // shoule add abort action mark.
-        }
-
-        // QMetaObject::invokeMethod(cliCore_, [this, frame] {
-        //     frame->sendRet = cliCore_->Send(frame);
-        //     if (frame->call) {
-        //         frame->call(frame);
-        //     }
-        // });
-
-        ++curSendCount_;
-
-        if (!isSuccess_) {
+        invokeSuccess = QMetaObject::invokeMethod(cliCore_, "SendFrame", Qt::BlockingQueuedConnection,
+                                                  Q_RETURN_ARG(bool, isSuccess_), Q_ARG(QSharedPointer<FrameBuffer>, frame));
+        if (!invokeSuccess || !isSuccess_) {
             qCritical() << QString(tr("send to %1 file failed.")).arg(task_->task.remoteId);
             break;
         }
+        task_->tranSize += frame->data.size();
     }
-
-    while (curSendCount_ > 0) {
-        QThread::msleep(1);
-        // shoule add abort action mark.
-    }
-
     InfoMsg info;
     auto f = cliCore_->GetBuffer(info, FBT_CLI_TRANS_DONE, task_->task.remoteId);
     ClientCore::syncInvoke(cliCore_, f);
@@ -381,14 +361,4 @@ void SendThread::run()
 void SendThread::setTask(const QSharedPointer<DoTransTask>& task)
 {
     task_ = task;
-}
-
-void SendThread::sendCall(QSharedPointer<FrameBuffer> frame)
-{
-    if (frame->sendRet) {
-        --curSendCount_;
-        task_->tranSize += frame->data.size();
-    } else {
-        isSuccess_ = false;
-    }
 }

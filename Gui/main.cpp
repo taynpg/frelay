@@ -36,6 +36,7 @@ int main(int argc, char* argv[])
     qRegisterMetaType<QSharedPointer<FrameBuffer>>("QSharedPointer<FrameBuffer>");
     qRegisterMetaType<InfoClientVec>("InfoClientVec");
     qRegisterMetaType<DirFileInfoVec>("DirFileInfoVec");
+    qRegisterMetaType<TransTask>("TransTask");
 
     frelayGUI w;
 
