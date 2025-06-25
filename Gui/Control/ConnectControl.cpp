@@ -139,6 +139,8 @@ void Connecter::InitControl()
     ui->btnDisconnect->setEnabled(false);
     ui->edIP->setText("127.0.0.1");
     ui->edPort->setText("9009");
+    ui->edPort->setFixedWidth(70);
+
     connect(ui->btnConnect, &QPushButton::clicked, this, &Connecter::Connect);
     connect(ui->btnRefresh, &QPushButton::clicked, this, &Connecter::RefreshClient);
     connect(this, &Connecter::sendConnect, this, &Connecter::setState);

@@ -55,7 +55,7 @@ void FileManager::InitControl()
     ui->comboBox->setEditable(true);
     // ui->tableWidget->setColumnWidth(0, 50);
     ui->tableWidget->setColumnWidth(1, 300);
-    ui->tableWidget->setColumnWidth(2, 150);
+    ui->tableWidget->setColumnWidth(2, 170);
     ui->tableWidget->setColumnWidth(3, 70);
     ui->tableWidget->setColumnWidth(4, 90);
     ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
