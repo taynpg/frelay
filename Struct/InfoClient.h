@@ -30,14 +30,15 @@ struct InfoClientVec {
 
     void serialize(QDataStream& data) const
     {
-        data << vec.size();
+		uint32_t size = static_cast<uint32_t>(vec.size());
+        data << size;
         for (const auto& info : vec) {
             data << info;
         }
     }
     void deserialize(QDataStream& data)
     {
-        qsizetype size;
+		uint32_t size = 0;
         data >> size;
         vec.resize(size);
         for (quint32 i = 0; i < size; ++i) {

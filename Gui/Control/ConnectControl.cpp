@@ -110,7 +110,7 @@ void Connecter::RefreshClient()
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->data = infoPack(info);
     frame->type = FBT_SER_MSG_ASKCLIENTS;
-    auto sendRet = ClientCore::syncInvoke(clientCore_, [this, frame]() { return clientCore_->Send(frame); });
+    auto sendRet = ClientCore::syncInvoke(clientCore_, frame);
     if (!sendRet) {
         qCritical() << QString(tr("send ask client list failed."));
         return;

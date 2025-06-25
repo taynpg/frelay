@@ -1,5 +1,6 @@
 ﻿#include <QCoreApplication>
 #include <Util.h>
+#include <iostream>
 
 #include "Console.h"
 

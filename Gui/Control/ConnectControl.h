@@ -47,7 +47,6 @@ private:
 private:
     Ui::Connecter* ui;
     bool connceted_{false};
-    std::thread thContext_;
     std::function<void(const QString& id)> remoteCall_;
     ClientCore* clientCore_;
 

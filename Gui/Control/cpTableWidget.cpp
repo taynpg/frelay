@@ -5,6 +5,7 @@
 #include <QMimeData>
 #include <QPainter>
 #include <Util.h>
+#include <functional>
 
 #include "GuiUtil/Public.h"
 

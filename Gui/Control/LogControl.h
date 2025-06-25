@@ -36,7 +36,10 @@ public:
 
 public:
     std::string now_str();
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     void ColorChange(Qt::ColorScheme scheme);
+#endif
 
 private:
     void InitControl();
@@ -51,7 +54,11 @@ private:
     QMap<PrintType, QBrush> lightMap_;
     QMap<PrintType, QBrush> darkMap_;
     QVector<LogEntry> logEntries_;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     QStyleHints* styleHints_{};
+#endif
+
     QStandardItemModel* model_;
 };
 

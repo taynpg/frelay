@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
+#include <QFileInfo>
 #include <QMutex>
 #include <QStandardPaths>
 #include <iostream>
@@ -76,9 +77,6 @@ void Util::InitLogger(const QString& logPath, const QString& mark)
     logger->set_level(spdlog::level::debug);
     spdlog::register_logger(logger);
 }
-
-#include <QDir>
-#include <QFileInfo>
 
 // do not check exit
 QString Util::Get2FilePath(const QString& file, const QString& directory)

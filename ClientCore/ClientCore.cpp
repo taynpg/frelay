@@ -18,6 +18,11 @@ ClientCore::~ClientCore()
 {
 }
 
+bool ClientCore::SendFrame(QSharedPointer<FrameBuffer> frame)
+{
+    return Send(frame);
+}
+
 void ClientCore::DoConnect(const QString& ip, quint16 port)
 {
     // qDebug() << "doConnect thread:" << QThread::currentThread();
@@ -31,11 +36,6 @@ void ClientCore::DoConnect(const QString& ip, quint16 port)
 
 bool ClientCore::Connect(const QString& ip, quint16 port)
 {
-    QMutexLocker locker(&conMutex_);
-    if (!locker.isLocked()) {
-        qWarning() << QString(tr("%1:%2 already connecting...")).arg(ip).arg(port);
-        return false;
-    }
     socket_->connectToHost(ip, port);
     if (!socket_->waitForConnected(3000)) {
         qCritical() << QString(tr("%1:%2 connect failed...")).arg(ip).arg(port);

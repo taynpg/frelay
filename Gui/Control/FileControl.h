@@ -4,10 +4,11 @@
 #include <ClientCore.h>
 #include <FileTrans.h>
 #include <InfoDirFile.h>
+#include <QMenu>
+#include <QMutex>
 #include <QWidget>
 #include <Util.h>
-#include <QMutex>
-#include <QMenu>
+#include <memory>
 
 namespace Ui {
 class FileManager;

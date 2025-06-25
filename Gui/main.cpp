@@ -20,9 +20,9 @@ int main(int argc, char* argv[])
 #else
     backward::SetDumpLogSavePath(configDir + QDir::separator() + "dumplog");
 #endif
+    CRASHELPER_MARK_ENTRY();
 #endif
 
-    CRASHELPER_MARK_ENTRY();
     SingleApplication a(argc, argv);
 
 #ifdef _WIN32

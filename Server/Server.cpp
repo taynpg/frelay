@@ -63,7 +63,8 @@ void Server::onNewConnection()
     client->socket = clientSocket;
     client->socket->setProperty("clientId", clientId);
     client->id = clientId;
-    client->connectTime = QDateTime::currentSecsSinceEpoch();
+    // client->connectTime = QDateTime::currentSecsSinceEpoch();
+    client->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
 
     connect(clientSocket, &QTcpSocket::readyRead, this, &Server::onReadyRead);
     connect(clientSocket, &QTcpSocket::disconnected, this, &Server::onClientDisconnected);
@@ -198,7 +199,8 @@ bool Server::sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame)
 
 void Server::monitorClients()
 {
-    qint64 now = QDateTime::currentSecsSinceEpoch();
+    // qint64 now = QDateTime::currentSecsSinceEpoch();
+    qint64 now = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
     QWriteLocker locker(&rwLock_);
 
     for (auto it = clients_.begin(); it != clients_.end();) {

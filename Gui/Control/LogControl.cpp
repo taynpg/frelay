@@ -3,6 +3,8 @@
 #include <QDateTime>
 #include <QListWidgetItem>
 #include <QStandardItem>
+#include <chrono>
+#include <ctime>
 #include <iomanip>
 #include <sstream>
 
@@ -17,9 +19,11 @@ LogPrint::LogPrint(QWidget* parent) : QWidget(parent), ui(new Ui::LogPrint)
 
 void LogPrint::InitControl()
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     isLightMode_ = QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Light;
     styleHints_ = QGuiApplication::styleHints();
     connect(styleHints_, &QStyleHints::colorSchemeChanged, this, &LogPrint::ColorChange);
+#endif
     ui->pedText->setReadOnly(true);
 }
 
@@ -29,13 +33,19 @@ std::string LogPrint::now_str()
     auto time_t_now = std::chrono::system_clock::to_time_t(now);
     auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
+    // std::ostringstream timestamp;
+    // timestamp << std::put_time(std::localtime(&time_t_now), "%H:%M:%S") << "." << std::setfill('0') << std::setw(3)
+    //           << milliseconds.count() << " ";
+
+    char timeStr[20];
+    std::strftime(timeStr, sizeof(timeStr), "%H:%M:%S", std::localtime(&time_t_now));
     std::ostringstream timestamp;
-    timestamp << std::put_time(std::localtime(&time_t_now), "%H:%M:%S") << "." << std::setfill('0') << std::setw(3)
-              << milliseconds.count() << " ";
+    timestamp << timeStr << "." << std::setfill('0') << std::setw(3) << milliseconds.count() << " ";
 
     return timestamp.str();
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 void LogPrint::ColorChange(Qt::ColorScheme scheme)
 {
     if (scheme == Qt::ColorScheme::Dark) {
@@ -45,6 +55,7 @@ void LogPrint::ColorChange(Qt::ColorScheme scheme)
     }
     RePrintLog();
 }
+#endif
 
 LogPrint::~LogPrint()
 {

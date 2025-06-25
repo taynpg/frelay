@@ -2,11 +2,10 @@
 #define FILETRANS_H
 
 #include <QFile>
+#include <QFuture>
 #include <QMap>
 #include <QMutex>
 #include <QVector>
-#include <QFuture>
-#include <QPromise>
 
 #include "ClientCore.h"
 
@@ -50,7 +49,7 @@ public:
     void sendCall(QSharedPointer<FrameBuffer> frame);
 
 private:
-    bool isSuccess_{ false };
+    bool isSuccess_{false};
     ClientCore* cliCore_;
     quint32 curSendCount_{0};
     QSharedPointer<DoTransTask> task_;

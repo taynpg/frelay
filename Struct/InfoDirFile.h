@@ -19,12 +19,15 @@ struct DirFileInfo {
 
     void serialize(QDataStream& data) const
     {
-        data << name << size << type << fullPath << permission << lastModified;
+		uint32_t t = static_cast<FileType>(type);
+        data << name << size << t << fullPath << permission << lastModified;
     }
 
     void deserialize(QDataStream& data)
     {
-        data >> name >> size >> type >> fullPath >> permission >> lastModified;
+		uint32_t t = 0;
+        data >> name >> size >> t >> fullPath >> permission >> lastModified;
+		type = static_cast<FileType>(t);
     }
 };
 
@@ -37,7 +40,8 @@ struct DirFileInfoVec {
 
     void serialize(QDataStream& data) const
     {
-        data << vec.size();
+		uint32_t size = static_cast<uint32_t>(vec.size());
+        data << size;
         for (const auto& info : vec) {
             data << info;
         }
@@ -45,7 +49,7 @@ struct DirFileInfoVec {
     }
     void deserialize(QDataStream& data)
     {
-        qsizetype size;
+		uint32_t size = 0;
         data >> size;
         vec.resize(size);
         for (quint32 i = 0; i < size; ++i) {

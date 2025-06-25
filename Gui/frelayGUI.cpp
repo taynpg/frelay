@@ -92,25 +92,20 @@ void frelayGUI::ControlLayout()
 
 void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
-    QMetaObject::invokeMethod(
-        qApp,
-        [type, msg]() {
-            switch (type) {
-            case QtDebugMsg:
-                logPrint->Debug(msg);
-                break;
-            case QtInfoMsg:
-                logPrint->Info(msg);
-                break;
-            case QtWarningMsg:
-                logPrint->Warn(msg);
-                break;
-            default:
-                logPrint->Error(msg);
-                break;
-            }
-        },
-        Qt::QueuedConnection);
+    switch (type) {
+    case QtDebugMsg:
+        logPrint->Debug(msg);
+        break;
+    case QtInfoMsg:
+        logPrint->Info(msg);
+        break;
+    case QtWarningMsg:
+        logPrint->Warn(msg);
+        break;
+    default:
+        logPrint->Error(msg);
+        break;
+    }
 }
 
 void frelayGUI::HandleTask(const QVector<TransTask>& tasks)

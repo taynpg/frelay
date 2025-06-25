@@ -9,13 +9,14 @@
 #include <Protocol.h>
 #include <QDataStream>
 #include <QFuture>
+#include <QFutureWatcher>
 #include <QHostAddress>
 #include <QMutex>
 #include <QMutexLocker>
-#include <QPromise>
 #include <QQueue>
 #include <QTcpSocket>
 #include <QThread>
+#include <QtConcurrent/QtConcurrentRun>
 #include <array>
 
 class ClientCore : public QObject
@@ -25,6 +26,9 @@ class ClientCore : public QObject
 public:
     ClientCore(QObject* parent = nullptr);
     ~ClientCore();
+
+public slots:
+    bool SendFrame(QSharedPointer<FrameBuffer> frame);
 
 public:
     void Instance();
@@ -46,30 +50,15 @@ public:
         f->type = type;
         return f;
     }
-    /*
-        When calling syncInvoke of ClientCore, the ClientCore should not be in the GUI's event loop thread. 
-        In other words, if a ClientCore instance is created in the GUI thread, it should be moved to another thread; 
-        otherwise, it will cause a deadlock and freeze the interface.
-    */
-    template <typename Callable> static bool syncInvoke(QObject* context, Callable&& func)
+    static bool syncInvoke(ClientCore* context, QSharedPointer<FrameBuffer> frame)
     {
-        auto promise = QSharedPointer<QPromise<bool>>::create();
-        QFuture<bool> future = promise->future();
-
-        QMetaObject::invokeMethod(
-            context,
-            [func = std::forward<Callable>(func), promise]() mutable {
-                try {
-                    promise->addResult(func());
-                } catch (...) {
-                    promise->addResult(false);
-                }
-                promise->finish();
-            },
-            Qt::QueuedConnection);
-
-        future.waitForFinished();
-        return future.result();
+        bool result = false;
+        bool success = QMetaObject::invokeMethod(context, "SendFrame", Qt::BlockingQueuedConnection, Q_RETURN_ARG(bool, result),
+                                                 Q_ARG(QSharedPointer<FrameBuffer>, frame));
+        if (!success) {
+            return false;
+        }
+        return result;
     }
 
 signals:
@@ -114,7 +103,7 @@ public:
     QTcpSocket* socket_{};
     QByteArray recvBuffer_;
 
-    bool connected_{ false };
+    bool connected_{false};
     LocalFile localFile_;
 };
 

@@ -1,5 +1,6 @@
 #include "Protocol.h"
 
+#include <QDataStream>
 #include <QIODevice>
 #include <cstdint>
 
@@ -14,12 +15,12 @@ QSharedPointer<FrameBuffer> Protocol::ParseBuffer(QByteArray& buffer)
 
     int headerPos = buffer.indexOf(protocolHeader);
     if (headerPos == -1) {
-        return nullptr;
+        return QSharedPointer<FrameBuffer>();
     }
 
     const int minFrameSize = protocolHeader.size() + sizeof(uint16_t) + 32 + 32 + sizeof(uint32_t) + protocolTail.size();
     if (buffer.size() - headerPos < minFrameSize) {
-        return nullptr;
+        return QSharedPointer<FrameBuffer>();
     }
 
     QDataStream stream(buffer.mid(headerPos));
@@ -29,7 +30,7 @@ QSharedPointer<FrameBuffer> Protocol::ParseBuffer(QByteArray& buffer)
     header.resize(protocolHeader.size());
     stream.readRawData(header.data(), protocolHeader.size());
     if (header != protocolHeader) {
-        return nullptr;
+        return QSharedPointer<FrameBuffer>();
     }
 
     FrameBufferType type;
@@ -51,7 +52,7 @@ QSharedPointer<FrameBuffer> Protocol::ParseBuffer(QByteArray& buffer)
 
     int totalFrameSize = minFrameSize - protocolTail.size() + dataLen;
     if (buffer.size() - headerPos < totalFrameSize) {
-        return nullptr;
+        return QSharedPointer<FrameBuffer>();
     }
     QByteArray data;
     if (dataLen > 0) {
@@ -62,7 +63,7 @@ QSharedPointer<FrameBuffer> Protocol::ParseBuffer(QByteArray& buffer)
     tail.resize(protocolTail.size());
     stream.readRawData(tail.data(), protocolTail.size());
     if (tail != protocolTail) {
-        return nullptr;
+        return QSharedPointer<FrameBuffer>();
     }
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->type = type;

@@ -335,21 +335,19 @@
 
 #if defined(BACKWARD_SYSTEM_WINDOWS)
 
+#include <basetsd.h>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
-
-#include <basetsd.h>
 typedef SSIZE_T ssize_t;
 
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <windows.h>
-#include <winnt.h>
-
 #include <psapi.h>
 #include <signal.h>
+#include <windows.h>
+#include <winnt.h>
 
 #ifndef __clang__
 #undef NOINLINE
@@ -1293,8 +1291,7 @@ public:
         for (;;) {
             // NOTE: this only works if PDBs are already loaded!
             SetLastError(0);
-            if (!StackWalk64(machine_type_, process, thd_, &s, ctx_, NULL, SymFunctionTableAccess64, SymGetModuleBase64,
-                             NULL))
+            if (!StackWalk64(machine_type_, process, thd_, &s, ctx_, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL))
                 break;
 
             if (s.AddrReturn.Offset == 0)
@@ -1797,13 +1794,11 @@ private:
     static void find_in_section_trampoline(bfd*, asection* section, void* data)
     {
         find_sym_context* context = static_cast<find_sym_context*>(data);
-        context->self->find_in_section(reinterpret_cast<bfd_vma>(context->addr),
-                                       reinterpret_cast<bfd_vma>(context->base_addr), context->fobj, section,
-                                       context->result);
+        context->self->find_in_section(reinterpret_cast<bfd_vma>(context->addr), reinterpret_cast<bfd_vma>(context->base_addr),
+                                       context->fobj, section, context->result);
     }
 
-    void find_in_section(bfd_vma addr, bfd_vma base_addr, bfd_fileobject* fobj, asection* section,
-                         find_sym_result& result)
+    void find_in_section(bfd_vma addr, bfd_vma base_addr, bfd_fileobject* fobj, asection* section, find_sym_result& result)
     {
         if (result.found)
             return;
@@ -1844,8 +1839,8 @@ private:
         }
 
         if (!result.found && fobj->dynamic_symtab) {
-            result.found = bfd_find_nearest_line(fobj->handle.get(), section, fobj->dynamic_symtab.get(),
-                                                 addr - sec_addr, &result.filename, &result.funcname, &result.line);
+            result.found = bfd_find_nearest_line(fobj->handle.get(), section, fobj->dynamic_symtab.get(), addr - sec_addr,
+                                                 &result.filename, &result.funcname, &result.line);
         }
 #if defined(__clang__)
 #pragma clang diagnostic pop
@@ -2490,62 +2485,61 @@ private:
         // We go the preprocessor way to avoid having to create templated
         // classes or using gelf (which might throw a compiler error if 64 bit
         // is not supported
-#define ELF_GET_DATA(ARCH)                                                                                             \
-    Elf_Scn* elf_section = 0;                                                                                          \
-    Elf_Data* elf_data = 0;                                                                                            \
-    Elf##ARCH##_Shdr* section_header = 0;                                                                              \
-    Elf_Scn* symbol_section = 0;                                                                                       \
-    size_t symbol_count = 0;                                                                                           \
-    size_t symbol_strings = 0;                                                                                         \
-    Elf##ARCH##_Sym* symbol = 0;                                                                                       \
-    const char* section_name = 0;                                                                                      \
-                                                                                                                       \
-    while ((elf_section = elf_nextscn(elf_handle.get(), elf_section)) != NULL) {                                       \
-        section_header = elf##ARCH##_getshdr(elf_section);                                                             \
-        if (section_header == NULL) {                                                                                  \
-            return r;                                                                                                  \
-        }                                                                                                              \
-                                                                                                                       \
-        if ((section_name = elf_strptr(elf_handle.get(), shdrstrndx, section_header->sh_name)) == NULL) {              \
-            return r;                                                                                                  \
-        }                                                                                                              \
-                                                                                                                       \
-        if (cstrings_eq(section_name, ".gnu_debuglink")) {                                                             \
-            elf_data = elf_getdata(elf_section, NULL);                                                                 \
-            if (elf_data && elf_data->d_size > 0) {                                                                    \
-                debuglink = std::string(reinterpret_cast<const char*>(elf_data->d_buf));                               \
-            }                                                                                                          \
-        }                                                                                                              \
-                                                                                                                       \
-        switch (section_header->sh_type) {                                                                             \
-        case SHT_SYMTAB:                                                                                               \
-            symbol_section = elf_section;                                                                              \
-            symbol_count = section_header->sh_size / section_header->sh_entsize;                                       \
-            symbol_strings = section_header->sh_link;                                                                  \
-            break;                                                                                                     \
-                                                                                                                       \
-        /* We use .dynsyms as a last resort, we prefer .symtab */                                                      \
-        case SHT_DYNSYM:                                                                                               \
-            if (!symbol_section) {                                                                                     \
-                symbol_section = elf_section;                                                                          \
-                symbol_count = section_header->sh_size / section_header->sh_entsize;                                   \
-                symbol_strings = section_header->sh_link;                                                              \
-            }                                                                                                          \
-            break;                                                                                                     \
-        }                                                                                                              \
-    }                                                                                                                  \
-                                                                                                                       \
-    if (symbol_section && symbol_count && symbol_strings) {                                                            \
-        elf_data = elf_getdata(symbol_section, NULL);                                                                  \
-        symbol = reinterpret_cast<Elf##ARCH##_Sym*>(elf_data->d_buf);                                                  \
-        for (size_t i = 0; i < symbol_count; ++i) {                                                                    \
-            int type = ELF##ARCH##_ST_TYPE(symbol->st_info);                                                           \
-            if (type == STT_FUNC && symbol->st_value > 0) {                                                            \
-                r.symbol_cache[symbol->st_value] =                                                                     \
-                    std::string(elf_strptr(elf_handle.get(), symbol_strings, symbol->st_name));                        \
-            }                                                                                                          \
-            ++symbol;                                                                                                  \
-        }                                                                                                              \
+#define ELF_GET_DATA(ARCH)                                                                                                       \
+    Elf_Scn* elf_section = 0;                                                                                                    \
+    Elf_Data* elf_data = 0;                                                                                                      \
+    Elf##ARCH##_Shdr* section_header = 0;                                                                                        \
+    Elf_Scn* symbol_section = 0;                                                                                                 \
+    size_t symbol_count = 0;                                                                                                     \
+    size_t symbol_strings = 0;                                                                                                   \
+    Elf##ARCH##_Sym* symbol = 0;                                                                                                 \
+    const char* section_name = 0;                                                                                                \
+                                                                                                                                 \
+    while ((elf_section = elf_nextscn(elf_handle.get(), elf_section)) != NULL) {                                                 \
+        section_header = elf##ARCH##_getshdr(elf_section);                                                                       \
+        if (section_header == NULL) {                                                                                            \
+            return r;                                                                                                            \
+        }                                                                                                                        \
+                                                                                                                                 \
+        if ((section_name = elf_strptr(elf_handle.get(), shdrstrndx, section_header->sh_name)) == NULL) {                        \
+            return r;                                                                                                            \
+        }                                                                                                                        \
+                                                                                                                                 \
+        if (cstrings_eq(section_name, ".gnu_debuglink")) {                                                                       \
+            elf_data = elf_getdata(elf_section, NULL);                                                                           \
+            if (elf_data && elf_data->d_size > 0) {                                                                              \
+                debuglink = std::string(reinterpret_cast<const char*>(elf_data->d_buf));                                         \
+            }                                                                                                                    \
+        }                                                                                                                        \
+                                                                                                                                 \
+        switch (section_header->sh_type) {                                                                                       \
+        case SHT_SYMTAB:                                                                                                         \
+            symbol_section = elf_section;                                                                                        \
+            symbol_count = section_header->sh_size / section_header->sh_entsize;                                                 \
+            symbol_strings = section_header->sh_link;                                                                            \
+            break;                                                                                                               \
+                                                                                                                                 \
+        /* We use .dynsyms as a last resort, we prefer .symtab */                                                                \
+        case SHT_DYNSYM:                                                                                                         \
+            if (!symbol_section) {                                                                                               \
+                symbol_section = elf_section;                                                                                    \
+                symbol_count = section_header->sh_size / section_header->sh_entsize;                                             \
+                symbol_strings = section_header->sh_link;                                                                        \
+            }                                                                                                                    \
+            break;                                                                                                               \
+        }                                                                                                                        \
+    }                                                                                                                            \
+                                                                                                                                 \
+    if (symbol_section && symbol_count && symbol_strings) {                                                                      \
+        elf_data = elf_getdata(symbol_section, NULL);                                                                            \
+        symbol = reinterpret_cast<Elf##ARCH##_Sym*>(elf_data->d_buf);                                                            \
+        for (size_t i = 0; i < symbol_count; ++i) {                                                                              \
+            int type = ELF##ARCH##_ST_TYPE(symbol->st_info);                                                                     \
+            if (type == STT_FUNC && symbol->st_value > 0) {                                                                      \
+                r.symbol_cache[symbol->st_value] = std::string(elf_strptr(elf_handle.get(), symbol_strings, symbol->st_name));   \
+            }                                                                                                                    \
+            ++symbol;                                                                                                            \
+        }                                                                                                                        \
     }
 
         if (e_ident[EI_CLASS] == ELFCLASS32) {
@@ -2639,8 +2633,7 @@ private:
         if (dwarf_srclines_b(die, 0, &table_count, &de.line_context, &error) == DW_DLV_OK) {
             // Get the source lines for this line context, to be deallocated
             // later
-            if (dwarf_srclines_from_linecontext(de.line_context, &de.line_buffer, &de.line_count, &error) ==
-                DW_DLV_OK) {
+            if (dwarf_srclines_from_linecontext(de.line_context, &de.line_buffer, &de.line_count, &error) == DW_DLV_OK) {
 
                 // Add all the addresses to our map
                 for (int i = 0; i < de.line_count; i++) {
@@ -2832,8 +2825,7 @@ private:
                 if (dwarf_get_ranges_a(dwarf, offset, die, &ranges, &ranges_count, &byte_count, &error) == DW_DLV_OK) {
                     has_ranges = ranges_count != 0;
                     for (int i = 0; i < ranges_count; i++) {
-                        if (ranges[i].dwr_addr1 != 0 && pc >= ranges[i].dwr_addr1 + low_pc &&
-                            pc < ranges[i].dwr_addr2 + low_pc) {
+                        if (ranges[i].dwr_addr1 != 0 && pc >= ranges[i].dwr_addr1 + low_pc && pc < ranges[i].dwr_addr2 + low_pc) {
                             result = true;
                             break;
                         }
@@ -2908,8 +2900,7 @@ private:
         std::string result;
         bool found = false;
 
-        while (dwarf_next_cu_header_d(dwarf, 0, 0, 0, 0, 0, 0, 0, &tu_signature, 0, &next_cu_header, 0, &error) ==
-               DW_DLV_OK) {
+        while (dwarf_next_cu_header_d(dwarf, 0, 0, 0, 0, 0, 0, 0, &tu_signature, 0, &next_cu_header, 0, &error) == DW_DLV_OK) {
 
             if (strncmp(signature.signature, tu_signature.signature, 8) == 0) {
                 Dwarf_Die type_cu_die = 0;
@@ -3072,8 +3063,8 @@ private:
     }
 
     // Resolve the function return type and parameters
-    static void set_function_parameters(std::string& function_name, std::vector<std::string>& ns,
-                                        dwarf_fileobject& fobj, Dwarf_Die die)
+    static void set_function_parameters(std::string& function_name, std::vector<std::string>& ns, dwarf_fileobject& fobj,
+                                        Dwarf_Die die)
     {
         Dwarf_Debug dwarf = fobj.dwarf_handle.get();
         Dwarf_Error error = DW_DLE_NE;
@@ -3335,8 +3326,8 @@ private:
     }
 
     template <typename CB>
-    static bool deep_first_search_by_pc(dwarf_fileobject& fobj, Dwarf_Die parent_die, Dwarf_Addr pc,
-                                        std::vector<std::string>& ns, CB cb)
+    static bool deep_first_search_by_pc(dwarf_fileobject& fobj, Dwarf_Die parent_die, Dwarf_Addr pc, std::vector<std::string>& ns,
+                                        CB cb)
     {
         Dwarf_Die current_die = 0;
         Dwarf_Debug dwarf = fobj.dwarf_handle.get();
@@ -3371,8 +3362,7 @@ private:
 
             bool declaration = false;
             Dwarf_Attribute attr_mem;
-            if (tag != DW_TAG_class_type &&
-                dwarf_attr(current_die, DW_AT_declaration, &attr_mem, &error) == DW_DLV_OK) {
+            if (tag != DW_TAG_class_type && dwarf_attr(current_die, DW_AT_declaration, &attr_mem, &error) == DW_DLV_OK) {
                 Dwarf_Bool flag = 0;
                 if (dwarf_formflag(attr_mem, &flag, &error) == DW_DLV_OK) {
                     declaration = flag != 0;
@@ -3501,8 +3491,7 @@ private:
         Dwarf_Half tag = 0;
         returnDie = 0;
 
-        while (!found &&
-               dwarf_next_cu_header_d(dwarf, 1, 0, 0, 0, 0, 0, 0, 0, 0, &next_cu_header, 0, &error) == DW_DLV_OK) {
+        while (!found && dwarf_next_cu_header_d(dwarf, 1, 0, 0, 0, 0, 0, 0, 0, 0, &next_cu_header, 0, &error) == DW_DLV_OK) {
 
             if (returnDie)
                 dwarf_dealloc(dwarf, returnDie, DW_DLA_DIE);
@@ -3643,8 +3632,7 @@ private:
     details::handle<char**> _symbols;
 };
 
-template <>
-class TraceResolverImpl<system_tag::darwin_tag> : public TraceResolverDarwinImpl<trace_resolver_tag::current>
+template <> class TraceResolverImpl<system_tag::darwin_tag> : public TraceResolverDarwinImpl<trace_resolver_tag::current>
 {
 };
 
@@ -3712,8 +3700,7 @@ public:
         EnumProcessModules(process, &module_handles[0], module_handles.size() * sizeof(HMODULE), &cbNeeded);
         module_handles.resize(cbNeeded / sizeof(HMODULE));
         EnumProcessModules(process, &module_handles[0], module_handles.size() * sizeof(HMODULE), &cbNeeded);
-        std::transform(module_handles.begin(), module_handles.end(), std::back_inserter(modules),
-                       get_mod_info(process));
+        std::transform(module_handles.begin(), module_handles.end(), std::back_inserter(modules), get_mod_info(process));
         void* base = modules[0].base_address;
         IMAGE_NT_HEADERS* h = ImageNtHeader(base);
         image_type = h->FileHeader.Machine;
@@ -3742,9 +3729,8 @@ public:
             char* lpMsgBuf;
             DWORD dw = GetLastError();
 
-            if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-                                   FORMAT_MESSAGE_IGNORE_INSERTS,
-                               NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char*)&lpMsgBuf, 0, NULL)) {
+            if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                               dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char*)&lpMsgBuf, 0, NULL)) {
                 std::fprintf(stderr, "%s\n", lpMsgBuf);
                 LocalFree(lpMsgBuf);
             }
@@ -3959,8 +3945,8 @@ public:
         return src_file.get_lines(start, context_size);
     }
 
-    lines_t get_combined_snippet(const std::string& filename_a, unsigned line_a, const std::string& filename_b,
-                                 unsigned line_b, unsigned context_size)
+    lines_t get_combined_snippet(const std::string& filename_a, unsigned line_a, const std::string& filename_b, unsigned line_b,
+                                 unsigned context_size)
     {
         SourceFile& src_file_a = get_src_file(filename_a);
         SourceFile& src_file_b = get_src_file(filename_b);
@@ -4007,11 +3993,7 @@ private:
 /*************** PRINTER ***************/
 
 namespace ColorMode {
-enum type {
-    automatic,
-    never,
-    always
-};
+enum type { automatic, never, always };
 }   // namespace ColorMode
 
 class cfile_streambuf : public std::streambuf
@@ -4055,11 +4037,7 @@ private:
 #ifdef BACKWARD_SYSTEM_LINUX
 
 namespace Color {
-enum type {
-    yellow = 33,
-    purple = 35,
-    reset = 39
-};
+enum type { yellow = 33, purple = 35, reset = 39 };
 }   // namespace Color
 
 class Colorize
@@ -4111,11 +4089,7 @@ private:
 #else   // ndef BACKWARD_SYSTEM_LINUX
 
 namespace Color {
-enum type {
-    yellow = 0,
-    purple = 0,
-    reset = 0
-};
+enum type { yellow = 0, purple = 0, reset = 0 };
 }   // namespace Color
 
 class Colorize
@@ -4148,11 +4122,7 @@ public:
     int trace_context_size;
 
     Printer()
-        : snippet(true),
-          color_mode(ColorMode::automatic),
-          address(false),
-          object(false),
-          inliner_context_size(5),
+        : snippet(true), color_mode(ColorMode::automatic), address(false), object(false), inliner_context_size(5),
           trace_context_size(7)
     {
     }
@@ -4211,8 +4181,7 @@ private:
         }
     }
 
-    template <typename IT>
-    void print_stacktrace(IT begin, IT end, std::ostream& os, size_t thread_id, Colorize& colorize)
+    template <typename IT> void print_stacktrace(IT begin, IT end, std::ostream& os, size_t thread_id, Colorize& colorize)
     {
         print_header(os, thread_id);
         for (; begin != end; ++begin) {
@@ -4235,8 +4204,7 @@ private:
         bool already_indented = true;
 
         if (!trace.source.filename.size() || object) {
-            os << "   Object \"" << trace.object_filename << "\", at " << trace.addr << ", in " << trace.object_function
-               << "\n";
+            os << "   Object \"" << trace.object_filename << "\", at " << trace.addr << ", in " << trace.object_function << "\n";
             already_indented = false;
         }
 
@@ -4263,14 +4231,13 @@ private:
         }
     }
 
-    void print_snippet(std::ostream& os, const char* indent, const ResolvedTrace::SourceLoc& source_loc,
-                       Colorize& colorize, Color::type color_code, int context_size)
+    void print_snippet(std::ostream& os, const char* indent, const ResolvedTrace::SourceLoc& source_loc, Colorize& colorize,
+                       Color::type color_code, int context_size)
     {
         using namespace std;
         typedef SnippetFactory::lines_t lines_t;
 
-        lines_t lines =
-            _snippets.get_snippet(source_loc.filename, source_loc.line, static_cast<unsigned>(context_size));
+        lines_t lines = _snippets.get_snippet(source_loc.filename, source_loc.line, static_cast<unsigned>(context_size));
 
         for (lines_t::const_iterator it = lines.begin(); it != lines.end(); ++it) {
             if (it->first == source_loc.line) {
@@ -4286,11 +4253,9 @@ private:
         }
     }
 
-    void print_source_loc(std::ostream& os, const char* indent, const ResolvedTrace::SourceLoc& source_loc,
-                          void* addr = nullptr)
+    void print_source_loc(std::ostream& os, const char* indent, const ResolvedTrace::SourceLoc& source_loc, void* addr = nullptr)
     {
-        os << indent << "Source \"" << source_loc.filename << "\", line " << source_loc.line << ", in "
-           << source_loc.function;
+        os << indent << "Source \"" << source_loc.filename << "\", line " << source_loc.line << ", in " << source_loc.function;
 
         if (address && addr != nullptr) {
             os << " [" << addr << "]";
@@ -4484,9 +4449,9 @@ private:
 class SignalHandling
 {
 private:
-    static inline std::function<std::string()> crash_path_getter_ = nullptr;
-    static inline std::function<void(EXCEPTION_POINTERS* info)> crash_use_handler_ = nullptr;
-    static inline std::function<void(int sig)> user_sig_handler_ = nullptr;
+    static std::function<std::string()> crash_path_getter_;
+    static std::function<void(EXCEPTION_POINTERS* info)> crash_use_handler_;
+    static std::function<void(int sig)> user_sig_handler_;
 
 public:
     static void register_crash_path(std::function<std::string()>&& crash_path_getter)
@@ -4562,12 +4527,7 @@ private:
         return &data;
     }
 
-    enum class crash_status {
-        running,
-        crashed,
-        normal_exit,
-        ending
-    };
+    enum class crash_status { running, crashed, normal_exit, ending };
 
     static crash_status& crashed()
     {
@@ -4637,8 +4597,7 @@ private:
         }
     }
 
-    static inline void __cdecl invalid_parameter_handler(const wchar_t*, const wchar_t*, const wchar_t*, unsigned int,
-                                                         uintptr_t)
+    static inline void __cdecl invalid_parameter_handler(const wchar_t*, const wchar_t*, const wchar_t*, unsigned int, uintptr_t)
     {
         crash_handler(signal_skip_recs);
         abort();
