@@ -279,7 +279,7 @@ void FileTrans::fbtFileBuffer(QSharedPointer<FrameBuffer> frame)
 void FileTrans::fbtFileInfo(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    qInfo() << QString(tr("prepare downfile's size is:%1, perm:%2")).arg(info.size, info.permissions);
+    qInfo() << QString(tr("prepare downfile's size is:%1, perm:%2")).arg(info.size).arg(info.permissions);
     downTask_->totalSize = info.size;
     downTask_->tranSize = 0;
     downTask_->permission = info.permissions;
