@@ -42,6 +42,11 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
 
     connect(fileHelper_.get(), &DirFileHelper::sigHome, this, &FileManager::ShowPath);
     connect(fileHelper_.get(), &DirFileHelper::sigDirFile, this, &FileManager::ShowFile);
+
+    if (type == 0) {
+        evtHome();
+        evtFile();
+    }
 }
 
 void FileManager::InitControl()

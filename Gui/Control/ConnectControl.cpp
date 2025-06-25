@@ -167,6 +167,7 @@ void Connecter::InitControl()
         ui->elbClient->setText(name);
         ui->elbClient->setStyleSheet("color: green;");
         remoteCall_(name);
+        emit sigConfirmUse();
     });
 
     setMaximumWidth(300);

@@ -34,6 +34,7 @@ signals:
     void sendConnect(ConnectState cs);
     void sigDoConnect(const QString& ip, quint16 port);
     void sigDisConnect();
+    void sigConfirmUse();
 
 private:
     void InitControl();

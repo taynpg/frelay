@@ -54,6 +54,7 @@ void frelayGUI::InitControl()
     connect(localFile_, &FileManager::sigSendTasks, this, &frelayGUI::HandleTask);
     connect(remoteFile_, &FileManager::sigSendTasks, this, &frelayGUI::HandleTask);
     connect(compare_, &Compare::sigTasks, this, &frelayGUI::HandleTask);
+    connect(connecter_, &Connecter::sigConfirmUse, remoteFile_, &FileManager::evtHome);
 }
 
 void frelayGUI::ControlSignal()
@@ -110,6 +111,10 @@ void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& conte
 
 void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
 {
+    if (!clientCore_->IsConnect()) {
+        qCritical() << QString(tr("Not connect to server."));
+        return;
+    }
     transform_->SetTasks(tasks);
     transform_->exec();
 }

@@ -37,7 +37,7 @@ private:
     void doubleClick(int row, int column);
     void SetRoot(const QString& path);
 
-private:
+public slots:
     void evtHome();
     void evtFile();
     void evtUp();
