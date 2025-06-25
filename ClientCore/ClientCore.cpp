@@ -209,6 +209,11 @@ bool ClientCore::Send(const char* data, qint64 len)
     return true;
 }
 
+bool ClientCore::IsConnect()
+{
+    return connected_;
+}
+
 void ClientCore::SetRemoteID(const QString& id)
 {
     GlobalData::Ins()->SetRemoteID(id);
@@ -238,7 +243,62 @@ SocketWorker::~SocketWorker()
 
 void SocketWorker::run()
 {
-    // qDebug() << "SocketWorker thread:" << QThread::currentThread();
     core_->Instance();
     exec();
+}
+
+HeatBeat::HeatBeat(ClientCore* core, QObject* parent) : QThread(parent), core_(core)
+{
+}
+
+HeatBeat::~HeatBeat()
+{
+    Stop();
+}
+
+void HeatBeat::Stop()
+{
+    isRun_ = false;
+}
+
+void HeatBeat::run()
+{
+    isRun_ = true;
+    InfoMsg info;
+    auto frame = core_->GetBuffer(info, FBT_SER_MSG_HEARTBEAT, "");
+    while (isRun_) {
+        QThread::sleep(1);
+        if (!core_->IsConnect()) {
+            continue;
+        }
+        ClientCore::syncInvoke(core_, frame);
+    }
+}
+
+TransBeat::TransBeat(ClientCore* core, QObject* parent) : QThread(parent), core_(core)
+{
+}
+
+TransBeat::~TransBeat()
+{
+    Stop();
+}
+
+void TransBeat::run()
+{
+    isRun_ = true;
+    InfoMsg info;
+    while (isRun_) {
+        QThread::sleep(1);
+        if (!core_->IsConnect()) {
+            continue;
+        }
+        auto frame = core_->GetBuffer(info, FBT_SER_MSG_JUDGE_OTHER_ALIVE, core_->GetRemoteID());
+        ClientCore::syncInvoke(core_, frame);
+    }
+}
+
+void TransBeat::Stop()
+{
+    isRun_ = false;
 }

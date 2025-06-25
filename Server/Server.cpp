@@ -4,6 +4,7 @@
 #include <QDebug>
 
 #include "InfoClient.h"
+#include "InfoMsg.h"
 #include "InfoPack.hpp"
 
 Server::Server(QObject* parent) : QTcpServer(parent)
@@ -174,7 +175,36 @@ void Server::replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<Fram
         replyFrame->tid = client->id;
         replyFrame->data = clientList;
         auto ret = sendData(client->socket, replyFrame);
-        qDebug() << "Reply client list:" << client->id << ret;
+        break;
+    }
+    case FBT_SER_MSG_HEARTBEAT: {
+        QSharedPointer<ClientInfo> cl;
+        {
+            QReadLocker locker(&rwLock_);
+            if (clients_.count(frame->fid)) {
+                cl = clients_.value(frame->fid);
+            }
+        }
+        if (cl) {
+            cl->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
+        }
+        break;
+    }
+    case FBT_SER_MSG_JUDGE_OTHER_ALIVE: {
+        QSharedPointer<ClientInfo> cl;
+        {
+            QReadLocker locker(&rwLock_);
+            if (clients_.count(frame->tid)) {
+                cl = clients_.value(frame->tid);
+            }
+        }
+        if (!cl) {
+            auto rf = QSharedPointer<FrameBuffer>::create();
+            rf->type = FBT_SER_MSG_OFFLINE;
+            rf->fid = id_;
+            rf->tid = frame->fid;
+            sendData(client->socket, rf);
+        }
         break;
     }
     default:
@@ -199,7 +229,6 @@ bool Server::sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame)
 
 void Server::monitorClients()
 {
-    // qint64 now = QDateTime::currentSecsSinceEpoch();
     qint64 now = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
     QWriteLocker locker(&rwLock_);
 

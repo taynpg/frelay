@@ -34,6 +34,7 @@ public:
     void Disconnect();
     bool Send(QSharedPointer<FrameBuffer> frame);
     bool Send(const char* data, qint64 len);
+    bool IsConnect();
     template <typename T> bool Send(const T& info, FrameBufferType type, const QString& tid)
     {
         auto f = GetBuffer<T>(info, type, tid);
@@ -104,6 +105,7 @@ public:
     LocalFile localFile_;
 };
 
+// Socket Worker Thread
 class SocketWorker : public QThread
 {
     Q_OBJECT
@@ -116,6 +118,46 @@ protected:
     void run() override;
 
 private:
+    ClientCore* core_{};
+};
+
+// HeatBeat to Server
+class HeatBeat : public QThread
+{
+    Q_OBJECT
+
+public:
+    HeatBeat(ClientCore* core, QObject* parent = nullptr);
+    ~HeatBeat() override;
+
+public:
+    void Stop();
+
+protected:
+    void run() override;
+
+private:
+    bool isRun_{false};
+    ClientCore* core_{};
+};
+
+// judge send client is alive or not when downloading
+class TransBeat : public QThread
+{
+    Q_OBJECT
+
+public:
+    TransBeat(ClientCore* core, QObject* parent = nullptr);
+    ~TransBeat() override;
+
+public:
+    void Stop();
+
+protected:
+    void run() override;
+
+private:
+    bool isRun_{false};
     ClientCore* core_{};
 };
 
