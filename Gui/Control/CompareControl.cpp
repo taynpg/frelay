@@ -189,7 +189,7 @@ void Compare::Load()
     if (!found) {
         FTCommon::msg(this, tr("No data found for the selected title."));
     } else {
-        FTCommon::msg(this, tr("Data loaded successfully."));
+        //FTCommon::msg(this, tr("Data loaded successfully."));
     }
 }
 
