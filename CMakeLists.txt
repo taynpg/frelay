@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required(VERSION 3.16)
 
-project(frelay VERSION 0.1 LANGUAGES CXX)
+project(frelay VERSION 0.2 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -20,7 +20,7 @@ endif()
 
 if(WIN32)
 if(DEFINED XP_PLATFORM_SUPPORT)
-message(STATUS "For Windows XP platform.")
+message(STATUS "Support Windows XP platform.")
 add_definitions(-D_WIN32_WINNT=0x0501)
 else()
 add_definitions(-D_WIN32_WINNT=0x0601)

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>350</width>
-    <height>276</height>
+    <width>331</width>
+    <height>289</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,6 +25,30 @@
      </item>
      <item>
       <widget class="QLineEdit" name="edIP"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="elbClient">
+       <property name="text">
+        <string>None</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
      </item>
      <item>
       <widget class="QLabel" name="label">
@@ -46,35 +70,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
-     <item>
-      <widget class="QLabel" name="lbClient">
-       <property name="text">
-        <string>Client:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="elbClient">
-       <property name="text">
-        <string>None</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_3">
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
+    <layout class="QHBoxLayout" name="horizontalLayout_3"/>
    </item>
    <item>
     <widget class="QListView" name="listView"/>

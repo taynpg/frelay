@@ -54,6 +54,7 @@ private:
 private:
     QMenu* menu_;
     SocketWorker* sockWorker_{};
+    HeatBeat* heatBeat_{};
     QStandardItemModel* model_;
 };
 

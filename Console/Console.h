@@ -25,6 +25,7 @@ private:
     quint16 port_{};
     FileTrans* fileTrans_{};
     SocketWorker* sockWorker_{};
+    HeatBeat* heatBeat_{};
     ClientCore* clientCore_;
 };
 

@@ -24,6 +24,7 @@ void Connecter::RunWorker(ClientCore* clientCore)
     connect(clientCore_, &ClientCore::sigClients, this, &Connecter::HandleClients);
 
     sockWorker_ = new SocketWorker(clientCore_, nullptr);
+    heatBeat_ = new HeatBeat(clientCore_);
     clientCore_->moveToThread(sockWorker_);
 
     connect(clientCore_, &ClientCore::conSuccess, this, [this]() {
@@ -50,6 +51,7 @@ void Connecter::RunWorker(ClientCore* clientCore)
     connect(this, &Connecter::sigDisConnect, clientCore_, &ClientCore::Disconnect);
     connect(sockWorker_, &QThread::finished, sockWorker_, &QObject::deleteLater);
 
+    heatBeat_->start();
     sockWorker_->start();
 }
 
@@ -89,6 +91,7 @@ void Connecter::setState(ConnectState cs)
         ui->btnConnect->setEnabled(false);
         ui->btnDisconnect->setEnabled(true);
         RefreshClient();
+        connect(heatBeat_, &HeatBeat::finished, heatBeat_, &QObject::deleteLater);
         break;
     case CS_DISCONNECT:
         ui->btnConnect->setEnabled(true);
@@ -139,7 +142,8 @@ void Connecter::InitControl()
     ui->btnDisconnect->setEnabled(false);
     ui->edIP->setText("127.0.0.1");
     ui->edPort->setText("9009");
-    ui->edPort->setFixedWidth(70);
+    // ui->edIP->setMinimumWidth(120);
+    // ui->edPort->setFixedWidth(60);
 
     connect(ui->btnConnect, &QPushButton::clicked, this, &Connecter::Connect);
     connect(ui->btnRefresh, &QPushButton::clicked, this, &Connecter::RefreshClient);

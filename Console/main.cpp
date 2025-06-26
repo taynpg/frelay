@@ -25,6 +25,11 @@ int main(int argc, char* argv[])
 #endif
 #endif
 
+    qRegisterMetaType<QSharedPointer<FrameBuffer>>("QSharedPointer<FrameBuffer>");
+    qRegisterMetaType<InfoClientVec>("InfoClientVec");
+    qRegisterMetaType<DirFileInfoVec>("DirFileInfoVec");
+    qRegisterMetaType<TransTask>("TransTask");
+
     QCoreApplication app(argc, argv);
 
     Util::InitLogger("frelayConsole.log", "frelayConsole");

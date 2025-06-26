@@ -13,6 +13,8 @@ void ConsoleHelper::RunWorker(ClientCore* clientCore)
     clientCore_ = clientCore;
 
     sockWorker_ = new SocketWorker(clientCore_, nullptr);
+    heatBeat_ = new HeatBeat(clientCore_);
+
     clientCore_->moveToThread(sockWorker_);
     fileTrans_ = new FileTrans(clientCore_);
     
@@ -24,6 +26,7 @@ void ConsoleHelper::RunWorker(ClientCore* clientCore)
     connect(sockWorker_, &QThread::finished, sockWorker_, &QObject::deleteLater);
 
     sockWorker_->start();
+    heatBeat_->start();
 }
 
 void ConsoleHelper::SetIpPort(const QString& ip, quint16 port)

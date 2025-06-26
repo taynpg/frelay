@@ -1,6 +1,7 @@
 ﻿#include "frelayGUI.h"
 
 #include <QLabel>
+#include <QScreen>
 #include <QSplitter>
 #include <fversion.h>
 
@@ -15,7 +16,11 @@ frelayGUI::frelayGUI(QWidget* parent) : QMainWindow(parent), ui(new Ui::frelayGU
     InitControl();
     ControlSignal();
     ControlLayout();
-    resize(1500, 800);
+
+    QRect availableGeometry = QGuiApplication::primaryScreen()->availableGeometry();
+    int width = static_cast<int>(availableGeometry.width() * 0.8);
+    int height = static_cast<int>(availableGeometry.height() * 0.6);
+    resize(width, height);
 
     setWindowTitle(QString(tr("frelay %1")).arg(VERSION_NUM));
 
@@ -95,15 +100,16 @@ void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& conte
 {
     switch (type) {
     case QtDebugMsg:
-        logPrint->Debug(msg);
+        QMetaObject::invokeMethod(logPrint, "Debug", Qt::QueuedConnection, Q_ARG(QString, msg));
         break;
     case QtInfoMsg:
-        logPrint->Info(msg);
+        QMetaObject::invokeMethod(logPrint, "Info", Qt::QueuedConnection, Q_ARG(QString, msg));
         break;
     case QtWarningMsg:
-        logPrint->Warn(msg);
+        QMetaObject::invokeMethod(logPrint, "Warn", Qt::QueuedConnection, Q_ARG(QString, msg));
         break;
     default:
+        QMetaObject::invokeMethod(logPrint, "Error", Qt::QueuedConnection, Q_ARG(QString, msg));
         logPrint->Error(msg);
         break;
     }

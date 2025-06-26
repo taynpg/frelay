@@ -74,7 +74,7 @@ void ClientCore::onReadyRead()
 void ClientCore::onDisconnected()
 {
     connected_ = false;
-    qCritical() << QString("client %1 disconnected...").arg(remoteID_);
+    qCritical() << QString("You [%1] disconnected...").arg(ownID_);
     emit sigDisconnect();
 }
 

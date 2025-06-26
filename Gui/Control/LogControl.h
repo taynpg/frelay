@@ -28,7 +28,7 @@ public:
     explicit LogPrint(QWidget* parent = nullptr);
     ~LogPrint();
 
-public:
+public slots:
     void Info(const QString& message);
     void Warn(const QString& message);
     void Error(const QString& message);

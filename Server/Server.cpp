@@ -7,6 +7,9 @@
 #include "InfoMsg.h"
 #include "InfoPack.hpp"
 
+#define NO_HEATBEAT_TIMEOUT (10)
+#define MONITOR_HEART_SPED (10 * 1000)
+
 Server::Server(QObject* parent) : QTcpServer(parent)
 {
     monitorTimer_ = new QTimer(this);
@@ -27,7 +30,7 @@ bool Server::startServer(quint16 port)
     }
 
     qDebug() << "Server started on port" << serverPort();
-    monitorTimer_->start(300000);
+    monitorTimer_->start(MONITOR_HEART_SPED);
     id_ = QString("0.0.0.0:%1").arg(serverPort());
     return true;
 }
@@ -101,7 +104,7 @@ void Server::onClientDisconnected()
         clients_.remove(clientId);
     }
 
-    qDebug() << "Client disconnected:" << clientId;
+    qDebug() << "Client disconnected:" << __LINE__ << clientId;
     socket->deleteLater();
 }
 
@@ -233,7 +236,8 @@ void Server::monitorClients()
     QWriteLocker locker(&rwLock_);
 
     for (auto it = clients_.begin(); it != clients_.end();) {
-        if (now - it.value()->connectTime > 300) {
+        auto t = now - it.value()->connectTime;
+        if (t > NO_HEATBEAT_TIMEOUT) {
             qDebug() << "Disconnecting inactive client:" << it.value()->id;
             it.value()->socket->disconnectFromHost();
             it = clients_.erase(it);
