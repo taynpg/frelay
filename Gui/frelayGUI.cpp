@@ -110,7 +110,6 @@ void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& conte
         break;
     default:
         QMetaObject::invokeMethod(logPrint, "Error", Qt::QueuedConnection, Q_ARG(QString, msg));
-        logPrint->Error(msg);
         break;
     }
 }
