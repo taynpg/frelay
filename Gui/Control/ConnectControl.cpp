@@ -44,6 +44,10 @@ void Connecter::RunWorker(ClientCore* clientCore)
 
     connect(clientCore_, &ClientCore::sigDisconnect, this, [this]() {
         setState(ConnectState::CS_DISCONNECT);
+        QStandardItemModel* model = qobject_cast<QStandardItemModel*>(ui->listView->model());
+        if (model) {
+            model->clear();
+        }
         qInfo() << QString(tr("Disconnected."));
     });
 
