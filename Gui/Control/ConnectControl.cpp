@@ -48,7 +48,8 @@ void Connecter::RunWorker(ClientCore* clientCore)
     });
 
     connect(this, &Connecter::sigDoConnect, clientCore_, &ClientCore::DoConnect);
-    connect(this, &Connecter::sigDisConnect, clientCore_, &ClientCore::Disconnect);
+    connect(this, &Connecter::sigDisConnect, this,
+            [this]() { QMetaObject::invokeMethod(clientCore_, "Disconnect", Qt::QueuedConnection); });
     connect(sockWorker_, &QThread::finished, sockWorker_, &QObject::deleteLater);
 
     heatBeat_->start();

@@ -36,3 +36,4 @@ cmake-*
 .idea
 .vs
 .cache
+xpbuild

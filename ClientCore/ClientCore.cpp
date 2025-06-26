@@ -36,6 +36,10 @@ void ClientCore::DoConnect(const QString& ip, quint16 port)
 
 bool ClientCore::Connect(const QString& ip, quint16 port)
 {
+    if (connected_) {
+        qInfo() << QString(tr("already connected."));
+        return true;
+    }
     socket_->connectToHost(ip, port);
     if (!socket_->waitForConnected(3000)) {
         qCritical() << QString(tr("%1:%2 connect failed...")).arg(ip).arg(port);

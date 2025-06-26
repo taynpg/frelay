@@ -132,7 +132,7 @@ void UseExceptionHandler(EXCEPTION_POINTERS* exception)
     QString fullPath = QDir(h.dumpSavePath_).absoluteFilePath(dumpName);
     QString fullFailedPath = QDir(h.dumpSavePath_).absoluteFilePath(dumpFailedLog);
 
-    HANDLE hFile = CreateFile(fullPath.toStdString().c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hFile = CreateFileA(fullPath.toStdString().c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         QFile file(fullFailedPath);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {

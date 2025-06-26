@@ -5,7 +5,11 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PROJECT_URL "https://github.com/taynpg/frelay")
-set(QT_DEFAULT_MAJOR_VERSION 5)
+
+if(NOT DEFINED QT_DEFAULT_MAJOR_VERSION)
+set(QT_DEFAULT_MAJOR_VERSION 6)
+endif()
+
 set(QAPPLICATION_CLASS QApplication)
 
 if (MSVC)
@@ -20,7 +24,8 @@ endif()
 
 if(WIN32)
 if(DEFINED XP_PLATFORM_SUPPORT)
-message(STATUS "Support Windows XP platform.")
+message(STATUS "Support Windows XP platform => ${XP_PLATFORM_SUPPORT}.")
+include_directories(${CMAKE_SOURCE_DIR}/Gui/Control)
 add_definitions(-D_WIN32_WINNT=0x0501)
 else()
 add_definitions(-D_WIN32_WINNT=0x0601)

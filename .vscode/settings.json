@@ -24,16 +24,12 @@
         "-Wno-dev"
     ],
     "cmake.environment": {
-        "QT_LIB_ROOT": "C:/Qt/Qt5.6.3/5.6.3/mingw49_32",
-        "PATH": "${env:PATH};C:/Qt/Qt5.6.3/5.6.3/mingw49_32/bin"
+        "QT_LIB_ROOT": "D:/Dev/Qt6/msvc2022_64",
+        "PATH": "${env:PATH};D:/Dev/Qt6/msvc2022_64/bin"
     },
-    // "cmake.environment": {
-    //     "QT_LIB_ROOT": "C:/Qt/Qt5.14.2/5.14.2/msvc2017_64",
-    //     "PATH": "${env:PATH};C:/Qt/Qt5.14.2/5.14.2/msvc2017_64/bin"
-    // },
     "cmake.configureSettings": {
         "CMAKE_PREFIX_PATH": "${env:QT_LIB_ROOT}",
-        "XP_PLATFORM_SUPPORT": "ON"
+        "QT_DEFAULT_MAJOR_VERSION": "6",
     },
     "cmake.options.statusBarVisibility": "visible",
     "cmake.generator": "Ninja",

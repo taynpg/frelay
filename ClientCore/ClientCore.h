@@ -26,12 +26,14 @@ public:
 
 public slots:
     bool SendFrame(QSharedPointer<FrameBuffer> frame);
+    void Disconnect();
+
+public slots:
+    void DoConnect(const QString& ip, quint16 port);
 
 public:
     void Instance();
     bool Connect(const QString& ip, quint16 port);
-    void DoConnect(const QString& ip, quint16 port);
-    void Disconnect();
     bool Send(QSharedPointer<FrameBuffer> frame);
     bool Send(const char* data, qint64 len);
     bool IsConnect();
