@@ -19,12 +19,19 @@
      <item>
       <widget class="QLabel" name="lbIP">
        <property name="text">
-        <string>Server IP:</string>
+        <string>Server:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="edIP"/>
+      <widget class="QComboBox" name="comboBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
@@ -49,23 +56,6 @@
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Port:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="edPort">
-       <property name="maximumSize">
-        <size>
-         <width>60</width>
-         <height>16777215</height>
-        </size>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>

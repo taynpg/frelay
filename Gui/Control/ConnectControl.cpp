@@ -2,6 +2,7 @@
 
 #include <InfoMsg.h>
 #include <InfoPack.hpp>
+#include <QRegularExpression>
 #include <future>
 
 #include "GuiUtil/Public.h"
@@ -74,12 +75,24 @@ void Connecter::HandleClients(const InfoClientVec& clients)
     }
 }
 
+void Connecter::SetConfigPtr(std::shared_ptr<FrelayConfig> config)
+{
+    config_ = config;
+    auto ipPorts = config_->GetIpPort();
+    for (const auto& ipPort : ipPorts) {
+        ui->comboBox->addItem(ipPort);
+    }
+    if (ui->comboBox->count() > 0) {
+        ui->comboBox->setCurrentIndex(0);
+    }
+}
+
 void Connecter::Connect()
 {
-    auto ip = ui->edIP->text().trimmed();
-    auto port = ui->edPort->text().trimmed();
-    if (ip.isEmpty() || port.isEmpty()) {
-        FTCommon::msg(this, tr("IP or Port is empty."));
+    QString ip;
+    QString port;
+    if (!parseIpPort(ui->comboBox->currentText(), ip, port)) {
+        FTCommon::msg(this, QString(tr("IP or port is invalid.")));
         return;
     }
     emit sigDoConnect(ip, port.toInt());
@@ -87,6 +100,7 @@ void Connecter::Connect()
 
 void Connecter::setState(ConnectState cs)
 {
+    config_->SaveIpPort(ui->comboBox->currentText());
     switch (cs) {
     case CS_CONNECTING:
         ui->btnConnect->setEnabled(false);
@@ -145,10 +159,7 @@ std::string Connecter::getCurClient()
 void Connecter::InitControl()
 {
     ui->btnDisconnect->setEnabled(false);
-    ui->edIP->setText("127.0.0.1");
-    ui->edPort->setText("9009");
-    // ui->edIP->setMinimumWidth(120);
-    // ui->edPort->setFixedWidth(60);
+    ui->comboBox->setEditable(true);
 
     connect(ui->btnConnect, &QPushButton::clicked, this, &Connecter::Connect);
     connect(ui->btnRefresh, &QPushButton::clicked, this, &Connecter::RefreshClient);
@@ -180,4 +191,32 @@ void Connecter::InitControl()
     });
 
     setMaximumWidth(300);
+}
+
+bool Connecter::parseIpPort(const QString& ipPort, QString& outIp, QString& outPort)
+{
+    QRegularExpression regex("^\\s*"
+                             "("
+                             "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
+                             "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
+                             "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
+                             "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+                             ")"
+                             "\\s*:\\s*"
+                             "("
+                             "\\d{1,5}"
+                             ")"
+                             "\\s*$");
+
+    QRegularExpressionMatch match = regex.match(ipPort);
+    if (!match.hasMatch()) {
+        return false;
+    }
+
+    outIp = match.captured(1);
+    outPort = match.captured(2);
+
+    bool portOk;
+    int portNum = outPort.toInt(&portOk);
+    return portOk && portNum > 0 && portNum <= 65535;
 }

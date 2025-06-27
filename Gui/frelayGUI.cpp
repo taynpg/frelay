@@ -12,7 +12,13 @@ static LogPrint* logPrint = nullptr;
 
 frelayGUI::frelayGUI(QWidget* parent) : QMainWindow(parent), ui(new Ui::frelayGUI)
 {
+    config_ = std::make_shared<FrelayConfig>();
+
     ui->setupUi(this);
+
+    QString configRoot = Util::GetCurConfigPath("frelay");
+    GlobalData::Ins()->SetConfigPath(configRoot.toStdString() + "/frelayConfig.json");
+
     InitControl();
     ControlSignal();
     ControlLayout();
@@ -47,6 +53,7 @@ void frelayGUI::InitControl()
     connecter_ = new Connecter(this);
     connecter_->RunWorker(clientCore_);
     connecter_->SetRemoteCall([this](const QString& id) { clientCore_->SetRemoteID(id); });
+    connecter_->SetConfigPtr(config_);
 
     localFile_ = new FileManager(this);
     remoteFile_ = new FileManager(this);

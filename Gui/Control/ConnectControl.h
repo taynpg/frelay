@@ -7,6 +7,9 @@
 #include <QStandardItemModel>
 #include <QWidget>
 
+#include "GuiUtil/Config.h"
+#include "GuiUtil/Public.h"
+
 namespace Ui {
 class Connecter;
 }
@@ -29,6 +32,7 @@ public:
     void RunWorker(ClientCore* clientCore);
     void SetRemoteCall(const std::function<void(const QString& id)>& call);
     void HandleClients(const InfoClientVec& clients);
+    void SetConfigPtr(std::shared_ptr<FrelayConfig> config);
 
 signals:
     void sendConnect(ConnectState cs);
@@ -44,6 +48,7 @@ private:
     void Disconnect();
     void ShowContextMenu(const QPoint& pos);
     std::string getCurClient();
+    bool parseIpPort(const QString& ipPort, QString& outIp, QString& outPort);
 
 private:
     Ui::Connecter* ui;
@@ -56,6 +61,7 @@ private:
     SocketWorker* sockWorker_{};
     HeatBeat* heatBeat_{};
     QStandardItemModel* model_;
+    std::shared_ptr<FrelayConfig> config_;
 };
 
 #endif   // CONNECTCONTROL_H

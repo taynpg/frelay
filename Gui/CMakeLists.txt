@@ -25,6 +25,7 @@ Form/Transform.h Form/Transform.cpp Form/Transform.ui
 ../Res/frelay.qrc ../Res/ico.rc
 Control/cusTableWidget.cpp Control/cusTableWidget.h
 Control/cpTableWidget.h Control/cpTableWidget.cpp
+GuiUtil/Config.h GuiUtil/Config.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

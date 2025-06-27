@@ -157,6 +157,7 @@
         "qdatastream": "cpp",
         "qhostaddress": "cpp",
         "qthread": "cpp",
-        "qobject": "cpp"
+        "qobject": "cpp",
+        "qregularexpression": "cpp"
     }
 }

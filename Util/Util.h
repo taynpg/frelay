@@ -20,6 +20,8 @@ public:
     QString GetLocalID() const;
     QString GetRemoteRoot() const;
     QString GetRemoteID() const;
+    std::string GetConfigPath() const;
+    void SetConfigPath(const std::string& path);
 
 private:
     GlobalData() = default;
@@ -30,6 +32,7 @@ public:
     QString RemoteRoot_;
     QString LocalID_;
     QString RemoteID_;
+    std::string ConfigPath_;
 };
 
 class Util : public QObject

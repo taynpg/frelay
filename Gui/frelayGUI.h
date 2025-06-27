@@ -6,10 +6,11 @@
 #include <QMainWindow>
 #include <QTabWidget>
 
+#include "Control/CompareControl.h"
 #include "Control/ConnectControl.h"
 #include "Control/FileControl.h"
-#include "Control/CompareControl.h"
 #include "Form/Transform.h"
+#include "GuiUtil/Config.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -48,5 +49,6 @@ private:
     ClientCore* clientCore_;
     TransForm* transform_;
     Compare* compare_;
+    std::shared_ptr<FrelayConfig> config_;
 };
 #endif   // FRELAYGUI_H

@@ -176,3 +176,13 @@ QString GlobalData::GetRemoteID() const
 {
     return RemoteID_;
 }
+
+std::string GlobalData::GetConfigPath() const
+{
+    return ConfigPath_;
+}
+
+void GlobalData::SetConfigPath(const std::string& path)
+{
+    ConfigPath_ = path;
+}
