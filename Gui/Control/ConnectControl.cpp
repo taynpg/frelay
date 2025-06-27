@@ -49,6 +49,8 @@ void Connecter::RunWorker(ClientCore* clientCore)
         if (model) {
             model->clear();
         }
+        ui->elbClient->clear();
+        clientCore_->SetRemoteID("");
         qInfo() << QString(tr("Disconnected."));
     });
 
