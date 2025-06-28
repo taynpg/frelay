@@ -87,27 +87,6 @@ void Server::onNewConnection()
     sendData(clientSocket, frame);
 }
 
-void Server::onClientDisconnected()
-{
-    QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender());
-    if (!socket) {
-        return;
-    }
-
-    QHostAddress peerAddress = socket->peerAddress();
-    quint32 ipv4 = peerAddress.toIPv4Address();
-    QString ipStr = QHostAddress(ipv4).toString();
-    QString clientId = QString("%1:%2").arg(ipStr).arg(socket->peerPort());
-
-    {
-        QWriteLocker locker(&rwLock_);
-        clients_.remove(clientId);
-    }
-
-    qDebug() << "Client disconnected:" << __LINE__ << clientId;
-    socket->deleteLater();
-}
-
 void Server::onReadyRead()
 {
     QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender());
@@ -116,6 +95,7 @@ void Server::onReadyRead()
     }
 
     QSharedPointer<ClientInfo> client;
+
     {
         QReadLocker locker(&rwLock_);
         client = clients_.value(socket->property("clientId").toString());
@@ -230,20 +210,42 @@ bool Server::sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame)
     return socket->write(data) == data.size();
 }
 
+void Server::onClientDisconnected()
+{
+    QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender());
+    if (!socket) {
+        return;
+    }
+
+    QString clientId = socket->property("clientId").toString();
+
+    {
+        QWriteLocker locker(&rwLock_);
+        if (clients_.count(clientId)) {
+            clients_.remove(clientId);
+        }
+    }
+
+    qDebug() << "Client disconnected:" << __LINE__ << clientId;
+    socket->deleteLater();
+}
+
 void Server::monitorClients()
 {
     qint64 now = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
-    QWriteLocker locker(&rwLock_);
+    std::vector<QTcpSocket*> prepareRemove;
 
-    for (auto it = clients_.begin(); it != clients_.end();) {
-        auto t = now - it.value()->connectTime;
-        if (t > NO_HEATBEAT_TIMEOUT) {
-            qDebug() << "Disconnecting inactive client:" << it.value()->id;
-            it.value()->socket->disconnectFromHost();
-            it = clients_.erase(it);
-        } else {
-            ++it;
+    {
+        QReadLocker locker(&rwLock_);
+        for (auto& c : clients_) {
+            if (now - c->connectTime > NO_HEATBEAT_TIMEOUT) {
+                prepareRemove.push_back(c->socket);
+            }
         }
+    }
+    for (const auto& s : prepareRemove) {
+        qDebug() << "Removing inactive client:" << s->property("clientId").toString();
+        s->disconnectFromHost();
     }
 }
 
