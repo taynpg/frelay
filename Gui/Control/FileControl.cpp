@@ -1,6 +1,7 @@
 ﻿#include "FileControl.h"
 
 #include <LocalFile.h>
+#include <QClipboard>
 #include <QDateTime>
 #include <QDialog>
 #include <QDir>
@@ -11,6 +12,7 @@
 #include <QTableWidgetItem>
 #include <RemoteFile.h>
 
+#include "GuiUtil/Public.h"
 #include "ui_FileControl.h"
 
 FileManager::FileManager(QWidget* parent) : QWidget(parent), ui(new Ui::FileManager)
@@ -99,6 +101,7 @@ void FileManager::InitMenu()
 {
     menu_ = new QMenu(ui->tableWidget);
     menu_->addAction(tr("Filter"), this, &FileManager::ShowFilterForm);
+    menu_->addAction(tr("FullPath"), this, &FileManager::CopyFullPath);
     menu_->addSeparator();
 }
 
@@ -402,6 +405,28 @@ void FileManager::ShowFilterForm()
         for (int i = 0; i < selectedTypes.count(); ++i) {
             curSelectTypes_.insert(selectedTypes[i]);
         }
+    }
+}
+
+void FileManager::CopyFullPath()
+{
+    int row = ui->tableWidget->currentRow();
+    if (row < 0) {
+        return;
+    }
+    QClipboard* clip = QApplication::clipboard();
+
+    bool found = false;
+    QString key = ui->tableWidget->item(row, 1)->text();
+    for (const auto& d : currentInfo_.vec) {
+        if (d.name == key) {
+            clip->setText(d.fullPath);
+            found = true;
+            return;
+        }
+    }
+    if (!found) {
+        FTCommon::msg(this, QString(tr("%1 not found.")).arg(key));
     }
 }
 

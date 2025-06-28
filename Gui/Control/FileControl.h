@@ -54,6 +54,7 @@ private:
     void FilterFile(const QStringList& selectedTypes);
     void GenFilter();
     void ShowFilterForm();
+    void CopyFullPath();
 
 public slots:
     void evtHome();
