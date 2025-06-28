@@ -81,6 +81,8 @@ void FileManager::InitControl()
     connect(ui->btnUp, &QPushButton::clicked, this, &FileManager::evtUp);
     connect(ui->tableWidget, &CustomTableWidget::sigTasks, this,
             [this](const QVector<TransTask>& tasks) { emit sigSendTasks(tasks); });
+
+    connect(ui->tableWidget->horizontalHeader(), &QHeaderView::sectionClicked, this, &FileManager::HeaderClicked);
 }
 
 void FileManager::InitMenu(bool remote)
@@ -108,11 +110,101 @@ void FileManager::ShowPath(const QString& path)
 void FileManager::ShowFile(const DirFileInfoVec& info)
 {
     QMutexLocker locker(&tbMut_);
-    ui->tableWidget->setRowCount(0);
-    ui->tableWidget->setRowCount(info.vec.size());
+    currentInfo_ = info;
+    SortFileInfo(SortMethod::SMD_BY_TYPE_DESC);
+    RefreshTab();
+    ui->tableWidget->resizeColumnToContents(0);
+    SetRoot(currentInfo_.root);
+    ShowPath(GetRoot());
+}
 
-    for (int i = 0; i < info.vec.size(); ++i) {
-        const DirFileInfo& fileInfo = info.vec[i];
+void FileManager::SetRoot(const QString& path)
+{
+    if (isRemote_) {
+        GlobalData::Ins()->SetRemoteRoot(path);
+    } else {
+        GlobalData::Ins()->SetLocalRoot(path);
+    }
+}
+
+void FileManager::SortFileInfo(SortMethod method)
+{
+    auto& vec = currentInfo_.vec;
+
+    switch (method) {
+    case SortMethod::SMD_BY_NAME_ASC:
+        std::sort(vec.begin(), vec.end(), [](const DirFileInfo& a, const DirFileInfo& b) {
+            return QString::compare(a.name, b.name, Qt::CaseInsensitive) < 0;
+        });
+        break;
+
+    case SortMethod::SMD_BY_NAME_DESC:
+        std::sort(vec.begin(), vec.end(), [](const DirFileInfo& a, const DirFileInfo& b) {
+            return QString::compare(a.name, b.name, Qt::CaseInsensitive) > 0;
+        });
+        break;
+
+    case SortMethod::SMD_BY_TIME_ASC:
+        std::sort(vec.begin(), vec.end(),
+                  [](const DirFileInfo& a, const DirFileInfo& b) { return a.lastModified < b.lastModified; });
+        break;
+
+    case SortMethod::SMD_BY_TIME_DESC:
+        std::sort(vec.begin(), vec.end(),
+                  [](const DirFileInfo& a, const DirFileInfo& b) { return a.lastModified > b.lastModified; });
+        break;
+
+    case SortMethod::SMD_BY_TYPE_ASC:
+        std::sort(vec.begin(), vec.end(), [](const DirFileInfo& a, const DirFileInfo& b) {
+            if (a.type == b.type) {
+                return QString::compare(a.name, b.name, Qt::CaseInsensitive) < 0;
+            }
+            return a.type < b.type;
+        });
+        break;
+
+    case SortMethod::SMD_BY_TYPE_DESC:
+        std::sort(vec.begin(), vec.end(), [](const DirFileInfo& a, const DirFileInfo& b) {
+            if (a.type == b.type) {
+                return QString::compare(a.name, b.name, Qt::CaseInsensitive) < 0;
+            }
+            return a.type > b.type;
+        });
+        break;
+
+    case SortMethod::SMD_BY_SIZE_ASC:
+        std::sort(vec.begin(), vec.end(), [](const DirFileInfo& a, const DirFileInfo& b) {
+            if (a.type == b.type) {
+                return a.size < b.size;
+            }
+            return a.type == FileType::Dir && b.type != FileType::Dir;
+        });
+        break;
+
+    case SortMethod::SMD_BY_SIZE_DESC:
+        std::sort(vec.begin(), vec.end(), [](const DirFileInfo& a, const DirFileInfo& b) {
+            if (a.type == b.type) {
+                return a.size > b.size;
+            }
+            return a.type == FileType::Dir && b.type != FileType::Dir;
+        });
+        break;
+
+    default:
+        std::sort(vec.begin(), vec.end(), [](const DirFileInfo& a, const DirFileInfo& b) {
+            return QString::compare(a.name, b.name, Qt::CaseInsensitive) < 0;
+        });
+        break;
+    }
+}
+
+void FileManager::RefreshTab()
+{
+    ui->tableWidget->setUpdatesEnabled(false);
+    ui->tableWidget->setRowCount(0);
+    ui->tableWidget->setRowCount(currentInfo_.vec.size());
+    for (int i = 0; i < currentInfo_.vec.size(); ++i) {
+        const DirFileInfo& fileInfo = currentInfo_.vec[i];
 
         // ***********************************************************************************
         auto* iconItem = new QTableWidgetItem("");
@@ -177,18 +269,50 @@ void FileManager::ShowFile(const DirFileInfoVec& info)
         item->setFlags(item->flags() & ~Qt::ItemIsEditable);
         ui->tableWidget->setItem(i, 4, item);
     }
-    ui->tableWidget->resizeColumnToContents(0);
-    SetRoot(info.root);
-    ShowPath(GetRoot());
+    ui->tableWidget->setUpdatesEnabled(true);
+    ui->tableWidget->viewport()->update();
 }
 
-void FileManager::SetRoot(const QString& path)
+void FileManager::HeaderClicked(int column)
 {
-    if (isRemote_) {
-        GlobalData::Ins()->SetRemoteRoot(path);
-    } else {
-        GlobalData::Ins()->SetLocalRoot(path);
+    SortMethod curMed{};
+    switch (column) {
+    case 1:
+        if (sortMedRecord_.count(column)) {
+            curMed = sortMedRecord_[column];
+        }
+        curMed = (curMed == SortMethod::SMD_BY_NAME_ASC ? SortMethod::SMD_BY_NAME_DESC : SortMethod::SMD_BY_NAME_ASC);
+        SortFileInfo(curMed);
+        sortMedRecord_[column] = curMed;
+        break;
+    case 2:
+        if (sortMedRecord_.count(column)) {
+            curMed = sortMedRecord_[column];
+        }
+        curMed = (curMed == SortMethod::SMD_BY_TIME_ASC ? SortMethod::SMD_BY_TIME_DESC : SortMethod::SMD_BY_TIME_ASC);
+        SortFileInfo(curMed);
+        sortMedRecord_[column] = curMed;
+        break;
+    case 3:
+        if (sortMedRecord_.count(column)) {
+            curMed = sortMedRecord_[column];
+        }
+        curMed = (curMed == SortMethod::SMD_BY_TYPE_ASC ? SortMethod::SMD_BY_TYPE_DESC : SortMethod::SMD_BY_TYPE_ASC);
+        SortFileInfo(curMed);
+        sortMedRecord_[column] = curMed;
+        break;
+    case 4:
+        if (sortMedRecord_.count(column)) {
+            curMed = sortMedRecord_[column];
+        }
+        curMed = (curMed == SortMethod::SMD_BY_SIZE_ASC ? SortMethod::SMD_BY_SIZE_DESC : SortMethod::SMD_BY_SIZE_ASC);
+        SortFileInfo(curMed);
+        sortMedRecord_[column] = curMed;
+        break;
+    default:
+        return;
     }
+    QMetaObject::invokeMethod(this, "RefreshTab", Qt::QueuedConnection);
 }
 
 QString FileManager::GetRoot()

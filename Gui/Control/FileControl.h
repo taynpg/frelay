@@ -9,10 +9,22 @@
 #include <QWidget>
 #include <Util.h>
 #include <memory>
+#include <map>
 
 namespace Ui {
 class FileManager;
 }
+
+enum class SortMethod {
+    SMD_BY_NAME_ASC,
+    SMD_BY_NAME_DESC,
+    SMD_BY_TIME_DESC,
+    SMD_BY_TIME_ASC,
+    SMD_BY_TYPE_DESC,
+    SMD_BY_TYPE_ASC,
+    SMD_BY_SIZE_DESC,
+    SMD_BY_SIZE_ASC,
+};
 
 class FileManager : public QWidget
 {
@@ -36,11 +48,14 @@ private:
     void ShowFile(const DirFileInfoVec& info);
     void doubleClick(int row, int column);
     void SetRoot(const QString& path);
+    void SortFileInfo(SortMethod method);
+    void HeaderClicked(int column);
 
 public slots:
     void evtHome();
     void evtFile();
     void evtUp();
+    void RefreshTab();
 
 private:
     bool isRemote_;
@@ -49,6 +64,8 @@ private:
     ClientCore* cliCore_;
     QMutex cbMut_;
     QMutex tbMut_;
+    DirFileInfoVec currentInfo_;
+    std::map<int, SortMethod> sortMedRecord_;
     std::shared_ptr<DirFileHelper> fileHelper_;
 };
 
