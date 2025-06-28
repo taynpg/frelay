@@ -4,12 +4,13 @@
 #include <ClientCore.h>
 #include <FileTrans.h>
 #include <InfoDirFile.h>
+#include <QDialogButtonBox>
 #include <QMenu>
 #include <QMutex>
 #include <QWidget>
 #include <Util.h>
-#include <memory>
 #include <map>
+#include <memory>
 
 namespace Ui {
 class FileManager;
@@ -43,13 +44,16 @@ signals:
 
 private:
     void InitControl();
-    void InitMenu(bool remote = false);
+    void InitMenu();
     void ShowPath(const QString& path);
     void ShowFile(const DirFileInfoVec& info);
     void doubleClick(int row, int column);
     void SetRoot(const QString& path);
     void SortFileInfo(SortMethod method);
     void HeaderClicked(int column);
+    void FilterFile(const QStringList& selectedTypes);
+    void GenFilter();
+    void ShowFilterForm();
 
 public slots:
     void evtHome();
@@ -64,7 +68,10 @@ private:
     ClientCore* cliCore_;
     QMutex cbMut_;
     QMutex tbMut_;
+    QSet<QString> fileTypes_;
+    QSet<QString> curSelectTypes_;
     DirFileInfoVec currentInfo_;
+    DirFileInfoVec currentShowInfo_;
     std::map<int, SortMethod> sortMedRecord_;
     std::shared_ptr<DirFileHelper> fileHelper_;
 };

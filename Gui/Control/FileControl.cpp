@@ -2,9 +2,11 @@
 
 #include <LocalFile.h>
 #include <QDateTime>
+#include <QDialog>
 #include <QDir>
 #include <QFile>
 #include <QHeaderView>
+#include <QListWidget>
 #include <QTableWidgetItem>
 #include <RemoteFile.h>
 
@@ -14,6 +16,7 @@ FileManager::FileManager(QWidget* parent) : QWidget(parent), ui(new Ui::FileMana
 {
     ui->setupUi(this);
     InitControl();
+    InitMenu();
 }
 
 FileManager::~FileManager()
@@ -75,6 +78,8 @@ void FileManager::InitControl()
     ui->tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
     ui->tableWidget->setDragDropMode(QAbstractItemView::DragDrop);
 
+    ui->tableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+
     connect(ui->btnHome, &QPushButton::clicked, this, &FileManager::evtHome);
     connect(ui->btnVisit, &QPushButton::clicked, this, &FileManager::evtFile);
     connect(ui->tableWidget, &QTableWidget::cellDoubleClicked, this, &FileManager::doubleClick);
@@ -82,16 +87,17 @@ void FileManager::InitControl()
     connect(ui->tableWidget, &CustomTableWidget::sigTasks, this,
             [this](const QVector<TransTask>& tasks) { emit sigSendTasks(tasks); });
 
+    connect(ui->tableWidget, &QTableWidget::customContextMenuRequested, this,
+            [this](const QPoint& pos) { menu_->exec(QCursor::pos()); });
+
     connect(ui->tableWidget->horizontalHeader(), &QHeaderView::sectionClicked, this, &FileManager::HeaderClicked);
 }
 
-void FileManager::InitMenu(bool remote)
+void FileManager::InitMenu()
 {
-    if (remote) {
-        // auto acDown = new QAction(tr("Download"));
-    } else {
-        // auto acUp = new QAction(tr("Upload"));
-    }
+    menu_ = new QMenu(ui->tableWidget);
+    menu_->addAction(tr("Filter"), this, &FileManager::ShowFilterForm);
+    menu_->addSeparator();
 }
 
 void FileManager::ShowPath(const QString& path)
@@ -112,6 +118,9 @@ void FileManager::ShowFile(const DirFileInfoVec& info)
     QMutexLocker locker(&tbMut_);
     currentInfo_ = info;
     SortFileInfo(SortMethod::SMD_BY_TYPE_DESC);
+    GenFilter();
+    curSelectTypes_.clear();
+    currentShowInfo_ = currentInfo_;
     RefreshTab();
     ui->tableWidget->resizeColumnToContents(0);
     SetRoot(currentInfo_.root);
@@ -202,9 +211,9 @@ void FileManager::RefreshTab()
 {
     ui->tableWidget->setUpdatesEnabled(false);
     ui->tableWidget->setRowCount(0);
-    ui->tableWidget->setRowCount(currentInfo_.vec.size());
-    for (int i = 0; i < currentInfo_.vec.size(); ++i) {
-        const DirFileInfo& fileInfo = currentInfo_.vec[i];
+    ui->tableWidget->setRowCount(currentShowInfo_.vec.size());
+    for (int i = 0; i < currentShowInfo_.vec.size(); ++i) {
+        const DirFileInfo& fileInfo = currentShowInfo_.vec[i];
 
         // ***********************************************************************************
         auto* iconItem = new QTableWidgetItem("");
@@ -313,6 +322,87 @@ void FileManager::HeaderClicked(int column)
         return;
     }
     QMetaObject::invokeMethod(this, "RefreshTab", Qt::QueuedConnection);
+}
+
+void FileManager::FilterFile(const QStringList& selectedTypes)
+{
+    if (selectedTypes.contains("*")) {
+        currentShowInfo_.vec = currentInfo_.vec;
+        QMetaObject::invokeMethod(this, "RefreshTab", Qt::QueuedConnection);
+        return;
+    }
+    currentShowInfo_.vec.clear();
+    for (const auto& d : currentInfo_.vec) {
+        if (d.type == File) {
+            auto ext = d.fullPath.lastIndexOf('.');
+            if (ext != -1) {
+                QString extStr = d.fullPath.mid(ext + 1).toLower();
+                if (selectedTypes.contains(extStr)) {
+                    currentShowInfo_.vec.push_back(d);
+                }
+            }
+        }
+    }
+    QMetaObject::invokeMethod(this, "RefreshTab", Qt::QueuedConnection);
+}
+
+void FileManager::GenFilter()
+{
+    fileTypes_.clear();
+    for (const auto& fileInfo : currentInfo_.vec) {
+        if (fileInfo.type == File) {
+            auto ext = fileInfo.fullPath.lastIndexOf('.');
+            if (ext != -1) {
+                QString extStr = fileInfo.fullPath.mid(ext + 1).toLower();
+                fileTypes_.insert(extStr);
+            }
+        }
+    }
+}
+
+void FileManager::ShowFilterForm()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle("Select file type");
+    dialog.resize(400, 300);
+    QListWidget listWidget(&dialog);
+
+    listWidget.setSelectionMode(QAbstractItemView::NoSelection);
+    QListWidgetItem* allItem = new QListWidgetItem("*(ALL)");
+    allItem->setData(Qt::UserRole, "*");
+    allItem->setCheckState(curSelectTypes_.contains("*") ? Qt::Checked : Qt::Unchecked);
+    listWidget.addItem(allItem);
+
+    for (const QString& ext : fileTypes_) {
+        QListWidgetItem* item = new QListWidgetItem(ext);
+        item->setData(Qt::UserRole, ext);
+        item->setCheckState(curSelectTypes_.contains(ext) ? Qt::Checked : Qt::Unchecked);
+        listWidget.addItem(item);
+    }
+
+    QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    connect(&buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(&buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    QVBoxLayout layout(&dialog);
+    layout.addWidget(&listWidget);
+    layout.addWidget(&buttons);
+    dialog.setLayout(&layout);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        QStringList selectedTypes;
+        for (int i = 0; i < listWidget.count(); ++i) {
+            QListWidgetItem* item = listWidget.item(i);
+            if (item->checkState() == Qt::Checked) {
+                selectedTypes << item->data(Qt::UserRole).toString();
+            }
+        }
+        FilterFile(selectedTypes);
+        curSelectTypes_.clear();
+        for (int i = 0; i < selectedTypes.count(); ++i) {
+            curSelectTypes_.insert(selectedTypes[i]);
+        }
+    }
 }
 
 QString FileManager::GetRoot()
