@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QFile>
 #include <QHeaderView>
+#include <QLineEdit>
 #include <QListWidget>
 #include <QTableWidgetItem>
 #include <RemoteFile.h>
@@ -80,6 +81,7 @@ void FileManager::InitControl()
 
     ui->tableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
+    connect(ui->comboBox->lineEdit(), &QLineEdit::returnPressed, this, &FileManager::evtFile);
     connect(ui->btnHome, &QPushButton::clicked, this, &FileManager::evtHome);
     connect(ui->btnVisit, &QPushButton::clicked, this, &FileManager::evtFile);
     connect(ui->tableWidget, &QTableWidget::cellDoubleClicked, this, &FileManager::doubleClick);
@@ -209,7 +211,6 @@ void FileManager::SortFileInfo(SortMethod method)
 
 void FileManager::RefreshTab()
 {
-    ui->tableWidget->setUpdatesEnabled(false);
     ui->tableWidget->setRowCount(0);
     ui->tableWidget->setRowCount(currentShowInfo_.vec.size());
     for (int i = 0; i < currentShowInfo_.vec.size(); ++i) {
@@ -278,8 +279,7 @@ void FileManager::RefreshTab()
         item->setFlags(item->flags() & ~Qt::ItemIsEditable);
         ui->tableWidget->setItem(i, 4, item);
     }
-    ui->tableWidget->setUpdatesEnabled(true);
-    ui->tableWidget->viewport()->update();
+    ui->tableWidget->scrollToTop();
 }
 
 void FileManager::HeaderClicked(int column)
