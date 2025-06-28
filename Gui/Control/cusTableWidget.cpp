@@ -41,12 +41,18 @@ void CustomTableWidget::dropEvent(QDropEvent* event)
     QByteArray encoded = event->mimeData()->data("application/x-qabstractitemmodeldatalist");
     QDataStream stream(&encoded, QIODevice::ReadOnly);
 
+    QStringList parseData;
     QVector<TransTask> tasks;
     while (!stream.atEnd()) {
         int row, col;
         QMap<int, QVariant> roleData;
         stream >> row >> col >> roleData;
-        if (col != 1) {
+        parseData.append(roleData[Qt::DisplayRole].toString());
+    }
+
+    for (int i = 0; i < (parseData.size() / 5); ++i) {
+        if (parseData[i * 5 + 3] != "File") {
+            qDebug() << QString(tr("Not Handle %1")).arg(parseData[i * 5 + 1]);
             continue;
         }
         TransTask task;
@@ -55,10 +61,10 @@ void CustomTableWidget::dropEvent(QDropEvent* event)
         task.remoteId = ridCall_();
         if (isRemote_) {
             task.remotePath = GlobalData::Ins()->GetRemoteRoot();
-            task.localPath = Util::Join(GlobalData::Ins()->GetLocalRoot(), roleData[Qt::DisplayRole].toString());
+            task.localPath = Util::Join(GlobalData::Ins()->GetLocalRoot(), parseData[i * 5 + 1]);
         } else {
             task.localPath = GlobalData::Ins()->GetLocalRoot();
-            task.remotePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), roleData[Qt::DisplayRole].toString());
+            task.remotePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), parseData[i * 5 + 1]);
         }
         tasks.push_back(task);
     }

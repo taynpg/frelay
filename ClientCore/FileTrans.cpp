@@ -40,6 +40,12 @@ void FileTrans::ReqSendFile(const TransTask& task)
     QFileInfo fileInfo(info.fromPath);
     if (fileInfo.exists()) {
         qint64 size = fileInfo.size();
+        if (size == 0) {
+            qCritical() << QString(tr("File [%1] size is 0, will not send.")).arg(info.fromPath);
+            sendTask_->file.close();
+            sendTask_->state = TaskState::STATE_FINISH;
+            return;
+        }
         info.permissions = static_cast<quint32>(fileInfo.permissions());
         info.size = size;
     } else {

@@ -27,10 +27,27 @@ bool FrelayConfig::SaveIpPort(const QString& ipPort)
         vec = j["connections"].get<CgConVec>();
     }
 
+    auto MoveIpToFront = [](CgConVec& vec, const QString& ipPort) {
+        auto it =
+            std::find_if(vec.begin(), vec.end(), [&ipPort](const CgConnection& conn) { return conn.ip == ipPort.toStdString(); });
+        if (it != vec.end()) {
+            std::rotate(vec.begin(), it, it + 1);
+        }
+    };
+
+    auto saveConfig = [this, &p](const CgConVec& vec) {
+        json j;
+        j["connections"] = vec;
+        std::ofstream ofs(p);
+        ofs << std::setw(4) << j << std::endl;
+    };
+
     bool exist = false;
     for (const auto& v : vec) {
         if (v.ip == ipPort.toStdString()) {
             exist = true;
+            MoveIpToFront(vec, ipPort);
+            saveConfig(vec);
             break;
         }
     }
@@ -44,9 +61,7 @@ bool FrelayConfig::SaveIpPort(const QString& ipPort)
         vec.pop_back();
     }
 
-    j["connections"] = vec;
-    std::ofstream ofs(p);
-    ofs << std::setw(4) << j << std::endl;
+    saveConfig(vec);
     return true;
 }
 
