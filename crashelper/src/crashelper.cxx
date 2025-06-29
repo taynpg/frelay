@@ -10,9 +10,14 @@
 
 #include "backward.hpp"
 
+#ifdef _WIN32
 std::function<std::string()> backward::SignalHandling::crash_path_getter_ = nullptr;
 std::function<void(EXCEPTION_POINTERS* info)> backward::SignalHandling::crash_use_handler_ = nullptr;
 std::function<void(int sig)> backward::SignalHandling::user_sig_handler_ = nullptr;
+#else
+std::function<std::string()> crash_path_getter_ = nullptr;
+std::function<void(int sig)> user_sig_handler_ = nullptr;
+#endif
 
 namespace backward {
 
@@ -132,7 +137,8 @@ void UseExceptionHandler(EXCEPTION_POINTERS* exception)
     QString fullPath = QDir(h.dumpSavePath_).absoluteFilePath(dumpName);
     QString fullFailedPath = QDir(h.dumpSavePath_).absoluteFilePath(dumpFailedLog);
 
-    HANDLE hFile = CreateFileA(fullPath.toStdString().c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE hFile =
+        CreateFileA(fullPath.toStdString().c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         QFile file(fullFailedPath);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {

@@ -4271,8 +4271,8 @@ private:
 class SignalHandling
 {
 private:
-    static inline std::function<std::string()> crash_path_getter_ = nullptr;
-    static inline std::function<void(int sig)> user_sig_handler_ = nullptr;
+    static std::function<std::string()> crash_path_getter_;
+    static std::function<void(int sig)> user_sig_handler_;
 
 public:
     static void register_crash_path(std::function<std::string()>&& crash_path_getter)

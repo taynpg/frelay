@@ -1,4 +1,5 @@
 ﻿#include <QCoreApplication>
+#include <QDir>
 #include <Util.h>
 
 #include "Server.h"
