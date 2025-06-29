@@ -120,8 +120,8 @@ void TransForm::handleUI(const TransTask& task)
         ui->pedFrom->setPlainText(task.localPath);
         ui->pedTo->setPlainText(task.remotePath);
     } else {
-        ui->edFrom->setText(task.localId);
-        ui->edTo->setText(task.remoteId);
+        ui->edFrom->setText(task.remoteId);
+        ui->edTo->setText(task.localId);
         ui->pedFrom->setPlainText(task.remotePath);
         ui->pedTo->setPlainText(task.localPath);
     }
