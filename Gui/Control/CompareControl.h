@@ -2,6 +2,7 @@
 #define COMPARECONTROL_H
 
 #include <FileTrans.h>
+#include <QMenu>
 #include <QVector>
 #include <QWidget>
 
