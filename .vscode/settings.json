@@ -158,6 +158,7 @@
         "qhostaddress": "cpp",
         "qthread": "cpp",
         "qobject": "cpp",
-        "qregularexpression": "cpp"
+        "qregularexpression": "cpp",
+        "qstring": "cpp"
     }
 }
