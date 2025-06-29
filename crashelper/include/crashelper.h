@@ -9,9 +9,11 @@
 #endif
 #elif defined(__APPLE__) && defined(__MACH__)
 #define MAC_OS
-#else // default linux
+#elif defined(__linux__) || defined(__TERMUX__) || defined(TERMUX) || defined(__ANDROID__)
 #define LINUX_OS
 #define BACKWARD_HAS_BFD 1
+#else
+#error "Unsupported OS"
 #endif
 
 #include "backward.hpp"
