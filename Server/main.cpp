@@ -10,6 +10,12 @@
 
 int main(int argc, char* argv[])
 {
+    int port = 9009;
+    if (argc < 2) {
+        qDebug() << "Usage: frelayServer port.";
+    } else {
+        port = atoi(argv[1]);
+    }
 
 #ifndef COMPILER_USE_MINGW
     auto configDir = Util::GetCurConfigPath("frelay");
@@ -27,7 +33,7 @@ int main(int argc, char* argv[])
     qInstallMessageHandler(Util::ConsoleMsgHander);
 
     Server server;
-    if (!server.startServer(9009)) {
+    if (!server.startServer(port)) {
         return 1;
     }
 
