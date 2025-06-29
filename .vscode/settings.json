@@ -30,6 +30,7 @@
     "cmake.configureSettings": {
         "CMAKE_PREFIX_PATH": "${env:QT_LIB_ROOT}",
         "QT_DEFAULT_MAJOR_VERSION": "6",
+        "COMPILE_GUI": "ON"
     },
     "cmake.options.statusBarVisibility": "visible",
     "cmake.generator": "Ninja",
