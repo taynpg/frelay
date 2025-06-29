@@ -40,6 +40,16 @@ void Compare::InitMenu()
         auto path = item->text();
         emit sigTryVisit(false, path);
     });
+    menu_->addAction(tr("InsertLastLine"), this, [this]() {
+        int cnt = ui->tableWidget->rowCount();
+        ui->tableWidget->insertRow(cnt);
+        auto item1 = new QTableWidgetItem("");
+        auto item2 = new QTableWidgetItem("");
+        auto item3 = new QTableWidgetItem("");
+        ui->tableWidget->setItem(cnt, 0, item1);
+        ui->tableWidget->setItem(cnt, 1, item2);
+        ui->tableWidget->setItem(cnt, 2, item3);
+    });
     menu_->addAction(tr("Delete"), this, [this]() { deleteSelectedRows(); });
     menu_->addSeparator();
     connect(ui->tableWidget, &QTableWidget::customContextMenuRequested, this,
