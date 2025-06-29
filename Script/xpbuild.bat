@@ -15,7 +15,7 @@ set QTDLL5="%QT_563_ROOT%\5.6.3\mingw49_32\plugins\platforms\qwindows.dll"
 
 set PAHT=%PATH%;%QT_GCC_ROOT%;
 
-cmake -B"%~dp0..\xpbuild" -S"%~dp0.." -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=%QT_DIRS% -DQT_DEFAULT_MAJOR_VERSION=5 -DXP_PLATFORM_SUPPORT=ON
+cmake -B"%~dp0..\xpbuild" -S"%~dp0.." -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=%QT_DIRS% -DQT_DEFAULT_MAJOR_VERSION=5 -DXP_PLATFORM_SUPPORT=ON -DCOMPILE_GUI=ON
 cmake --build "%~dp0..\xpbuild" --config Release
 
 if %errorlevel% equ 0 (
