@@ -19,10 +19,12 @@ public:
 
 signals:
     void sigTasks(const QVector<TransTask>& tasks);
+    void sigTryVisit(bool local, const QString& path);
 
 private:
     void InitControl();
     void InitTabWidget();
+    void InitMenu();
 
 private:
     void Save();
@@ -32,7 +34,11 @@ private:
     void TransToLeft();
     void TransToRight();
 
+private slots:
+    void deleteSelectedRows();
+
 private:
+    QMenu* menu_;
     Ui::Compare* ui;
 };
 

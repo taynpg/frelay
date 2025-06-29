@@ -66,6 +66,15 @@ void frelayGUI::InitControl()
     connect(localFile_, &FileManager::sigSendTasks, this, &frelayGUI::HandleTask);
     connect(remoteFile_, &FileManager::sigSendTasks, this, &frelayGUI::HandleTask);
     connect(compare_, &Compare::sigTasks, this, &frelayGUI::HandleTask);
+    connect(compare_, &Compare::sigTryVisit, this, [this](bool local, const QString& path) {
+        if (local) {
+            localFile_->SetUiCurrentPath(path);
+            localFile_->evtFile();
+        } else {
+            remoteFile_->SetUiCurrentPath(path);
+            remoteFile_->evtFile();
+        }
+    });
     connect(connecter_, &Connecter::sigConfirmUse, remoteFile_, &FileManager::evtHome);
 }
 

@@ -37,6 +37,7 @@ public:
 
 public:
     QString GetRoot();
+    void SetUiCurrentPath(const QString& path);
     void SetModeStr(const QString& modeStr, int type = 0, ClientCore* clientCore = nullptr);
 
 signals:

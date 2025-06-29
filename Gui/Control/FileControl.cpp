@@ -327,6 +327,15 @@ void FileManager::HeaderClicked(int column)
     QMetaObject::invokeMethod(this, "RefreshTab", Qt::QueuedConnection);
 }
 
+void FileManager::SetUiCurrentPath(const QString& path)
+{
+    if (path.isEmpty()) {
+        return;
+    }
+    ui->comboBox->addItem(path);
+    ui->comboBox->setCurrentText(path);
+}
+
 void FileManager::FilterFile(const QStringList& selectedTypes)
 {
     if (selectedTypes.contains("*")) {

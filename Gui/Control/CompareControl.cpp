@@ -11,11 +11,39 @@ Compare::Compare(QWidget* parent) : QWidget(parent), ui(new Ui::Compare)
 {
     ui->setupUi(this);
     InitControl();
+    InitMenu();
 }
 
 Compare::~Compare()
 {
     delete ui;
+}
+
+void Compare::InitMenu()
+{
+    menu_ = new QMenu(ui->tableWidget);
+    menu_->addAction(tr("Try2Local"), this, [this]() {
+        auto selected = ui->tableWidget->selectedItems();
+        if (selected.size() != 3) {
+            return;
+        }
+        auto item = selected[1];
+        auto path = item->text();
+        emit sigTryVisit(true, path);
+    });
+    menu_->addAction(tr("Try2Remote"), this, [this]() {
+        auto selected = ui->tableWidget->selectedItems();
+        if (selected.size() != 3) {
+            return;
+        }
+        auto item = selected[2];
+        auto path = item->text();
+        emit sigTryVisit(false, path);
+    });
+    menu_->addAction(tr("Delete"), this, [this]() { deleteSelectedRows(); });
+    menu_->addSeparator();
+    connect(ui->tableWidget, &QTableWidget::customContextMenuRequested, this,
+            [this](const QPoint& pos) { menu_->exec(QCursor::pos()); });
 }
 
 void Compare::InitControl()
@@ -26,7 +54,6 @@ void Compare::InitControl()
     connect(ui->btnLoad, &QPushButton::clicked, this, &Compare::Load);
     connect(ui->btnLeft, &QPushButton::clicked, this, &Compare::TransToLeft);
     connect(ui->btnRight, &QPushButton::clicked, this, &Compare::TransToRight);
-
     LoadTitles();
 }
 
@@ -49,6 +76,7 @@ void Compare::InitTabWidget()
     // ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    ui->tableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
     ui->tableWidget->setDragEnabled(false);
     ui->tableWidget->viewport()->setAcceptDrops(true);
@@ -277,4 +305,23 @@ void Compare::TransToRight()
     }
 
     emit sigTasks(tasks);
+}
+
+void Compare::deleteSelectedRows()
+{
+    auto r = FTCommon::affirm(this, tr("confirm"), tr("delete selected rows?"));
+    if (!r) {
+        return;
+    }
+    QList<int> rowsToDelete;
+    for (QTableWidgetItem* item : ui->tableWidget->selectedItems()) {
+        int row = item->row();
+        if (!rowsToDelete.contains(row)) {
+            rowsToDelete.append(row);
+        }
+    }
+    std::sort(rowsToDelete.begin(), rowsToDelete.end(), std::greater<int>());
+    for (int row : rowsToDelete) {
+        ui->tableWidget->removeRow(row);
+    }
 }

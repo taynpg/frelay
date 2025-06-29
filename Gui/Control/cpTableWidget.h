@@ -16,14 +16,6 @@ public:
 protected:
     void dropEvent(QDropEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event);
-    void contextMenuEvent(QContextMenuEvent* event) override;
-
-private slots:
-    void deleteSelectedRows();
-
-private:
-    QMenu* contexMenu_;
-    QAction* delAction_;
 };
 
 #endif   // CP_TABLEWIDET_H

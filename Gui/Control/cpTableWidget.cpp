@@ -11,21 +11,10 @@
 
 CpTableWidget::CpTableWidget(QWidget* parent) : QTableWidget(parent)
 {
-    contexMenu_ = new QMenu(this);
-    delAction_ = new QAction(tr("delete"), this);
-    connect(delAction_, &QAction::triggered, this, &CpTableWidget::deleteSelectedRows);
-    contexMenu_->addAction(delAction_);
 }
 
 CpTableWidget::~CpTableWidget()
 {
-}
-
-void CpTableWidget::contextMenuEvent(QContextMenuEvent* event)
-{
-    if (selectedItems().count() > 0) {
-        contexMenu_->exec(event->globalPos());
-    }
 }
 
 void CpTableWidget::dropEvent(QDropEvent* event)
@@ -100,24 +89,5 @@ void CpTableWidget::dragEnterEvent(QDragEnterEvent* event)
         event->acceptProposedAction();
     } else {
         event->ignore();
-    }
-}
-
-void CpTableWidget::deleteSelectedRows()
-{
-    auto r = FTCommon::affirm(this, tr("confirm"), tr("delete selected rows?"));
-    if (!r) {
-        return;
-    }
-    QList<int> rowsToDelete;
-    for (QTableWidgetItem* item : selectedItems()) {
-        int row = item->row();
-        if (!rowsToDelete.contains(row)) {
-            rowsToDelete.append(row);
-        }
-    }
-    std::sort(rowsToDelete.begin(), rowsToDelete.end(), std::greater<int>());
-    for (int row : rowsToDelete) {
-        removeRow(row);
     }
 }
