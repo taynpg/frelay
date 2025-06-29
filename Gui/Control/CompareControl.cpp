@@ -33,19 +33,20 @@ void Compare::InitControl()
 void Compare::InitTabWidget()
 {
     QStringList headers;
-    headers << tr("") << tr("LocalPath") << tr("RemotePath");
+    headers << tr("FileName") << tr("LocalDir") << tr("RemoteDir");
     ui->tableWidget->setColumnCount(headers.size());
     ui->tableWidget->setHorizontalHeaderLabels(headers);
     ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     ui->comboBox->setEditable(true);
     // ui->tableWidget->setColumnWidth(0, 50);
-    ui->tableWidget->setColumnWidth(1, 500);
-    ui->tableWidget->setColumnWidth(2, 500);
+    ui->tableWidget->setColumnWidth(0, 400);
+    /// ui->tableWidget->setColumnWidth(1, 300);
+    ui->tableWidget->setColumnWidth(2, 300);
 
     ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->tableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
-    ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+    // ui->tableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    // ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
 
@@ -84,10 +85,13 @@ void Compare::Save()
                 QStringList paths;
                 while (!(reader.isEndElement() && reader.name() == "Entry")) {
                     reader.readNext();
-                    if (reader.isStartElement() && reader.name() == "LocalPath") {
+                    if (reader.isStartElement() && reader.name() == "FileName") {
                         paths << reader.readElementText();
                     }
-                    if (reader.isStartElement() && reader.name() == "RemotePath") {
+                    if (reader.isStartElement() && reader.name() == "LocalDir") {
+                        paths << reader.readElementText();
+                    }
+                    if (reader.isStartElement() && reader.name() == "RemoteDir") {
                         paths << reader.readElementText();
                     }
                 }
@@ -99,8 +103,10 @@ void Compare::Save()
 
     QStringList paths;
     for (int row = 0; row < ui->tableWidget->rowCount(); ++row) {
+        QTableWidgetItem* fileName = ui->tableWidget->item(row, 0);
         QTableWidgetItem* localItem = ui->tableWidget->item(row, 1);
         QTableWidgetItem* remoteItem = ui->tableWidget->item(row, 2);
+        paths << (fileName ? fileName->text() : "");
         paths << (localItem ? localItem->text() : "");
         paths << (remoteItem ? remoteItem->text() : "");
     }
@@ -118,9 +124,10 @@ void Compare::Save()
         writer.writeAttribute("title", it.key());
 
         const QStringList& pathList = it.value();
-        for (int i = 0; i < pathList.size(); i += 2) {
-            writer.writeTextElement("LocalPath", pathList[i]);
-            writer.writeTextElement("RemotePath", pathList[i + 1]);
+        for (int i = 0; i < pathList.size(); i += 3) {
+            writer.writeTextElement("FileName", pathList[i]);
+            writer.writeTextElement("LocalDir", pathList[i + 1]);
+            writer.writeTextElement("RemoteDir", pathList[i + 2]);
         }
 
         writer.writeEndElement();
@@ -163,20 +170,25 @@ void Compare::Load()
 
                 while (!(reader.isEndElement() && reader.name() == "Entry")) {
                     reader.readNext();
-                    if (reader.isStartElement() && reader.name() == "LocalPath") {
+                    if (reader.isStartElement() && reader.name() == "FileName") {
                         paths << reader.readElementText();
                     }
-                    if (reader.isStartElement() && reader.name() == "RemotePath") {
+                    if (reader.isStartElement() && reader.name() == "LocalDir") {
+                        paths << reader.readElementText();
+                    }
+                    if (reader.isStartElement() && reader.name() == "RemoteDir") {
                         paths << reader.readElementText();
                     }
                 }
-                for (int i = 0; i < paths.size(); i += 2) {
+                for (int i = 0; i < paths.size(); i += 3) {
                     int row = ui->tableWidget->rowCount();
                     ui->tableWidget->insertRow(row);
 
-                    QTableWidgetItem* localItem = new QTableWidgetItem(paths[i]);
-                    QTableWidgetItem* remoteItem = new QTableWidgetItem(paths[i + 1]);
+                    QTableWidgetItem* fileName = new QTableWidgetItem(paths[i]);
+                    QTableWidgetItem* localItem = new QTableWidgetItem(paths[i + 1]);
+                    QTableWidgetItem* remoteItem = new QTableWidgetItem(paths[i + 2]);
 
+                    ui->tableWidget->setItem(row, 0, fileName);
                     ui->tableWidget->setItem(row, 1, localItem);
                     ui->tableWidget->setItem(row, 2, remoteItem);
                 }
@@ -189,7 +201,7 @@ void Compare::Load()
     if (!found) {
         FTCommon::msg(this, tr("No data found for the selected title."));
     } else {
-        //FTCommon::msg(this, tr("Data loaded successfully."));
+        // FTCommon::msg(this, tr("Data loaded successfully."));
     }
 }
 
@@ -233,14 +245,14 @@ void Compare::TransToLeft()
     QModelIndexList indexList = ui->tableWidget->selectionModel()->selectedRows();
 
     for (int i = 0; i < indexList.size(); ++i) {
-        const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 1);
-        const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 2);
+        const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 2);
+        const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 1);
         TransTask task;
         task.isUpload = false;
         task.localId = GlobalData::Ins()->GetLocalID();
-        task.localPath = itemF->text();
+        task.localPath = itemT->text();
         task.remoteId = GlobalData::Ins()->GetRemoteID();
-        task.remotePath = itemT->text();
+        task.remotePath = Util::Join(itemF->text(), ui->tableWidget->item(indexList[i].row(), 0)->text());
         tasks.push_back(task);
     }
 
@@ -258,11 +270,11 @@ void Compare::TransToRight()
         TransTask task;
         task.isUpload = true;
         task.localId = GlobalData::Ins()->GetLocalID();
-        task.localPath = itemF->text();
+        task.localPath = Util::Join(itemF->text(), ui->tableWidget->item(indexList[i].row(), 0)->text());
         task.remoteId = GlobalData::Ins()->GetRemoteID();
         task.remotePath = itemT->text();
         tasks.push_back(task);
-    }                                   
+    }
 
     emit sigTasks(tasks);
 }

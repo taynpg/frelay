@@ -45,18 +45,14 @@ void CpTableWidget::dropEvent(QDropEvent* event)
         return;
     }
 
-    QStringList draggedData;
+    QStringList parseData;
     while (!stream.atEnd()) {
         int row, col;
         QMap<int, QVariant> roleData;
         stream >> row >> col >> roleData;
-        if (col != 1) {
-            continue;
-        }
-        draggedData.append(roleData[Qt::DisplayRole].toString());
+        parseData.append(roleData[Qt::DisplayRole].toString());
     }
-
-    if (draggedData.isEmpty()) {
+    if (parseData.isEmpty()) {
         event->ignore();
         return;
     }
@@ -65,22 +61,36 @@ void CpTableWidget::dropEvent(QDropEvent* event)
     if (currentRow == -1) {
         currentRow = rowCount();
     }
-    for (const QString& text : draggedData) {
+
+    auto setItemData = [this](int row, int col, const QString& data) {
+        QTableWidgetItem* item = this->item(row, col);
+        if (!item) {
+            item = new QTableWidgetItem(data);
+            setItem(row, col, item);
+        } else {
+            item->setText(data);
+        }
+    };
+
+    for (int i = 0; i < (parseData.size() / 5); ++i, ++currentRow) {
         if (currentRow >= rowCount()) {
             insertRow(rowCount());
         }
-        QString cur = startCol == 1 ? Util::Join(GlobalData::Ins()->GetLocalRoot(), text)
-                                    : Util::Join(GlobalData::Ins()->GetRemoteRoot(), text);
-        QTableWidgetItem* item = this->item(currentRow, startCol);
-        if (!item) {
-            item = new QTableWidgetItem(cur);
-            setItem(currentRow, startCol, item);
-        } else {
-            item->setText(cur);
+        if (parseData[i * 5 + 3] == "Dir") {
+            if (startCol == 1) {
+                setItemData(currentRow, startCol, Util::Join(GlobalData::Ins()->GetLocalRoot(), parseData[i * 5 + 1]));
+            } else {
+                setItemData(currentRow, startCol, Util::Join(GlobalData::Ins()->GetRemoteRoot(), parseData[i * 5 + 1]));
+            }
+            continue;
         }
-        currentRow++;
+        setItemData(currentRow, 0, parseData[i * 5 + 1]);
+        if (startCol == 1) {
+            setItemData(currentRow, 1, GlobalData::Ins()->GetLocalRoot());
+        } else {
+            setItemData(currentRow, 2, GlobalData::Ins()->GetRemoteRoot());
+        }
     }
-
     event->acceptProposedAction();
 }
 

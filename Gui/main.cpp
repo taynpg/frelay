@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
     QFont font("Microsoft YaHei", 9);
     a.setFont(font);
-    // a.setStyle("fusion");
+    //a.setStyle("fusion");
     a.setStyle("windows");
 #endif
 
