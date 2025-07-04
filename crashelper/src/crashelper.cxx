@@ -15,8 +15,8 @@ std::function<std::string()> backward::SignalHandling::crash_path_getter_ = null
 std::function<void(EXCEPTION_POINTERS* info)> backward::SignalHandling::crash_use_handler_ = nullptr;
 std::function<void(int sig)> backward::SignalHandling::user_sig_handler_ = nullptr;
 #else
-std::function<std::string()> crash_path_getter_ = nullptr;
-std::function<void(int sig)> user_sig_handler_ = nullptr;
+std::function<std::string()> backward::SignalHandling::crash_path_getter_ = nullptr;
+std::function<void(int sig)> backward::SignalHandling::user_sig_handler_ = nullptr;
 #endif
 
 namespace backward {

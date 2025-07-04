@@ -23,11 +23,11 @@ int main(int argc, char* argv[])
     CRASHELPER_MARK_ENTRY();
 #endif
 
-    SingleApplication a(argc, argv);
-
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
+
+    SingleApplication a(argc, argv);
 
 #ifdef _WIN32
     QFont font("Microsoft YaHei", 9);

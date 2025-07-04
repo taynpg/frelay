@@ -48,7 +48,7 @@ void UseExceptionHandler(EXCEPTION_POINTERS* exception);
 #elif defined(LINUX_OS)
 #define CRASHELPER_MARK_ENTRY()                                                                                        \
     backward::SignalHandling sh;                                                                                       \
-    sh.register_crash_path([]() -> QString { return backward::GetCurFullLogPath(); })
+    sh.register_crash_path([]() -> std::string { return backward::GetCurFullLogPath(); })
 #endif
 
 #endif   // CRASHELPER_H
