@@ -1,0 +1,12 @@
+add_rules("mode.debug", "mode.release")
+
+target("ClientCore")
+    add_rules("qt.static")
+    add_includedirs(".", {public = true})
+    add_files("*.h")
+    add_files("*.cpp")
+    add_frameworks("QtCore")
+    add_frameworks("QtNetwork")
+    add_deps("Struct")
+    add_deps("Util")
+    add_deps("Protocol")

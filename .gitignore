@@ -37,3 +37,5 @@ cmake-*
 .vs
 .cache
 xpbuild
+.xmake
+compile_commands.json

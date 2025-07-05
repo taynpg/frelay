@@ -28,7 +28,7 @@ frelayGUI::frelayGUI(QWidget* parent) : QMainWindow(parent), ui(new Ui::frelayGU
     int height = static_cast<int>(availableGeometry.height() * 0.6);
     resize(width, height);
 
-    setWindowTitle(QString(tr("frelay %1")).arg(VERSION_NUM));
+    setWindowTitle(QString(tr("frelay %1.%2.%3.%4")).arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_ALTER).arg(VERSION_BUILD));
 
     QLabel* permanent = new QLabel(this);
     permanent->setFrameStyle(QFrame::Box | QFrame::Sunken);

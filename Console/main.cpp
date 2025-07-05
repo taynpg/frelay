@@ -4,7 +4,7 @@
 
 #include "Console.h"
 
-#ifndef COMPILER_USE_MINGW
+#ifndef NO_CRASHELPER
 #include <crashelper.h>
 #endif
 
@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-#ifndef COMPILER_USE_MINGW
+#ifndef NO_CRASHELPER
     auto configDir = Util::GetCurConfigPath("frelay");
 #ifdef _WIN32
     backward::SetDumpFileSavePath(configDir + "/dumpfile");
