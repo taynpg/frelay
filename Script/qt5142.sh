@@ -1,6 +1,7 @@
 #!/bin/bash
 current_user=$(whoami)
 qt_path="/home/${current_user}/Qt5.14.2/5.14.2/gcc_64"
+build_dir="build-linux/linux/x64/release"
 
 if [ -d "$qt_path" ]; then
 
@@ -11,6 +12,8 @@ if [ -d "$qt_path" ]; then
     xmake
 
     if [ $? -eq 0 ]; then
+        find "$build_dir" -name "*.a" -delete 2>/dev/null
+        find "$build_dir" -name "*Test*" -type f -delete 2>/dev/null
         echo "xmake command executed successfully"
     else
         echo "xmake command failed"
