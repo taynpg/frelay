@@ -20,6 +20,7 @@ add_defines("FMT_HEADER_ONLY")
 add_includedirs("3rd")
 
 if has_config("gui") then
+    add_includedirs("Gui/Control")
     includes("Gui", "3rd/SingleApplication-3.5.2")
 end
 
@@ -41,3 +42,8 @@ option("gui")
     set_default(false)
     set_showmenu(true)
     set_description("Enable GUI support")
+
+option("qt5")
+    set_default(false)
+    set_showmenu(true)
+    set_description("Use Qt5 instead of Qt6.")

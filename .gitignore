@@ -39,3 +39,4 @@ cmake-*
 xpbuild
 .xmake
 compile_commands.json
+build*

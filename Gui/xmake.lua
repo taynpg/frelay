@@ -1,5 +1,4 @@
 add_rules("mode.debug", "mode.release")
-
 target("frelayGUI")
     add_rules("qt.widgetapp")
     add_defines("QAPPLICATION_CLASS=QApplication")
@@ -17,6 +16,9 @@ target("frelayGUI")
     add_files("*.h")
     add_files("../Res/frelay.qrc")
     add_files("../Res/ico.rc")
+    if is_plat("windows") then
+        add_ldflags("-subsystem:windows")
+    end
     add_frameworks("QtCore")
     add_frameworks("QtGui")
     add_frameworks("QtNetwork")
@@ -25,4 +27,8 @@ target("frelayGUI")
     add_deps("Util")
     add_deps("ClientCore")
     add_deps("SingleApplication")
-    add_deps("crashelper")
+    if is_plat("mingw") then
+        add_ldflags("-mwindows")
+    else
+        add_deps("crashelper")
+    end

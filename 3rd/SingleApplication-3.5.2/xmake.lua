@@ -2,7 +2,7 @@ add_rules("mode.debug", "mode.release")
 
 target("SingleApplication")
     add_rules("qt.static")
-    if has_config("single5") then
+    if has_config("qt5") then
         add_defines("QT_DEFAULT_MAJOR_VERSION=5")
     else
         add_defines("QT_DEFAULT_MAJOR_VERSION=6")
@@ -24,8 +24,3 @@ target("SingleApplication")
     add_frameworks("QtGui")
     add_frameworks("QtWidgets")
     add_frameworks("QtNetwork")
-
-option("single5")
-    set_default(false)
-    set_showmenu(true)
-    set_description("SingleApplication Build with Qt5.")
