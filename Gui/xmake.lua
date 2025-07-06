@@ -15,8 +15,9 @@ target("frelayGUI")
     add_files("*.ui")
     add_files("*.h")
     add_files("../Res/frelay.qrc")
-    add_files("../Res/ico.rc")
+
     if is_plat("windows") then
+        add_files("../Res/ico.rc")
         add_ldflags("-subsystem:windows")
     end
     add_frameworks("QtCore")
@@ -28,7 +29,12 @@ target("frelayGUI")
     add_deps("ClientCore")
     add_deps("SingleApplication")
     if is_plat("mingw") then
+        add_files("../Res/ico.rc")
         add_ldflags("-mwindows")
     else
         add_deps("crashelper")
+    end
+
+    if is_plat("linux") then
+        add_links("dl")
     end
