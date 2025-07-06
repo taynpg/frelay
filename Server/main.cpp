@@ -4,10 +4,6 @@
 
 #include "Server.h"
 
-#ifndef NO_CRASHELPER
-#include <crashelper.h>
-#endif
-
 int main(int argc, char* argv[])
 {
     int port = 9009;
@@ -16,16 +12,6 @@ int main(int argc, char* argv[])
     } else {
         port = atoi(argv[1]);
     }
-
-#ifndef NO_CRASHELPER
-    auto configDir = Util::GetCurConfigPath("frelay");
-#ifdef _WIN32
-    backward::SetDumpFileSavePath(configDir + "/dumpfile");
-    backward::SetDumpLogSavePath(configDir + "/dumplog");
-#else
-    backward::SetDumpLogSavePath(configDir + QDir::separator() + "dumplog");
-#endif
-#endif
 
     QCoreApplication app(argc, argv);
 

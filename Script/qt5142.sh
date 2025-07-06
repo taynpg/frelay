@@ -1,22 +1,17 @@
 #!/bin/bash
 current_user=$(whoami)
 qt_path="/home/${current_user}/Qt5.14.2/5.14.2/gcc_64"
-build_dir="build-linux/linux/x64/release"
 
 if [ -d "$qt_path" ]; then
-
     echo "Found Qt directory: $qt_path"
 
-    cd ..
-    xmake f -a x64 -m release --qt="$qt_path" --gui=y --qt5=y -o build-linux -v
-    xmake
-
+    cmake -B../build -S../ -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$qt_path" -DQT_DEFAULT_MAJOR_VERSION=5 -DCOMPILE_GUI=ON
+    cmake --build ../build --config Release
+    
     if [ $? -eq 0 ]; then
-        find "$build_dir" -name "*.a" -delete 2>/dev/null
-        find "$build_dir" -name "*Test*" -type f -delete 2>/dev/null
-        echo "xmake command executed successfully"
+        echo "cmake command executed successfully"
     else
-        echo "xmake command failed"
+        echo "cmake command failed"
         exit 1
     fi
 else

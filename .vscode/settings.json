@@ -3,14 +3,41 @@
     "editor.fontSize": 14,
     // "editor.fontFamily": "'Source Code Pro', 'Source Code Pro', 'Source Code Pro'",
     "terminal.integrated.fontFamily": "Source Code Pro",
-    "cmake.configureOnOpen": false,
-    "C_Cpp.default.compileCommands": "${workspaceRoot}/.vscode/compile_commands.json",
-    "C_Cpp.default.cppStandard": "c++11",
-    "editor.inlayHints.enabled": "off",
-    "xmake.additionalConfigArguments": [
-        "--qt=C:/Qt/6.8.3",
-        "--gui=y"
+    "cmake.configureOnOpen": true,
+    "cmake.debugConfig": {
+        "console": "integratedTerminal",
+        "setupCommands": [
+            {
+                "description": "-gdb-set charset utf-8",
+                "text": "-gdb-set charset UTF-8"
+            },
+            {
+                "description": "Enable gdb pretty-printing",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ],
+        "visualizerFile": "${workspaceRoot}/.vscode/qt5.natvis",
+        "args": ["127.0.0.1", "9009"]
+    },
+    "cmake.configureArgs": [
+        "-Wno-dev"
     ],
+    "cmake.environment": {
+        "QT_LIB_ROOT": "C:/Qt/6.8.3",
+        "PATH": "${env:PATH};C:/Qt/6.8.3/bin"
+    },
+    "cmake.configureSettings": {
+        "CMAKE_PREFIX_PATH": "${env:QT_LIB_ROOT}",
+        "QT_DEFAULT_MAJOR_VERSION": "6",
+        "COMPILE_GUI": "ON"
+    },
+    "cmake.options.statusBarVisibility": "visible",
+    "cmake.generator": "Ninja",
+    "C_Cpp.default.compileCommands": "${workspaceRoot}/build/compile_commands.json",
+    "C_Cpp.default.cppStandard": "c++17",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "editor.inlayHints.enabled": "off",
     "editor.unicodeHighlight.allowedLocales": {
         "ja": true,
         "zh-hant": true,
