@@ -47,6 +47,7 @@ bool LocalFile::GetDirFile(const QString& dir, DirFileInfoVec& vec)
         DirFileInfo info;
         info.fullPath = entry.absoluteFilePath();
         info.name = entry.fileName();
+        info.permission = entry.permissions();
 
         if (entry.isDir()) {
             info.type = Dir;

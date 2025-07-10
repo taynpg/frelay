@@ -238,6 +238,7 @@ void FileTrans::fbtTransDone(QSharedPointer<FrameBuffer> frame)
 {
     auto info = infoUnpack<InfoMsg>(frame->data);
     if (downTask_->file.isOpen()) {
+        downTask_->file.setPermissions(static_cast<QFileDevice::Permissions>(downTask_->permission));
         downTask_->file.close();
         downTask_->state = TaskState::STATE_FINISH;
         info.msg = QString(tr("recv file:%1 success.")).arg(downTask_->file.fileName());
