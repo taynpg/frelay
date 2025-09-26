@@ -37,7 +37,7 @@ if(DEFINED XP_PLATFORM_SUPPORT)
 message(STATUS "Support Windows XP platform => ${XP_PLATFORM_SUPPORT}.")
 add_definitions(-D_WIN32_WINNT=0x0501)
 else()
-add_definitions(-D_WIN32_WINNT=0x0601)
+#add_definitions(-D_WIN32_WINNT=0x0601)
 endif()
 set(QT_DEP_FILES
 "${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Core.dll"

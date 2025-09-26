@@ -26,7 +26,12 @@ void CpTableWidget::dropEvent(QDropEvent* event)
     QByteArray encoded = event->mimeData()->data("application/x-qabstractitemmodeldatalist");
     QDataStream stream(&encoded, QIODevice::ReadOnly);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QPoint pos = event->position().toPoint();
+#else
     QPoint pos = event->pos();
+#endif
+
     int startRow = rowAt(pos.y());
     int startCol = columnAt(pos.x());
     if (startCol != 1 && startCol != 2) {

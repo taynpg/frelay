@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
     QFont font("Microsoft YaHei", 9);
     a.setFont(font);
     // a.setStyle("fusion");
-    a.setStyle("windows");
+    // a.setStyle("windows");
 #endif
 
     qInstallMessageHandler(frelayGUI::ControlMsgHander);
