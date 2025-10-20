@@ -1,11 +1,15 @@
 ﻿#include <QCoreApplication>
 #include <Util.h>
 #include <iostream>
+#include <fversion.h>
 
 #include "Console.h"
 
 int main(int argc, char* argv[])
 {
+    auto ver = QString("%1 %2 on %3").arg(VERSION_NUM, VERSION_GIT_COMMIT, VERSION_GIT_BRANCH);
+    std::cout << ver.toStdString() << std::endl;
+
     if (argc < 3) {
         std::cerr << "Usage arg is ip port." << std::endl;
         return 0;

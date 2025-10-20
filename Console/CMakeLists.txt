@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network)
 
+# include_directories(${PROJECT_BINARY_DIR}/../)
 add_executable(frelayConsole Console.h Console.cpp main.cpp ../Res/ico.rc)
 target_link_libraries(frelayConsole PRIVATE Protocol Util ClientCore)
 target_link_libraries(frelayConsole PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network)

@@ -137,7 +137,8 @@
         "stack": "cpp",
         "valarray": "cpp",
         "filesystem": "cpp",
-        "qmainwindow": "cpp"
+        "qmainwindow": "cpp",
+        "qlabel": "cpp"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [
