@@ -26,6 +26,7 @@ Form/Transform.h Form/Transform.cpp Form/Transform.ui
 Control/cusTableWidget.cpp Control/cusTableWidget.h
 Control/cpTableWidget.h Control/cpTableWidget.cpp
 GuiUtil/Config.h GuiUtil/Config.cpp
+../Res/qss.qrc
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

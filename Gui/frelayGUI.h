@@ -3,7 +3,7 @@
 
 #include <ClientCore.h>
 #include <QFile>
-#include <QMainWindow>
+#include <QDialog>
 #include <QTabWidget>
 
 #include "Control/CompareControl.h"
@@ -18,7 +18,7 @@ class frelayGUI;
 }
 QT_END_NAMESPACE
 
-class frelayGUI : public QMainWindow
+class frelayGUI : public QDialog
 {
     Q_OBJECT
 

@@ -3,6 +3,7 @@
 #include <QLabel>
 #include <QScreen>
 #include <QSplitter>
+#include <QVBoxLayout>
 #include <fversion.h>
 
 #include "./ui_frelayGUI.h"
@@ -10,7 +11,7 @@
 
 static LogPrint* logPrint = nullptr;
 
-frelayGUI::frelayGUI(QWidget* parent) : QMainWindow(parent), ui(new Ui::frelayGUI)
+frelayGUI::frelayGUI(QWidget* parent) : QDialog(parent), ui(new Ui::frelayGUI)
 {
     config_ = std::make_shared<FrelayConfig>();
 
@@ -30,10 +31,10 @@ frelayGUI::frelayGUI(QWidget* parent) : QMainWindow(parent), ui(new Ui::frelayGU
 
     setWindowTitle(QString(tr("frelay %1")).arg(VERSION_NUM));
 
-    QLabel* permanent = new QLabel(this);
-    permanent->setFrameStyle(QFrame::Box | QFrame::Sunken);
-    permanent->setText(QString("%1 on %2").arg(VERSION_GIT_COMMIT, VERSION_GIT_BRANCH));
-    this->statusBar()->addPermanentWidget(permanent);
+    // QLabel* permanent = new QLabel(this);
+    // permanent->setFrameStyle(QFrame::Box | QFrame::Sunken);
+    // permanent->setText(QString("%1 on %2").arg(VERSION_GIT_COMMIT, VERSION_GIT_BRANCH));
+    //this->statusBar()->addPermanentWidget(permanent);
 }
 
 frelayGUI::~frelayGUI()
@@ -109,7 +110,10 @@ void frelayGUI::ControlLayout()
     sizes << height() * 2 / 5 << height() * 3 / 5;
     splitter->setSizes(sizes);
 
-    setCentralWidget(splitter);
+    QVBoxLayout* layout = new QVBoxLayout();
+    layout->addWidget(splitter);
+    setLayout(layout);
+    // setCentralWidget(splitter);
 }
 
 void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg)
@@ -142,5 +146,5 @@ void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
 
 void frelayGUI::closeEvent(QCloseEvent* event)
 {
-    QMainWindow::closeEvent(event);
+    QDialog::closeEvent(event);
 }

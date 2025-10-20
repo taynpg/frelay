@@ -19,12 +19,13 @@
         //"EXTER_LIB_DIR": "C:/local"
     },
     "cmake.configureSettings": {
-        "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64",
+        "CMAKE_PREFIX_PATH": "C:/Qt/Qt5.14.2/5.14.2/msvc2017_64",
         //"CMAKE_TOOLCHAIN_FILE": "${env:TT_VCPKG}"
     },
     "cmake.configureArgs": [
         "-Wno-dev",
-        "-DCOMPILE_GUI=ON"
+        "-DCOMPILE_GUI=ON",
+        "-DQT_DEFAULT_MAJOR_VERSION=5"
     ],
     "cmake.options.statusBarVisibility": "visible",
     "cmake.generator": "Ninja",
@@ -135,7 +136,8 @@
         "regex": "cpp",
         "stack": "cpp",
         "valarray": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "qmainwindow": "cpp"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [
