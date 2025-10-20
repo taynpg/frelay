@@ -76,6 +76,7 @@ signals:
     void sigFileBuffer(QSharedPointer<FrameBuffer> frame);
     void sigTransFailed(QSharedPointer<FrameBuffer> frame);
     void sigFileInfo(QSharedPointer<FrameBuffer> frame);
+    void sigOffline(QSharedPointer<FrameBuffer> frame);
 
 signals:
     void conSuccess();
@@ -131,26 +132,6 @@ class HeatBeat : public QThread
 public:
     HeatBeat(ClientCore* core, QObject* parent = nullptr);
     ~HeatBeat() override;
-
-public:
-    void Stop();
-
-protected:
-    void run() override;
-
-private:
-    bool isRun_{false};
-    ClientCore* core_{};
-};
-
-// judge send client is alive or not when downloading
-class TransBeat : public QThread
-{
-    Q_OBJECT
-
-public:
-    TransBeat(ClientCore* core, QObject* parent = nullptr);
-    ~TransBeat() override;
 
 public:
     void Stop();

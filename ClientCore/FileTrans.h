@@ -78,6 +78,7 @@ private:
     void fbtCanotSend(QSharedPointer<FrameBuffer> frame);
     void fbtCanSend(QSharedPointer<FrameBuffer> frame);
     void fbtTransFailed(QSharedPointer<FrameBuffer> frame);
+    void fbtInterrupt(QSharedPointer<FrameBuffer> frame);
 
 private:
     void RegisterSignal();

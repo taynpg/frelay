@@ -41,6 +41,8 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
         isRemote_ = true;
         ui->tableWidget->setIsRemote(true);
         fileHelper_ = remotePtr;
+        connect(cliCore_, &ClientCore::sigDisconnect, this, [this]() { ui->tableWidget->setRowCount(0); });
+        connect(cliCore_, &ClientCore::sigOffline, this, [this]() { ui->tableWidget->setRowCount(0); });
     }
 
     ui->tableWidget->setOwnIDCall([this]() { return cliCore_->GetOwnID(); });

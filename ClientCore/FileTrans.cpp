@@ -17,13 +17,11 @@ FileTrans::FileTrans(ClientCore* clientCore) : clientCore_(clientCore)
  */
 void FileTrans::ReqSendFile(const TransTask& task)
 {
+    sendTask_->state = TaskState::STATE_RUNNING;
     // TODO: check if running...
     if (sendTask_->file.isOpen()) {
-        qWarning() << QString(tr("file [%1] is running.")).arg(sendTask_->file.fileName());
-        while (sendTask_->file.isOpen()) {
-            QThread::msleep(1);
-        }
-        qWarning() << QString(tr("file [%1] is exit running.")).arg(sendTask_->file.fileName());
+        qWarning() << QString(tr("file [%1] is already opened, will auto close.")).arg(sendTask_->file.fileName());
+        sendTask_->file.close();
     }
     // start
     InfoMsg info;
@@ -146,6 +144,7 @@ void FileTrans::RegisterSignal()
     connect(clientCore_, &ClientCore::sigFileBuffer, this, [this](QSharedPointer<FrameBuffer> frame) { fbtFileBuffer(frame); });
     connect(clientCore_, &ClientCore::sigFileInfo, this, [this](QSharedPointer<FrameBuffer> frame) { fbtFileInfo(frame); });
     connect(clientCore_, &ClientCore::sigTransFailed, this, [this](QSharedPointer<FrameBuffer> frame) { fbtTransFailed(frame); });
+    connect(clientCore_, &ClientCore::sigOffline, this, [this](QSharedPointer<FrameBuffer> frame) { fbtInterrupt(frame); });
 }
 
 // The other party requests to send, prepare to receive.
@@ -315,6 +314,18 @@ void FileTrans::fbtTransFailed(QSharedPointer<FrameBuffer> frame)
         downTask_->file.close();
     }
     downTask_->state = TaskState::STATE_FAILED;
+}
+
+void FileTrans::fbtInterrupt(QSharedPointer<FrameBuffer> frame)
+{
+    if (downTask_->state == TaskState::STATE_RUNNING) {
+        qWarning() << QString(tr("trans file:%1 interrupt.")).arg(downTask_->file.fileName());
+        downTask_->state = TaskState::STATE_NONE;
+    }
+    if (sendTask_->state == TaskState::STATE_RUNNING) {
+        qWarning() << QString(tr("trans file:%1 interrupt.")).arg(sendTask_->file.fileName());
+        sendTask_->state = TaskState::STATE_NONE;
+    }
 }
 
 void FileTrans::SendFile(const QSharedPointer<DoTransTask>& task)

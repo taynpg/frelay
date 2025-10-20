@@ -67,7 +67,7 @@ void TransForm::startTask()
                     break;
                 }
                 emit sigProgress(progress);
-                QThread::msleep(10);
+                QThread::msleep(2);
             }
         } else {
             fileTrans_->ReqDownFile(task);
@@ -85,7 +85,7 @@ void TransForm::startTask()
                     break;
                 }
                 emit sigProgress(progress);
-                QThread::msleep(10);
+                QThread::msleep(2);
             }
         }
         ++curTaskNum_;

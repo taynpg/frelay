@@ -53,6 +53,11 @@ void Connecter::RunWorker(ClientCore* clientCore)
         clientCore_->SetRemoteID("");
         qInfo() << QString(tr("Disconnected."));
     });
+    connect(clientCore_, &ClientCore::sigOffline, this, [this]() {
+        ui->elbClient->clear();
+        clientCore_->SetRemoteID("");
+        RefreshClient();
+    });
 
     connect(this, &Connecter::sigDoConnect, clientCore_, &ClientCore::DoConnect);
     connect(this, &Connecter::sigDisConnect, this,
@@ -125,7 +130,7 @@ void Connecter::setState(ConnectState cs)
 
 void Connecter::Disconnect()
 {
-    qWarning() << QString(tr("Disconnected requeset..."));
+    qWarning() << QString(tr("Disconnected..."));
     emit sigDisConnect();
 }
 

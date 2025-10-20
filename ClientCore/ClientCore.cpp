@@ -176,6 +176,10 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         emit sigFileInfo(frame);
         break;
     }
+    case FBT_SER_MSG_OFFLINE: {
+        emit sigOffline(frame);
+        break;
+    }
     default:
         qCritical() << QString("unknown frame type: %1").arg(frame->type);
         break;
@@ -276,33 +280,11 @@ void HeatBeat::run()
             continue;
         }
         ClientCore::syncInvoke(core_, frame);
-    }
-}
-
-TransBeat::TransBeat(ClientCore* core, QObject* parent) : QThread(parent), core_(core)
-{
-}
-
-TransBeat::~TransBeat()
-{
-    Stop();
-}
-
-void TransBeat::run()
-{
-    isRun_ = true;
-    InfoMsg info;
-    while (isRun_) {
-        QThread::sleep(1);
-        if (!core_->IsConnect()) {
+        auto rid = core_->GetRemoteID();
+        if (rid.isEmpty()) {
             continue;
         }
-        auto frame = core_->GetBuffer(info, FBT_SER_MSG_JUDGE_OTHER_ALIVE, core_->GetRemoteID());
-        ClientCore::syncInvoke(core_, frame);
+        auto frame2 = core_->GetBuffer(info, FBT_SER_MSG_JUDGE_OTHER_ALIVE, rid);
+        ClientCore::syncInvoke(core_, frame2);
     }
-}
-
-void TransBeat::Stop()
-{
-    isRun_ = false;
 }

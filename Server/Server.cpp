@@ -8,7 +8,7 @@
 #include "InfoPack.hpp"
 
 #define NO_HEATBEAT_TIMEOUT (10)
-#define MONITOR_HEART_SPED (10 * 1000)
+#define MONITOR_HEART_SPED (10 * 2)
 
 Server::Server(QObject* parent) : QTcpServer(parent)
 {
@@ -116,7 +116,7 @@ void Server::processClientData(QSharedPointer<ClientInfo> client)
         }
         frame->fid = client->id;
         if (frame->type <= 30) {
-            frame->tid = "server";
+            //frame->tid = "server";
             replyRequest(client, frame);
         } else {
             if (!forwardData(client, frame)) {
