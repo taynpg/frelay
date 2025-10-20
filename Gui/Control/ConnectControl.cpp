@@ -51,6 +51,7 @@ void Connecter::RunWorker(ClientCore* clientCore)
         }
         ui->elbClient->clear();
         clientCore_->SetRemoteID("");
+        ui->edOwnID->setText("");
         qInfo() << QString(tr("Disconnected."));
     });
     connect(clientCore_, &ClientCore::sigOffline, this, [this]() {
@@ -78,6 +79,9 @@ void Connecter::HandleClients(const InfoClientVec& clients)
     model_->removeRows(0, ui->listView->model()->rowCount());
     for (const auto& client : clients.vec) {
         auto* item = new QStandardItem(client.id);
+        if (client.id == GlobalData::Ins()->GetLocalID()) {
+            item->setForeground(QColor("red"));
+        }
         model_->appendRow(item);
     }
 }
@@ -117,6 +121,7 @@ void Connecter::setState(ConnectState cs)
         ui->btnConnect->setEnabled(false);
         ui->btnDisconnect->setEnabled(true);
         RefreshClient();
+        ui->edOwnID->setText(GlobalData::Ins()->GetLocalID());
         connect(heatBeat_, &HeatBeat::finished, heatBeat_, &QObject::deleteLater);
         break;
     case CS_DISCONNECT:
@@ -165,6 +170,10 @@ std::string Connecter::getCurClient()
 
 void Connecter::InitControl()
 {
+    ui->edOwnID->setReadOnly(true);
+    ui->label->setStyleSheet("color: blue;");
+    ui->edOwnID->setStyleSheet("color: blue;");
+
     ui->btnDisconnect->setEnabled(false);
     ui->comboBox->setEditable(true);
 
