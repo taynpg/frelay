@@ -85,7 +85,6 @@ void FileManager::InitControl()
 
     ui->tableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    connect(ui->comboBox->lineEdit(), &QLineEdit::returnPressed, this, &FileManager::evtFile);
     connect(ui->btnHome, &QPushButton::clicked, this, &FileManager::evtHome);
     connect(ui->btnVisit, &QPushButton::clicked, this, &FileManager::evtFile);
     connect(ui->tableWidget, &QTableWidget::cellDoubleClicked, this, &FileManager::doubleClick);
@@ -97,7 +96,9 @@ void FileManager::InitControl()
             [this](const QPoint& pos) { menu_->exec(QCursor::pos()); });
 
     connect(ui->tableWidget->horizontalHeader(), &QHeaderView::sectionClicked, this, &FileManager::HeaderClicked);
-    ui->btnVisit->setDefault(true);
+
+    auto* line = ui->comboBox->lineEdit();
+    connect(line, &QLineEdit::returnPressed, this, [this]() { ui->btnVisit->click(); });
 }
 
 void FileManager::InitMenu()
