@@ -97,6 +97,7 @@ void FileManager::InitControl()
             [this](const QPoint& pos) { menu_->exec(QCursor::pos()); });
 
     connect(ui->tableWidget->horizontalHeader(), &QHeaderView::sectionClicked, this, &FileManager::HeaderClicked);
+    ui->btnVisit->setDefault(true);
 }
 
 void FileManager::InitMenu()
