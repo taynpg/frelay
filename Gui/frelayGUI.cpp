@@ -30,6 +30,7 @@ frelayGUI::frelayGUI(QWidget* parent) : QDialog(parent), ui(new Ui::frelayGUI)
     resize(width, height);
 
     setWindowTitle(QString(tr("frelay %1")).arg(VERSION_NUM));
+    setWindowFlags(windowFlags() | Qt::WindowMinimizeButtonHint);
 
     // QLabel* permanent = new QLabel(this);
     // permanent->setFrameStyle(QFrame::Box | QFrame::Sunken);
