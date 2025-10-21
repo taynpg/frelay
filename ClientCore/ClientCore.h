@@ -77,6 +77,7 @@ signals:
     void sigTransFailed(QSharedPointer<FrameBuffer> frame);
     void sigFileInfo(QSharedPointer<FrameBuffer> frame);
     void sigOffline(QSharedPointer<FrameBuffer> frame);
+    void sigYourId(QSharedPointer<FrameBuffer> frame);
 
 signals:
     void conSuccess();

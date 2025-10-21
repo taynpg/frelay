@@ -33,6 +33,9 @@ void Connecter::RunWorker(ClientCore* clientCore)
         qInfo() << QString(tr("Connected."));
     });
 
+    connect(clientCore_, &ClientCore::sigYourId, this,
+            [this](QSharedPointer<FrameBuffer> frame) { ui->edOwnID->setText(frame->data); });
+
     connect(clientCore_, &ClientCore::conFailed, this, [this]() {
         setState(ConnectState::CS_DISCONNECT);
         qInfo() << QString(tr("Connect failed."));
@@ -121,7 +124,6 @@ void Connecter::setState(ConnectState cs)
         ui->btnConnect->setEnabled(false);
         ui->btnDisconnect->setEnabled(true);
         RefreshClient();
-        ui->edOwnID->setText(GlobalData::Ins()->GetLocalID());
         connect(heatBeat_, &HeatBeat::finished, heatBeat_, &QObject::deleteLater);
         break;
     case CS_DISCONNECT:

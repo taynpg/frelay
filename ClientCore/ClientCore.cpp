@@ -94,6 +94,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         ownID_ = frame->data;
         GlobalData::Ins()->SetLocalID(ownID_);
         qInfo() << QString(tr("own id: %1")).arg(ownID_);
+        emit sigYourId(frame);
         break;
     }
     case FrameBufferType::FBT_CLI_ANS_DIRFILE: {
