@@ -169,6 +169,7 @@ void Server::replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<Fram
             }
         }
         if (cl) {
+            //qDebug() << "Client" << cl->id << "heartbeat received";
             cl->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
         }
         break;
@@ -238,7 +239,7 @@ void Server::monitorClients()
     {
         QReadLocker locker(&rwLock_);
         for (auto& c : clients_) {
-            if (now - c->connectTime > NO_HEATBEAT_TIMEOUT) {
+            if ((now - c->connectTime) > NO_HEATBEAT_TIMEOUT) {
                 prepareRemove.push_back(c->socket);
             }
         }
