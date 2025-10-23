@@ -1,7 +1,8 @@
 ﻿#include <QCoreApplication>
 #include <Util.h>
-#include <iostream>
 #include <fversion.h>
+#include <iostream>
+#include <memory>
 
 #include "Console.h"
 
@@ -25,11 +26,11 @@ int main(int argc, char* argv[])
     Util::InitLogger("frelayConsole.log", "frelayConsole");
     qInstallMessageHandler(Util::ConsoleMsgHander);
 
-    auto* core = new ClientCore();
-    auto* helper = new ConsoleHelper();
+    auto core = std::make_shared<ClientCore>();
+    auto helper = std::make_shared<ConsoleHelper>();
 
     helper->SetIpPort(argv[1], QString("%1").arg(argv[2]).toInt());
-    helper->RunWorker(core);
+    helper->RunWorker(core.get());
     helper->Connect();
 
     return app.exec();
