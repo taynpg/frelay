@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QMutex>
 #include <QStandardPaths>
+#include <fversion.h>
 #include <iostream>
 #include <spdlog/fmt/bundled/color.h>
 #include <spdlog/fmt/fmt.h>
@@ -116,6 +117,12 @@ void Util::ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, c
         logger->warn("Unknown QtMsgType type.");
         break;
     }
+}
+
+QString Util::GetVersion()
+{
+    auto ver = QString("frelay %1 %2").arg(VERSION_NUM, VERSION_DEV);
+    return ver;
 }
 
 QString DirFileHelper::GetErr() const

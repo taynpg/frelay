@@ -8,12 +8,12 @@
 
 int main(int argc, char* argv[])
 {
-    auto ver = QString("%1 %2 on %3").arg(VERSION_NUM, VERSION_GIT_COMMIT, VERSION_GIT_BRANCH);
-    std::cout << ver.toStdString() << std::endl;
+    auto ver = Util::GetVersion();
+    std::cout << "==============> " << ver.toStdString() << std::endl;
 
     int port = 9009;
     if (argc < 2) {
-        qDebug() << "Usage: frelayServer port.";
+        qDebug() << "==============> Usage: frelayServer port.";
     } else {
         port = atoi(argv[1]);
     }

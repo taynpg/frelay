@@ -138,7 +138,12 @@
         "valarray": "cpp",
         "filesystem": "cpp",
         "qmainwindow": "cpp",
-        "qlabel": "cpp"
+        "qlabel": "cpp",
+        "*.in": "cpp",
+        "fstream": "cpp",
+        "xmemory0": "cpp",
+        "xstddef": "cpp",
+        "xtree": "cpp"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [

@@ -48,6 +48,7 @@ public:
     static QString Join(const QString& path, const QString& name);
     static QString GetCurConfigPath(const QString& sub);
     static void ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg);
+    static QString GetVersion();
 };
 
 class DirFileHelper : public QObject

@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PROJECT_URL "https://github.com/taynpg/frelay")
+set(DEVELOP_MARK "dev")
+#set(DEVELOP_MARK "release")
 
 if(NOT DEFINED QT_DEFAULT_MAJOR_VERSION)
 set(QT_DEFAULT_MAJOR_VERSION 6)
