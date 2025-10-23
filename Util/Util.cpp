@@ -121,7 +121,7 @@ void Util::ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, c
 
 QString Util::GetVersion()
 {
-    auto ver = QString("frelay %1 %2").arg(VERSION_NUM, VERSION_DEV);
+    auto ver = QString("frelay %1 %2 %3").arg(VERSION_NUM, VERSION_DEV, VERSION_GIT_COMMIT);
     return ver;
 }
 

@@ -29,10 +29,10 @@ int main(int argc, char* argv[])
 
     frelayGUI w;
 
-    QFile file(":/qss/flatgray.css");
-    if (file.open(QFile::ReadOnly)) {
-        a.setStyleSheet(file.readAll());
-    }
+    // QFile file(":/qss/flatgray.css");
+    // if (file.open(QFile::ReadOnly)) {
+    //     a.setStyleSheet(file.readAll());
+    // }
 
     QObject::connect(&a, &SingleApplication::instanceStarted, &w, [&w]() {
         w.showNormal();
