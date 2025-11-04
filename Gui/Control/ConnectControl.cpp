@@ -30,7 +30,7 @@ void Connecter::RunWorker(ClientCore* clientCore)
 
     connect(clientCore_, &ClientCore::conSuccess, this, [this]() {
         setState(ConnectState::CS_CONNECTED);
-        qInfo() << QString(tr("Connected."));
+        qInfo() << QString(tr("已连接。"));
     });
 
     connect(clientCore_, &ClientCore::sigYourId, this,
@@ -38,12 +38,12 @@ void Connecter::RunWorker(ClientCore* clientCore)
 
     connect(clientCore_, &ClientCore::conFailed, this, [this]() {
         setState(ConnectState::CS_DISCONNECT);
-        qInfo() << QString(tr("Connect failed."));
+        qInfo() << QString(tr("连接失败。"));
     });
 
     connect(clientCore_, &ClientCore::connecting, this, [this]() {
         setState(ConnectState::CS_CONNECTING);
-        qInfo() << QString(tr("Connecting..."));
+        qInfo() << QString(tr("连接中......"));
     });
 
     connect(clientCore_, &ClientCore::sigDisconnect, this, [this]() {
@@ -55,7 +55,7 @@ void Connecter::RunWorker(ClientCore* clientCore)
         ui->elbClient->clear();
         clientCore_->SetRemoteID("");
         ui->edOwnID->setText("");
-        qInfo() << QString(tr("Disconnected."));
+        qInfo() << QString(tr("已断开。"));
     });
     connect(clientCore_, &ClientCore::sigOffline, this, [this]() {
         ui->elbClient->clear();
@@ -152,7 +152,7 @@ void Connecter::RefreshClient()
         qCritical() << QString(tr("请求查询客户端列表失败。"));
         return;
     }
-    qInfo() << QString(tr("ask client list..."));
+    qInfo() << QString(tr("刷新在线客户端列表。"));
 }
 
 void Connecter::ShowContextMenu(const QPoint& pos)

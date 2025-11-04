@@ -104,8 +104,8 @@ void FileManager::InitControl()
 void FileManager::InitMenu()
 {
     menu_ = new QMenu(ui->tableWidget);
-    menu_->addAction(tr("Filter"), this, &FileManager::ShowFilterForm);
-    menu_->addAction(tr("FullPath"), this, &FileManager::CopyFullPath);
+    menu_->addAction(tr("过滤器"), this, &FileManager::ShowFilterForm);
+    menu_->addAction(tr("复制文件路径"), this, &FileManager::CopyFullPath);
     menu_->addSeparator();
 }
 
@@ -379,7 +379,7 @@ void FileManager::GenFilter()
 void FileManager::ShowFilterForm()
 {
     QDialog dialog(this);
-    dialog.setWindowTitle("Select file type");
+    dialog.setWindowTitle("筛选文件类型");
     dialog.resize(400, 300);
     QListWidget listWidget(&dialog);
 
@@ -457,7 +457,7 @@ void FileManager::evtHome()
     auto r = fileHelper_->GetHome();
     auto curPath = ui->comboBox->currentText();
     SetRoot(curPath);
-    qDebug() << QString(tr("%1 获取家目录结果：%2").arg(__FUNCTION__).arg(r));
+    qDebug() << QString(tr("%1 获取用户目录结果：%2").arg(__FUNCTION__).arg(r));
 }
 
 void FileManager::evtFile()

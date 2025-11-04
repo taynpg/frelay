@@ -37,7 +37,7 @@ void ClientCore::DoConnect(const QString& ip, quint16 port)
 bool ClientCore::Connect(const QString& ip, quint16 port)
 {
     if (connected_) {
-        qInfo() << QString(tr("already connected."));
+        qInfo() << QString(tr("已连接。"));
         return true;
     }
     socket_->connectToHost(ip, port);
@@ -78,7 +78,7 @@ void ClientCore::onReadyRead()
 void ClientCore::onDisconnected()
 {
     connected_ = false;
-    qCritical() << QString("You [%1] disconnected...").arg(ownID_);
+    qCritical() << QString("你 [%1] 断开了。").arg(ownID_);
     emit sigDisconnect();
 }
 
@@ -126,12 +126,12 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     }
     case FrameBufferType::FBT_CLI_ANS_HOME: {
         InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-        qInfo() << QString(tr("home: %1")).arg(info.msg);
+        qInfo() << QString(tr("用户目录：%1")).arg(info.msg);
         emit sigPath(info.msg);
         break;
     }
     case FrameBufferType::FBT_SER_MSG_FORWARD_FAILED: {
-        qCritical() << QString(tr("*** forward failed. fid:%1, tid:%2, type:%3"))
+        qCritical() << QString(tr("转发数据失败，fid:%1, tid:%2, type:%3"))
                            .arg(frame->fid)
                            .arg(frame->tid)
                            .arg(static_cast<uint32_t>(frame->type));

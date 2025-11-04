@@ -40,7 +40,7 @@
      <item>
       <widget class="QLabel" name="elbClient">
        <property name="text">
-        <string>None</string>
+        <string>未选择远端客户端</string>
        </property>
       </widget>
      </item>
