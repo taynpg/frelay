@@ -106,7 +106,7 @@ void Connecter::Connect()
     QString ip;
     QString port;
     if (!parseIpPort(ui->comboBox->currentText(), ip, port)) {
-        FTCommon::msg(this, QString(tr("IP or port is invalid.")));
+        FTCommon::msg(this, QString(tr("IP或者端口不合法。")));
         return;
     }
     emit sigDoConnect(ip, port.toInt());
@@ -137,7 +137,7 @@ void Connecter::setState(ConnectState cs)
 
 void Connecter::Disconnect()
 {
-    qWarning() << QString(tr("Disconnected..."));
+    qWarning() << QString(tr("断开连接。"));
     emit sigDisConnect();
 }
 
@@ -149,7 +149,7 @@ void Connecter::RefreshClient()
     frame->type = FBT_SER_MSG_ASKCLIENTS;
     auto sendRet = ClientCore::syncInvoke(clientCore_, frame);
     if (!sendRet) {
-        qCritical() << QString(tr("send ask client list failed."));
+        qCritical() << QString(tr("请求查询客户端列表失败。"));
         return;
     }
     qInfo() << QString(tr("ask client list..."));

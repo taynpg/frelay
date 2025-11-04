@@ -22,7 +22,7 @@ Compare::~Compare()
 void Compare::InitMenu()
 {
     menu_ = new QMenu(ui->tableWidget);
-    menu_->addAction(tr("Try2Local"), this, [this]() {
+    menu_->addAction(tr("尝试访问本地路径"), this, [this]() {
         auto selected = ui->tableWidget->selectedItems();
         if (selected.size() != 3) {
             return;
@@ -31,7 +31,7 @@ void Compare::InitMenu()
         auto path = item->text();
         emit sigTryVisit(true, path);
     });
-    menu_->addAction(tr("Try2Remote"), this, [this]() {
+    menu_->addAction(tr("尝试访问远程路径"), this, [this]() {
         auto selected = ui->tableWidget->selectedItems();
         if (selected.size() != 3) {
             return;
@@ -70,7 +70,7 @@ void Compare::InitControl()
 void Compare::InitTabWidget()
 {
     QStringList headers;
-    headers << tr("FileName") << tr("LocalDir") << tr("RemoteDir");
+    headers << tr("文件") << tr("本地目录") << tr("远端目录");
     ui->tableWidget->setColumnCount(headers.size());
     ui->tableWidget->setHorizontalHeaderLabels(headers);
     ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -101,13 +101,13 @@ void Compare::Save()
 {
     auto titleKey = ui->comboBox->currentText().trimmed();
     if (titleKey.isEmpty()) {
-        FTCommon::msg(this, tr("Please select or input a title."));
+        FTCommon::msg(this, tr("请输入标题"));
         return;
     }
 
     QFile file("CompareData.xml");
     if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
-        FTCommon::msg(this, tr("Failed to open data file."));
+        FTCommon::msg(this, tr("打开数据文件失败。"));
         return;
     }
 
@@ -179,20 +179,20 @@ void Compare::Save()
         ui->comboBox->addItem(titleKey);
     }
 
-    FTCommon::msg(this, tr("Data saved successfully."));
+    FTCommon::msg(this, tr("数据保存成功。"));
 }
 
 void Compare::Load()
 {
     auto titleKey = ui->comboBox->currentText().trimmed();
     if (titleKey.isEmpty()) {
-        FTCommon::msg(this, tr("Please select or input a title."));
+        FTCommon::msg(this, tr("请选择或输入标题。"));
         return;
     }
 
     QFile file("CompareData.xml");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        FTCommon::msg(this, tr("Failed to open data file."));
+        FTCommon::msg(this, tr("打开数据文件失败。"));
         return;
     }
 
@@ -237,7 +237,7 @@ void Compare::Load()
 
     file.close();
     if (!found) {
-        FTCommon::msg(this, tr("No data found for the selected title."));
+        FTCommon::msg(this, tr("没有找到标题对应的数据。"));
     } else {
         // FTCommon::msg(this, tr("Data loaded successfully."));
     }
@@ -319,7 +319,7 @@ void Compare::TransToRight()
 
 void Compare::deleteSelectedRows()
 {
-    auto r = FTCommon::affirm(this, tr("confirm"), tr("delete selected rows?"));
+    auto r = FTCommon::affirm(this, tr("确认"), tr("删除选中的行？"));
     if (!r) {
         return;
     }

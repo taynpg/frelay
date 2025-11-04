@@ -19,7 +19,7 @@
      <item>
       <widget class="QLabel" name="lbIP">
        <property name="text">
-        <string>Server:</string>
+        <string>服务器：</string>
        </property>
       </widget>
      </item>
@@ -67,7 +67,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>OwnID：</string>
+        <string>本机ID：</string>
        </property>
       </widget>
      </item>
@@ -84,7 +84,7 @@
         <enum>Qt::FocusPolicy::NoFocus</enum>
        </property>
        <property name="text">
-        <string>Disconnect</string>
+        <string>断开</string>
        </property>
       </widget>
      </item>
@@ -104,7 +104,7 @@
      <item>
       <widget class="QPushButton" name="btnRefresh">
        <property name="text">
-        <string>Refresh</string>
+        <string>刷新</string>
        </property>
       </widget>
      </item>
@@ -124,7 +124,7 @@
      <item>
       <widget class="QPushButton" name="btnConnect">
        <property name="text">
-        <string>Connect</string>
+        <string>连接</string>
        </property>
       </widget>
      </item>

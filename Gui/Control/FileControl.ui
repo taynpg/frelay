@@ -36,21 +36,21 @@
      <item>
       <widget class="QPushButton" name="btnVisit">
        <property name="text">
-        <string>Go</string>
+        <string>访问</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="btnHome">
        <property name="text">
-        <string>Home</string>
+        <string>家目录</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="btnUp">
        <property name="text">
-        <string>Up</string>
+        <string>上一级</string>
        </property>
       </widget>
      </item>

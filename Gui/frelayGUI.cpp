@@ -60,8 +60,8 @@ void frelayGUI::InitControl()
     localFile_ = new FileManager(this);
     remoteFile_ = new FileManager(this);
 
-    localFile_->SetModeStr(tr("Local:"), 0, clientCore_);
-    remoteFile_->SetModeStr(tr("Remote:"), 1, clientCore_);
+    localFile_->SetModeStr(tr("本地："), 0, clientCore_);
+    remoteFile_->SetModeStr(tr("远端："), 1, clientCore_);
 
     tabWidget_ = new QTabWidget(this);
 
@@ -98,8 +98,8 @@ void frelayGUI::ControlLayout()
 
     sTop->addWidget(tabWidget_);
     sTop->addWidget(connecter_);
-    tabWidget_->addTab(logPrint, tr("Log"));
-    tabWidget_->addTab(compare_, tr("Compare"));
+    tabWidget_->addTab(logPrint, tr("日志"));
+    tabWidget_->addTab(compare_, tr("文件对照"));
 
     sFile->addWidget(localFile_);
     sFile->addWidget(remoteFile_);
@@ -138,7 +138,7 @@ void frelayGUI::ControlMsgHander(QtMsgType type, const QMessageLogContext& conte
 void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
 {
     if (!clientCore_->IsConnect()) {
-        qCritical() << QString(tr("Not connect to server."));
+        qCritical() << QString(tr("未连接到服务器。。。"));
         return;
     }
     transform_->SetTasks(tasks);

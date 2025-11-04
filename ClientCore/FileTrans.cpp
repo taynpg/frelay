@@ -356,7 +356,7 @@ void SendThread::run()
 
         auto br = task_->file.read(frame->data.data(), CHUNK_BUF_SIZE);
         if (br == -1) {
-            qCritical() << QString(tr("read file failed: %1")).arg(task_->file.errorString());
+            qCritical() << QString(tr("读取失败： %1")).arg(task_->file.errorString());
             isSuccess_ = false;
             break;
         }
@@ -364,7 +364,7 @@ void SendThread::run()
         invokeSuccess = QMetaObject::invokeMethod(cliCore_, "SendFrame", Qt::BlockingQueuedConnection,
                                                   Q_RETURN_ARG(bool, isSuccess_), Q_ARG(QSharedPointer<FrameBuffer>, frame));
         if (!invokeSuccess || !isSuccess_) {
-            qCritical() << QString(tr("send to %1 file failed.")).arg(task_->task.remoteId);
+            qCritical() << QString(tr("向 %1 发送失败.")).arg(task_->task.remoteId);
             break;
         }
         task_->tranSize += frame->data.size();

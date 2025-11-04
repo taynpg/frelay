@@ -60,7 +60,7 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
 void FileManager::InitControl()
 {
     QStringList headers;
-    headers << tr("") << tr("FileName") << tr("ModifyTime") << tr("Type") << tr("Size");
+    headers << tr("") << tr("文件名称") << tr("最后修改时间") << tr("类型") << tr("大小");
     ui->tableWidget->setColumnCount(headers.size());
     ui->tableWidget->setHorizontalHeaderLabels(headers);
     ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -457,7 +457,7 @@ void FileManager::evtHome()
     auto r = fileHelper_->GetHome();
     auto curPath = ui->comboBox->currentText();
     SetRoot(curPath);
-    qDebug() << QString(tr("%1 get home ret:%2").arg(__FUNCTION__).arg(r));
+    qDebug() << QString(tr("%1 获取家目录结果：%2").arg(__FUNCTION__).arg(r));
 }
 
 void FileManager::evtFile()
@@ -465,7 +465,7 @@ void FileManager::evtFile()
     auto curPath = ui->comboBox->currentText();
     auto r = fileHelper_->GetDirFile(curPath);
     SetRoot(curPath);
-    qDebug() << QString(tr("%1 get files ret:%2").arg(__FUNCTION__).arg(r));
+    qDebug() << QString(tr("%1 获取文件结果：%2").arg(__FUNCTION__).arg(r));
 }
 
 void FileManager::evtUp()

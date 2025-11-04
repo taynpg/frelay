@@ -1,13 +1,14 @@
 ﻿# frelay
 
-A tool that uses a relay server to upload and download files from remote clients.
+一个通过中继服务器在多个客户端之间相互传输文件的工具。
 
-## Features
+## 功能特点
 
-1. Minimal configuration—simply start a server, connect to it, and begin transferring files.
-2. If you frequently transfer the same files repeatedly, frelay offers a local-remote file mapping feature for one-click transfers.
+1. 极简配置——只需启动服务器，连接至服务器，即可开始传输文件。
+2. 若需频繁传输相同文件，frelay 提供本地-远程文件映射功能，支持一键传输。
 
-## Disclaimer And Warning
-This tool is solely designed for simple file transmission between clients via a relay server. It does not include any security validation logic to prevent data attacks or similar threats. It is primarily intended for temporary, non-sensitive file transfers. Please close the software or disconnect from the relay server when not in use.
+## 免责声明与警告
 
-The software may contain unexpected bugs that could corrupt or lose your files. Please ensure proper backups or use it only for non-critical file transfers.
+本工具仅设计用于通过中继服务器在客户端之间进行简单的文件传输，未包含任何可防范数据攻击或类似威胁的安全验证逻辑，主要适用于临时性、非敏感的文件传输场景。请在不使用时及时关闭软件或断开与中继服务器的连接。
+
+本软件可能存在意外错误，可能导致文件损坏或丢失。请务必做好文件备份，或仅将其用于非关键文件的传输。

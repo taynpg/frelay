@@ -42,10 +42,10 @@ bool ClientCore::Connect(const QString& ip, quint16 port)
     }
     socket_->connectToHost(ip, port);
     if (!socket_->waitForConnected(3000)) {
-        qCritical() << QString(tr("%1:%2 connect failed...")).arg(ip).arg(port);
+        qCritical() << QString(tr("%1:%2 连接失败。")).arg(ip).arg(port);
         return false;
     }
-    qInfo() << QString(tr("%1:%2 connected success.")).arg(ip).arg(port);
+    qInfo() << QString(tr("%1:%2 连接成功。")).arg(ip).arg(port);
     connected_ = true;
     return true;
 }
@@ -93,7 +93,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     case FrameBufferType::FBT_SER_MSG_YOURID: {
         ownID_ = frame->data;
         GlobalData::Ins()->SetLocalID(ownID_);
-        qInfo() << QString(tr("own id: %1")).arg(ownID_);
+        qInfo() << QString(tr("本机ID: %1")).arg(ownID_);
         emit sigYourId(frame);
         break;
     }
@@ -106,11 +106,11 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         DirFileInfoVec vec;
         InfoMsg info = infoUnpack<InfoMsg>(frame->data);
         if (!localFile_.GetDirFile(info.msg, vec)) {
-            qWarning() << QString(tr("get dir file failed use %1")).arg(info.msg);
+            qWarning() << QString(tr("访问文件失败： %1")).arg(info.msg);
             return;
         }
         if (!Send<DirFileInfoVec>(vec, FBT_CLI_ANS_DIRFILE, frame->fid)) {
-            qCritical() << QString(tr("send dir file result failed."));
+            qCritical() << QString(tr("发送文件列表结果失败。"));
             return;
         }
         break;
@@ -182,7 +182,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         break;
     }
     default:
-        qCritical() << QString("unknown frame type: %1").arg(frame->type);
+        qCritical() << QString("未知的帧类型： %1").arg(frame->type);
         break;
     }
 }
@@ -202,7 +202,7 @@ bool ClientCore::Send(QSharedPointer<FrameBuffer> frame)
 bool ClientCore::Send(const char* data, qint64 len)
 {
     if (socket_->state() != QAbstractSocket::ConnectedState) {
-        qCritical() << QString("client %1 not connected...").arg(remoteID_);
+        qCritical() << QString("客户端 %1 未连接...").arg(remoteID_);
         return false;
     }
 
@@ -212,7 +212,7 @@ bool ClientCore::Send(const char* data, qint64 len)
         bytesWritten = socket_->write(data, len);
     }
     if (bytesWritten == -1 || !socket_->waitForBytesWritten(5000)) {
-        qCritical() << QString("Send data to server failed. %1").arg(socket_->errorString());
+        qCritical() << QString("向服务器发送数据失败： %1").arg(socket_->errorString());
         return false;
     }
     return true;
