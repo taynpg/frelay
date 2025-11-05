@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_definitions(-DUSE_QT_GUI)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Concurrent)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Concurrent)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 set(PROJECT_SOURCES main.cpp
@@ -26,7 +26,7 @@ Form/Transform.h Form/Transform.cpp Form/Transform.ui
 Control/cusTableWidget.cpp Control/cusTableWidget.h
 Control/cpTableWidget.h Control/cpTableWidget.cpp
 GuiUtil/Config.h GuiUtil/Config.cpp
-../Res/qss.qrc
+../Res/qss.qrc Form/Loading.h Form/Loading.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -55,8 +55,9 @@ endif()
 target_link_libraries(frelayGUI PRIVATE 
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Network
+    Qt${QT_VERSION_MAJOR}::Concurrent
     ClientCore Protocol 
-    Util
+    Util 
     Struct SingleApplication::SingleApplication
 )
 

@@ -143,7 +143,11 @@
         "fstream": "cpp",
         "xmemory0": "cpp",
         "xstddef": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "qxmlstreamwriter": "cpp",
+        "qgraphicsdropshadoweffect": "cpp",
+        "qpushbutton": "cpp",
+        "qpainter": "cpp"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [

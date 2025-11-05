@@ -36,8 +36,15 @@ enum FrameBufferType : uint16_t {
     FBT_CLI_FILE_BUFFER,
     FBT_CLI_TRANS_DONE,
     FBT_CLI_TRANS_FAILED,
-    FBT_CLI_FILE_INFO
+    FBT_CLI_FILE_INFO,
+    FBT_MSGINFO_ASK,
+    FBT_MSGINFO_ANSWER
 };
+
+// 字符串标识
+#define STRMSG_CHECK_FILE_EXIST "checkFileExist"
+#define STRMSG_FILE_EXIST "fileExist"
+#define STRMSG_FILE_NOT_EXIST "fileNotExist"
 
 struct FrameBuffer {
     QByteArray data;

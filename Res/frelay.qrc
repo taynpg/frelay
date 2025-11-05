@@ -2,5 +2,6 @@
     <qresource prefix="/ico">
         <file>main.ico</file>
         <file>server.ico</file>
+        <file>loading.gif</file>
     </qresource>
 </RCC>

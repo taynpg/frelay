@@ -6,6 +6,7 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
+#include "Form/Loading.h"
 #include "GuiUtil/Public.h"
 #include "ui_CompareControl.h"
 
@@ -80,6 +81,13 @@ void Compare::InitControl()
     connect(ui->btnLoad, &QPushButton::clicked, this, &Compare::Load);
     connect(ui->btnLeft, &QPushButton::clicked, this, &Compare::TransToLeft);
     connect(ui->btnRight, &QPushButton::clicked, this, &Compare::TransToRight);
+
+    // 测试代码
+    connect(ui->btnReplace, &QPushButton::clicked, this, [this]() {
+        // auto* loading = new LoadingDialog(this);
+        // loading->exec();
+    });
+
     LoadTitles();
 }
 

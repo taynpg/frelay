@@ -181,6 +181,14 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         emit sigOffline(frame);
         break;
     }
+    case FBT_MSGINFO_ASK: {
+        emit sigMsgAsk(frame);
+        break;
+    }
+    case FBT_MSGINFO_ANSWER: {
+        emit sigMsgAnswer(frame);
+        break;
+    }
     default:
         qCritical() << QString("未知的帧类型： %1").arg(frame->type);
         break;

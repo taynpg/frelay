@@ -78,6 +78,8 @@ signals:
     void sigFileInfo(QSharedPointer<FrameBuffer> frame);
     void sigOffline(QSharedPointer<FrameBuffer> frame);
     void sigYourId(QSharedPointer<FrameBuffer> frame);
+    void sigMsgAsk(QSharedPointer<FrameBuffer> frame);
+    void sigMsgAnswer(QSharedPointer<FrameBuffer> frame);
 
 signals:
     void conSuccess();

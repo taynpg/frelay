@@ -333,7 +333,6 @@ void FileTrans::SendFile(const QSharedPointer<DoTransTask>& task)
     auto* sendThread = new SendThread(clientCore_);
     sendThread->setTask(task);
     QMutexLocker locker(&sthMut_);
-    // TODO: check if already exist
     upTasks_[task->task.localId] = sendThread;
     sendThread->run();
 }
