@@ -42,9 +42,8 @@ enum FrameBufferType : uint16_t {
 };
 
 // 字符串标识
-#define STRMSG_CHECK_FILE_EXIST "checkFileExist"
-#define STRMSG_FILE_EXIST "fileExist"
-#define STRMSG_FILE_NOT_EXIST "fileNotExist"
+#define STRMSG_REQUEST_CHECK_FILE_EXIST "requestCheckFileExist"
+#define STRMSG_ANSWER_CHECK_FILE_EXIST "answerCheckFileExist"
 
 struct FrameBuffer {
     QByteArray data;

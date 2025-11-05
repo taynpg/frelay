@@ -106,8 +106,11 @@ void LoadingDialog::moveToCenter(QWidget* pParent)
  */
 void LoadingDialog::cancelBtnClicked()
 {
-    emit cancelWaiting();
-    this->done(USER_CANCEL);
+    if (isShow_) {
+        isShow_ = false;
+        emit cancelWaiting();
+        this->done(USER_CANCEL);
+    }
 }
 
 /**
@@ -127,6 +130,12 @@ void LoadingDialog::paintEvent(QPaintEvent* event)
     rect.setHeight(rect.height() - 9);
     painter.drawRoundedRect(rect, 8, 8);
     QWidget::paintEvent(event);
+}
+
+int LoadingDialog::exec()
+{
+    isShow_ = true;
+    return QDialog::exec();
 }
 
 LoadingDialog::~LoadingDialog()

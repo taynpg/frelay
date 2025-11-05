@@ -1,5 +1,6 @@
 ﻿#include "frelayGUI.h"
 
+#include <Form/Loading.h>
 #include <QLabel>
 #include <QScreen>
 #include <QSplitter>
@@ -35,7 +36,7 @@ frelayGUI::frelayGUI(QWidget* parent) : QDialog(parent), ui(new Ui::frelayGUI)
     // QLabel* permanent = new QLabel(this);
     // permanent->setFrameStyle(QFrame::Box | QFrame::Sunken);
     // permanent->setText(QString("%1 on %2").arg(VERSION_GIT_COMMIT, VERSION_GIT_BRANCH));
-    //this->statusBar()->addPermanentWidget(permanent);
+    // this->statusBar()->addPermanentWidget(permanent);
 }
 
 frelayGUI::~frelayGUI()
@@ -142,6 +143,22 @@ void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
         return;
     }
     transform_->SetTasks(tasks);
+
+    // 检查文件
+    CheckCondition checkThread(this);
+    checkThread.SetTasks(tasks);
+    checkThread.SetClientCore(clientCore_);
+
+    LoadingDialog checking(this);
+    checking.setTipsText("正在检查文件...");
+
+    connect(&checkThread, &CheckCondition::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+    connect(&checking, &LoadingDialog::cancelWaiting, &checkThread, &CheckCondition::interrupCheck);
+    connect(clientCore_, &ClientCore::sigMsgAnswer, &checkThread, &CheckCondition::recvFrame);
+
+    checkThread.start();
+    checking.exec();
+
     transform_->exec();
 }
 

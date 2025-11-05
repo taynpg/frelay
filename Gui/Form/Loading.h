@@ -23,16 +23,19 @@ public:
     // 移动到指定窗口中间显示
     void moveToCenter(QWidget* pParent);
 
+public:
+    int exec() override;
+
 protected:
     void paintEvent(QPaintEvent* event) override;
 
 private:
     void initUi();
-    
+
 Q_SIGNALS:
     void cancelWaiting();
 
-private slots:
+public slots:
     void cancelBtnClicked();
 
 private:
@@ -40,6 +43,7 @@ private:
     QLabel* m_pMovieLabel;
     QMovie* m_pLoadingMovie;
     QLabel* m_pTipsLabel;
+    bool isShow_{};
     QPushButton* m_pCancelBtn;
 };
 #endif   // LOADINGDIALOG_H

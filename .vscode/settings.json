@@ -147,7 +147,8 @@
         "qxmlstreamwriter": "cpp",
         "qgraphicsdropshadoweffect": "cpp",
         "qpushbutton": "cpp",
-        "qpainter": "cpp"
+        "qpainter": "cpp",
+        "qdialog": "cpp"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [

@@ -125,6 +125,16 @@ QString Util::GetVersion()
     return ver;
 }
 
+bool Util::FileExist(const QString& path)
+{
+    return QFile::exists(path);
+}
+
+bool Util::DirExist(const QString& path)
+{
+    return QDir(path).exists();
+}
+
 QString DirFileHelper::GetErr() const
 {
     return QString();

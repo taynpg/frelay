@@ -89,6 +89,7 @@ signals:
 private:
     void onReadyRead();
     void onDisconnected();
+    void handleAsk(QSharedPointer<FrameBuffer> frame);
 
 private:
     void UseFrame(QSharedPointer<FrameBuffer> frame);

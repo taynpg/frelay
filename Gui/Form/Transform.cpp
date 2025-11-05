@@ -1,5 +1,6 @@
 ﻿#include "Transform.h"
 
+#include <QFileInfo>
 #include <QMessageBox>
 
 #include "ui_Transform.h"
@@ -145,4 +146,106 @@ void TransForm::closeEvent(QCloseEvent* event)
 {
     exis_ = true;
     QDialog::closeEvent(event);
+}
+
+CheckCondition::CheckCondition(QObject* parent) : QThread(parent)
+{
+}
+
+void CheckCondition::SetClientCore(ClientCore* clientCore)
+{
+    clientCore_ = clientCore;
+}
+
+void CheckCondition::SetTasks(const QVector<TransTask>& tasks)
+{
+    tasks_ = tasks;
+}
+
+void CheckCondition::recvFrame(QSharedPointer<FrameBuffer> frame)
+{
+    InfoMsg info = infoUnpack<InfoMsg>(frame->data);
+    if (info.command == STRMSG_ANSWER_CHECK_FILE_EXIST) {
+        remoteNotExits_ = info.list;
+        qInfo() << tr("检查结束，远端不存在的文件数：") << remoteNotExits_.size();
+        msg_ = info.command;
+        return;
+    }
+    msg_ = tr("收到未知信息，认为判断失败：") + info.command;
+    qInfo() << msg_;
+}
+
+void CheckCondition::interrupCheck()
+{
+    if (!isAlreadyInter_) {
+        isAlreadyInter_ = true;
+        qWarning() << tr("中断文件校验......");
+        emit sigCheckOver();
+    }
+}
+
+void CheckCondition::run()
+{
+    qInfo() << tr("开始文件校验......");
+
+    resultMsgMap_.clear();
+    checkRet_.clear();
+    isRun_ = true;
+    msg_.clear();
+    isAlreadyInter_ = false;
+
+    // 先检查本地文件是否存在
+    for (const auto& task : tasks_) {
+        if (task.isUpload && !Util::FileExist(task.localPath)) {
+            resultMsgMap_[CCR_CHECK_LOCAL_NOT_EXIT].push_back(task.localPath);
+            if (!checkRet_.contains(CCR_CHECK_LOCAL_NOT_EXIT)) {
+                checkRet_.push_back(CCR_CHECK_LOCAL_NOT_EXIT);
+            }
+        }
+        if (!task.isUpload && Util::FileExist(task.localPath)) {
+            resultMsgMap_[CCR_CHECK_LOCAL_EXIT].push_back(task.localPath);
+            if (!checkRet_.contains(CCR_CHECK_LOCAL_EXIT)) {
+                checkRet_.push_back(CCR_CHECK_LOCAL_EXIT);
+            }
+        }
+    }
+
+    // 再检查远程文件是否存在
+    InfoMsg msg;
+    msg.command = STRMSG_REQUEST_CHECK_FILE_EXIST;
+    for (const auto& task : tasks_) {
+        msg.list.push_back(task.remotePath);
+    }
+
+    auto f = clientCore_->GetBuffer(msg, FBT_MSGINFO_ASK, clientCore_->GetRemoteID());
+    if (!ClientCore::syncInvoke(clientCore_, f)) {
+        auto errMsg = tr("检查远程文件存在性数据发送失败。");
+        if (!checkRet_.contains(CCR_CHECK_FAILED)) {
+            checkRet_.push_back(CCR_CHECK_FAILED);
+            resultMsgMap_[CCR_CHECK_FAILED].push_back(errMsg);
+        }
+        emit sigCheckOver();
+        qCritical() << errMsg;
+        return;
+    }
+    while (isRun_) {
+        QThread::msleep(10);
+        if (msg_.isEmpty()) {
+            continue;
+        }
+        if (msg_ != STRMSG_ANSWER_CHECK_FILE_EXIST) {
+            if (!checkRet_.contains(CCR_CHECK_FAILED)) {
+                checkRet_.push_back(CCR_CHECK_FAILED);
+                resultMsgMap_[CCR_CHECK_FAILED].push_back(msg_);
+            }
+        } else {
+            if (!checkRet_.contains(CCR_CHECK_PASSED)) {
+                checkRet_.push_back(CCR_CHECK_PASSED);
+            }
+        }
+        break;
+    }
+    isAlreadyInter_ = true;
+    emit sigCheckOver();
+    qInfo() << tr("文件校验结束......");
 }

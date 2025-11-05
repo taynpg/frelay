@@ -49,6 +49,8 @@ public:
     static QString GetCurConfigPath(const QString& sub);
     static void ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg);
     static QString GetVersion();
+    static bool FileExist(const QString& path);
+    static bool DirExist(const QString& path);
 };
 
 class DirFileHelper : public QObject

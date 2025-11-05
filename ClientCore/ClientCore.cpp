@@ -82,6 +82,29 @@ void ClientCore::onDisconnected()
     emit sigDisconnect();
 }
 
+void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
+{
+    InfoMsg msg = infoUnpack<InfoMsg>(frame->data);
+    // TODO: 处理询问请求
+    if (msg.command == STRMSG_REQUEST_CHECK_FILE_EXIST) {
+        InfoMsg ans;
+        ans.command = STRMSG_ANSWER_CHECK_FILE_EXIST;
+        for (const auto& filePath : msg.list) {
+            if (!Util::FileExist(filePath)) {
+                ans.list.append(filePath);
+            }
+        }
+        if (!Send<InfoMsg>(ans, FBT_MSGINFO_ANSWER, frame->fid)) {
+            auto logMsg = tr("给") + frame->fid + tr("返回检查文件存在性消息失败。");
+            qCritical() << logMsg;
+            return;
+        }
+        return;
+    }
+    // 未知信息
+    qWarning() << QString(tr("未知询问信息类型：%1")).arg(msg.command);
+}
+
 void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
 {
     switch (frame->type) {
@@ -182,7 +205,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         break;
     }
     case FBT_MSGINFO_ASK: {
-        emit sigMsgAsk(frame);
+        handleAsk(frame);
         break;
     }
     case FBT_MSGINFO_ANSWER: {
