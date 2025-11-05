@@ -6,6 +6,17 @@
 #include <QIODevice>
 #include <QString>
 #include <QVector>
+#include <QMap>
+
+struct PropertyData {
+    QString key;
+    QString mark;
+    QString properA;
+    QString properB;
+    QString properC;
+    QString properD;
+    QString properE;
+};
 
 struct InfoMsg {
     qint32 mark{};
@@ -16,6 +27,7 @@ struct InfoMsg {
     quint64 size{};
     quint32 permissions{};
     QVector<QString> list;
+    QMap<QString, PropertyData> mapData;
 
     void serialize(QDataStream& data) const
     {
@@ -23,6 +35,10 @@ struct InfoMsg {
         data << list.size();
         for (const auto& item : list) {
             data << item;
+        }
+        data << mapData.size();
+        for (const auto& item : mapData) {
+            data << item.key << item.mark << item.properA << item.properB << item.properC << item.properD << item.properE;
         }
     }
 
@@ -34,6 +50,14 @@ struct InfoMsg {
         list.resize(listSize);
         for (auto& item : list) {
             data >> item;
+        }
+        qint32 mapSize;
+        data >> mapSize;
+        data >> mapSize;
+        for (int i = 0; i < mapSize; ++i) {
+            PropertyData prop;
+            data >> prop.key >> prop.mark >> prop.properA >> prop.properB >> prop.properC >> prop.properD >> prop.properE;
+            mapData.insert(prop.key, prop);
         }
     }
 };

@@ -86,9 +86,9 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg msg = infoUnpack<InfoMsg>(frame->data);
     // TODO: 处理询问请求
-    if (msg.command == STRMSG_REQUEST_CHECK_FILE_EXIST) {
+    if (msg.command == STRMSG_AC_CHECK_FILE_EXIST) {
         InfoMsg ans;
-        ans.command = STRMSG_ANSWER_CHECK_FILE_EXIST;
+        ans.command = STRMSG_AC_ANSWER_FILE_EXIST;
         for (const auto& filePath : msg.list) {
             if (!Util::FileExist(filePath)) {
                 ans.list.append(filePath);

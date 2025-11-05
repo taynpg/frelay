@@ -75,17 +75,6 @@ private:
     TransForm* tf_;
 };
 
-enum CondCheckResult {
-    CCR_NO_CHECK = 0,
-    CCR_CHECK_PASSED,
-    CCR_CHECK_FAILED,
-    CCR_CHECK_INTERRUPT,
-    CCR_CHECK_LOCAL_EXIT,
-    CCR_CHECK_REMOTE_EXIT,
-    CCR_CHECK_LOCAL_NOT_EXIT,
-    CCR_CHECK_REMOTE_NOT_EXIT
-};
-
 class CheckCondition : public QThread
 {
     Q_OBJECT
@@ -114,8 +103,6 @@ private:
     QVector<TransTask> tasks_;
     ClientCore* clientCore_{};
     QVector<QString> remoteNotExits_;
-    QVector<CondCheckResult> checkRet_;
-    std::unordered_map<CondCheckResult, QVector<QString>> resultMsgMap_;
 };
 
 #endif // TRANSFORM_H

@@ -41,10 +41,6 @@ enum FrameBufferType : uint16_t {
     FBT_MSGINFO_ANSWER
 };
 
-// 字符串标识
-#define STRMSG_REQUEST_CHECK_FILE_EXIST "requestCheckFileExist"
-#define STRMSG_ANSWER_CHECK_FILE_EXIST "answerCheckFileExist"
-
 struct FrameBuffer {
     QByteArray data;
     QString fid;
@@ -62,5 +58,25 @@ public:
     static QSharedPointer<FrameBuffer> ParseBuffer(QByteArray& buffer);
     static QByteArray PackBuffer(const QSharedPointer<FrameBuffer>& frame);
 };
+
+
+// 字符串标识
+#define STRMSG_AC_CHECK_FILE_EXIST "requestCheckFileExist"
+#define STRMSG_AC_ANSWER_FILE_EXIST "answerCheckFileExist"
+#define STRMSG_AC_DEL_FILE "requestDelFile"
+#define STRMSG_AC_ANSWER_DEL_FILE "answerDelFile"
+#define STRMSG_AC_DEL_DIR "requestDelDir"
+#define STRMSG_AC_ANSWER_DEL_DIR "answerDelDir"
+#define STRMSG_AC_RENAME_FILEDIR "requestRenameFileDir"
+#define STRMSG_AC_ANSWER_FILEDIR "answerRenameFileDir"
+#define STRMSG_AC_NEW_DIR "requestNewDir"
+#define STRMSG_AC_ANSWER_NEW_DIR "answerNewDir"
+#define STRMSG_AC_ASK_FILEINFO "requestFileInfo"
+#define STRMSG_AC_ANSWER_FILEINFO "answerFileInfo"
+
+#define STRMSG_ST_FILEEXIT "fileExist"
+#define STRMSG_ST_FILENOEXIT "fileNotExist"
+#define STRMSG_ST_DIREXIT "dirExist"
+#define STRMSG_ST_DIRNOEXIT "dirNotExist"
 
 #endif   // PROTOCOL_H

@@ -20,7 +20,7 @@ void FileTrans::ReqSendFile(const TransTask& task)
     sendTask_->state = TaskState::STATE_RUNNING;
     // TODO: check if running...
     if (sendTask_->file.isOpen()) {
-        qWarning() << QString(tr("file [%1] is already opened, will auto close.")).arg(sendTask_->file.fileName());
+        qWarning() << QString(tr("文件 [%1] 已经被打开，将会自动关闭。")).arg(sendTask_->file.fileName());
         sendTask_->file.close();
     }
     // start
@@ -30,7 +30,7 @@ void FileTrans::ReqSendFile(const TransTask& task)
 
     sendTask_->file.setFileName(info.fromPath);
     if (!sendTask_->file.open(QIODevice::ReadOnly)) {
-        qCritical() << QString(tr("open file [%1] failed.")).arg(info.fromPath);
+        qCritical() << QString(tr("打开 [%1] 失败。")).arg(info.fromPath);
         sendTask_->state = TaskState::STATE_NONE;
         return;
     }
@@ -39,7 +39,7 @@ void FileTrans::ReqSendFile(const TransTask& task)
     if (fileInfo.exists()) {
         qint64 size = fileInfo.size();
         if (size == 0) {
-            qCritical() << QString(tr("File [%1] size is 0, will not send.")).arg(info.fromPath);
+            qCritical() << QString(tr("文件 [%1] 尺寸为0不会进行发送。")).arg(info.fromPath);
             sendTask_->file.close();
             sendTask_->state = TaskState::STATE_FINISH;
             return;
@@ -47,14 +47,14 @@ void FileTrans::ReqSendFile(const TransTask& task)
         info.permissions = static_cast<quint32>(fileInfo.permissions());
         info.size = size;
     } else {
-        qCritical() << QString(tr("File [%1] not exit.")).arg(info.fromPath);
+        qCritical() << QString(tr("文件 [%1] 不存在。")).arg(info.fromPath);
         sendTask_->file.close();
         return;
     }
 
     auto frame = clientCore_->GetBuffer(info, FBT_CLI_REQ_SEND, task.remoteId);
     if (!ClientCore::syncInvoke(clientCore_, frame)) {
-        qCritical() << QString(tr("send req send failed: %1")).arg(info.msg);
+        qCritical() << QString(tr("返回发送请求失败：%1")).arg(info.msg);
         sendTask_->state = TaskState::STATE_NONE;
         sendTask_->file.close();
         return;
@@ -78,13 +78,13 @@ void FileTrans::ReqDownFile(const TransTask& task)
     downTask_->totalSize = 0;
     downTask_->file.setFileName(Util::Get2FilePath(task.remotePath, task.localPath));
     if (!downTask_->file.open(QIODevice::WriteOnly)) {
-        qCritical() << QString(tr("open file [%1] failed.")).arg(downTask_->file.fileName());
+        qCritical() << QString(tr("打开文件 [%1] 失败。")).arg(downTask_->file.fileName());
         downTask_->state = TaskState::STATE_NONE;
         return;
     }
     auto frame = clientCore_->GetBuffer(info, FBT_CLI_REQ_DOWN, task.remoteId);
     if (!ClientCore::syncInvoke(clientCore_, frame)) {
-        qCritical() << QString(tr("send req send failed: %1")).arg(info.msg);
+        qCritical() << QString(tr("返回发送请求失败：%1")).arg(info.msg);
         downTask_->state = TaskState::STATE_NONE;
         downTask_->file.close();
         return;
@@ -151,13 +151,13 @@ void FileTrans::RegisterSignal()
 void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    qInfo() << QString(tr("%1 req send: %2 to %3")).arg(frame->fid).arg(info.fromPath, info.toPath);
+    qInfo() << QString(tr("%1 请求发送 %2 到 %3")).arg(frame->fid).arg(info.fromPath, info.toPath);
 
     // judge is same client's same file.
 
     // recv is single thread recv, judge idle
     if (downTask_->state == TaskState::STATE_RUNNING) {
-        info.msg = QString(tr("busy..."));
+        info.msg = QString(tr("繁忙......"));
         auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, frame->fid);
         ClientCore::syncInvoke(clientCore_, f);
         return;
@@ -167,11 +167,11 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
     auto newerPath = Util::Get2FilePath(info.fromPath, info.toPath);
     downTask_->file.setFileName(newerPath);
     if (!downTask_->file.open(QIODevice::WriteOnly)) {
-        info.msg = QString(tr("open file failed: %1")).arg(newerPath);
+        info.msg = QString(tr("打卡文件失败： %1")).arg(newerPath);
         qCritical() << info.msg;
         auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, frame->fid);
         if (!ClientCore::syncInvoke(clientCore_, f)) {
-            qCritical() << QString(tr("open recv file:%2 failed, and reply %2 failed.")).arg(info.msg, f->fid);
+            qCritical() << QString(tr("打开接收文件 %2 失败，回复 %2 失败。")).arg(info.msg, f->fid);
             downTask_->file.close();
             return;
         }
@@ -182,11 +182,11 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
     downTask_->tranSize = 0;
     downTask_->permission = info.permissions;
 
-    info.msg = QString(tr("open recv file success: %1")).arg(newerPath);
+    info.msg = QString(tr("打开待接收文件成功：%1")).arg(newerPath);
     qInfo() << info.msg;
     auto f = clientCore_->GetBuffer(info, FBT_CLI_CAN_SEND, frame->fid);
     if (!ClientCore::syncInvoke(clientCore_, f)) {
-        qCritical() << QString(tr("open recv file:%2 success, but reply %2 failed.")).arg(info.msg, frame->fid);
+        qCritical() << QString(tr("打开接收文件 %1 成功, 但是回复 %2 失败。")).arg(info.msg, frame->fid);
         downTask_->file.close();
         return;
     }
@@ -205,7 +205,7 @@ void FileTrans::fbtReqDown(QSharedPointer<FrameBuffer> frame)
     auto doTask = QSharedPointer<DoTransTask>::create();
     doTask->file.setFileName(info.fromPath);
     if (!doTask->file.open(QIODevice::ReadOnly)) {
-        qCritical() << QString(tr("open file failed: %1")).arg(info.fromPath);
+        qCritical() << QString(tr("打开文件失败：%1")).arg(info.fromPath);
         return;
     }
 
@@ -215,7 +215,7 @@ void FileTrans::fbtReqDown(QSharedPointer<FrameBuffer> frame)
         info.permissions = static_cast<quint32>(fileInfo.permissions());
         info.size = size;
     } else {
-        qCritical() << QString(tr("File [%1] not exit.")).arg(info.fromPath);
+        qCritical() << QString(tr("文件 [%1] 不存在。")).arg(info.fromPath);
         doTask->file.close();
         return;
     }
@@ -223,7 +223,7 @@ void FileTrans::fbtReqDown(QSharedPointer<FrameBuffer> frame)
     // reply fileinfo
     auto f = clientCore_->GetBuffer(info, FBT_CLI_FILE_INFO, frame->fid);
     if (!ClientCore::syncInvoke(clientCore_, f)) {
-        qCritical() << QString(tr("send file %1 info failed.")).arg(info.fromPath);
+        qCritical() << QString(tr("发送 %1 信息失败。")).arg(info.fromPath);
         doTask->file.close();
         return;
     }
@@ -240,11 +240,11 @@ void FileTrans::fbtTransDone(QSharedPointer<FrameBuffer> frame)
         downTask_->file.setPermissions(static_cast<QFileDevice::Permissions>(downTask_->permission));
         downTask_->file.close();
         downTask_->state = TaskState::STATE_FINISH;
-        info.msg = QString(tr("recv file:%1 success.")).arg(downTask_->file.fileName());
+        info.msg = QString(tr("接收文件：%1 成功。")).arg(downTask_->file.fileName());
         qInfo() << info.msg;
         return;
     }
-    qCritical() << QString(tr("recv file:%1 done sigal, but file not opened.")).arg(info.msg);
+    qCritical() << QString(tr("成功收到了信号：%1 但是文件未打开。")).arg(info.msg);
 }
 
 // the other party indicates that can download, ready to receive the file.
@@ -261,7 +261,7 @@ void FileTrans::fbtCanDown(QSharedPointer<FrameBuffer> frame)
 void FileTrans::fbtCanotDown(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    qCritical() << QString(tr("request send file:%1 failed. reason:%2")).arg(info.fromPath, info.msg);
+    qCritical() << QString(tr("请求发送文件 %1 失败，原因：%2")).arg(info.fromPath, info.msg);
 }
 
 void FileTrans::fbtFileBuffer(QSharedPointer<FrameBuffer> frame)
@@ -285,7 +285,7 @@ void FileTrans::fbtFileBuffer(QSharedPointer<FrameBuffer> frame)
 void FileTrans::fbtFileInfo(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    qInfo() << QString(tr("prepare downfile's size is:%1, perm:%2")).arg(info.size).arg(info.permissions);
+    qInfo() << QString(tr("准备接收文件的大小：%1，权限：%2")).arg(info.size).arg(info.permissions);
     downTask_->totalSize = info.size;
     downTask_->tranSize = 0;
     downTask_->permission = info.permissions;
@@ -294,7 +294,7 @@ void FileTrans::fbtFileInfo(QSharedPointer<FrameBuffer> frame)
 void FileTrans::fbtCanotSend(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    qCritical() << QString(tr("request file:%1 failed. reason:%2")).arg(info.fromPath, info.msg);
+    qCritical() << QString(tr("请求文件 %1 失败，原因：%2")).arg(info.fromPath, info.msg);
     if (sendTask_->file.isOpen()) {
         sendTask_->file.close();
     }
@@ -303,13 +303,13 @@ void FileTrans::fbtCanotSend(QSharedPointer<FrameBuffer> frame)
 void FileTrans::fbtCanSend(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    qInfo() << QString(tr("Can Send start trans file:%1 to %2")).arg(info.fromPath, frame->fid);
+    qInfo() << QString(tr("开始发送 %1 到 %2")).arg(info.fromPath, frame->fid);
     SendFile(sendTask_);
 }
 
 void FileTrans::fbtTransFailed(QSharedPointer<FrameBuffer> frame)
 {
-    qCritical() << QString(tr("trans file:%1 failed.")).arg(downTask_->file.fileName());
+    qCritical() << QString(tr("传输文件 %1 失败。")).arg(downTask_->file.fileName());
     if (downTask_->file.isOpen()) {
         downTask_->file.close();
     }
@@ -319,11 +319,11 @@ void FileTrans::fbtTransFailed(QSharedPointer<FrameBuffer> frame)
 void FileTrans::fbtInterrupt(QSharedPointer<FrameBuffer> frame)
 {
     if (downTask_->state == TaskState::STATE_RUNNING) {
-        qWarning() << QString(tr("trans file:%1 interrupt.")).arg(downTask_->file.fileName());
+        qWarning() << QString(tr("传输文件 %1 中断。")).arg(downTask_->file.fileName());
         downTask_->state = TaskState::STATE_NONE;
     }
     if (sendTask_->state == TaskState::STATE_RUNNING) {
-        qWarning() << QString(tr("trans file:%1 interrupt.")).arg(sendTask_->file.fileName());
+        qWarning() << QString(tr("传输文件 %1 中断。")).arg(sendTask_->file.fileName());
         sendTask_->state = TaskState::STATE_NONE;
     }
 }

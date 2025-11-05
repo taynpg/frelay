@@ -173,8 +173,8 @@ std::string Connecter::getCurClient()
 void Connecter::InitControl()
 {
     ui->edOwnID->setReadOnly(true);
-    ui->label->setStyleSheet("color: blue;");
-    ui->edOwnID->setStyleSheet("color: blue;");
+    ui->label->setStyleSheet("color: green;");
+    ui->edOwnID->setStyleSheet("color: green;");
 
     ui->btnDisconnect->setEnabled(false);
     ui->comboBox->setEditable(true);
@@ -191,7 +191,7 @@ void Connecter::InitControl()
     connect(ui->btnDisconnect, &QPushButton::clicked, this, &Connecter::Disconnect);
 
     menu_ = new QMenu(this);
-    QAction* acUseThis = menu_->addAction(tr("UseThis"));
+    QAction* acUseThis = menu_->addAction(tr("与此客户端通信"));
     connect(acUseThis, &QAction::triggered, this, [this]() {
         auto index = ui->listView->currentIndex();
         if (!index.isValid()) {
