@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
 
     int port = 9009;
     if (argc < 2) {
-        qDebug() << "==============> Usage: frelayServer port.";
+        qInfo() << "==============> Usage: frelayServer port.";
     } else {
         port = atoi(argv[1]);
     }
@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    qDebug() << "TCP server is running. Press Ctrl+C to exit...";
+    qInfo() << "TCP server is running. Press Ctrl+C to exit...";
 
     return app.exec();
 }

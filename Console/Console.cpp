@@ -33,7 +33,7 @@ void ConsoleHelper::SetIpPort(const QString& ip, quint16 port)
 {
     ip_ = ip;
     port_ = port;
-    qDebug() << "SetIpPort:" << ip_ << port_;
+    qInfo() << "SetIpPort:" << ip_ << port_;
 }
 
 void ConsoleHelper::Connect()

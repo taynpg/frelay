@@ -29,7 +29,7 @@ bool Server::startServer(quint16 port)
         return false;
     }
 
-    qDebug() << "Server started on port" << serverPort();
+    qInfo() << "Server started on port" << serverPort();
     monitorTimer_->start(MONITOR_HEART_SPED);
     id_ = QString("0.0.0.0:%1").arg(serverPort());
     return true;
@@ -78,7 +78,7 @@ void Server::onNewConnection()
         clients_.insert(clientId, client);
     }
 
-    qDebug() << "Client connected:" << clientId;
+    qInfo() << "Client connected:" << clientId;
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->type = FBT_SER_MSG_YOURID;
     frame->fid = id_;
@@ -227,7 +227,7 @@ void Server::onClientDisconnected()
         }
     }
 
-    qDebug() << "Client disconnected:" << __LINE__ << clientId;
+    qInfo() << "Client disconnected:" << __LINE__ << clientId;
     socket->deleteLater();
 }
 
@@ -245,7 +245,7 @@ void Server::monitorClients()
         }
     }
     for (const auto& s : prepareRemove) {
-        qDebug() << "Removing inactive client:" << s->property("clientId").toString();
+        qInfo() << "Removing inactive client:" << s->property("clientId").toString();
         s->disconnectFromHost();
     }
 }

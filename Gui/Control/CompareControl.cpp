@@ -1,5 +1,7 @@
 ﻿#include "CompareControl.h"
 
+#include <QDesktopServices>
+#include <QDir>
 #include <QFile>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
@@ -51,6 +53,20 @@ void Compare::InitMenu()
         ui->tableWidget->setItem(cnt, 2, item3);
     });
     menu_->addAction(tr("删除"), this, [this]() { deleteSelectedRows(); });
+    menu_->addAction(tr("尝试打开本地路径"), this, [this]() {
+        auto selected = ui->tableWidget->selectedItems();
+        if (selected.size() != 3) {
+            return;
+        }
+        auto item = selected[1];
+        auto path = item->text();
+        QDir dir(path);
+        if (!dir.exists()) {
+            FTCommon::msg(this, tr("本地路径不存在。"));
+            return;
+        }
+        QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+    });
     menu_->addSeparator();
     connect(ui->tableWidget, &QTableWidget::customContextMenuRequested, this,
             [this](const QPoint& pos) { menu_->exec(QCursor::pos()); });
