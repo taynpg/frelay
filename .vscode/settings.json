@@ -12,20 +12,17 @@
                 "ignoreFailures": true
             }
         ],
-        "visualizerFile": "${workspaceRoot}/.vscode/qt5.natvis",
+        //"visualizerFile": "${workspaceRoot}/.vscode/qt5.natvis",
         "args": []
     },
-    "cmake.environment": {
-        //"EXTER_LIB_DIR": "C:/local"
-    },
     "cmake.configureSettings": {
-        "CMAKE_PREFIX_PATH": "C:/Qt/Qt5.14.2/5.14.2/msvc2017_64",
+        "CMAKE_PREFIX_PATH": "C:/Qt/6.8.3/mingw_64",
         //"CMAKE_TOOLCHAIN_FILE": "${env:TT_VCPKG}"
     },
     "cmake.configureArgs": [
         "-Wno-dev",
         "-DCOMPILE_GUI=ON",
-        "-DQT_DEFAULT_MAJOR_VERSION=5"
+        "-DQT_DEFAULT_MAJOR_VERSION=6"
     ],
     "cmake.options.statusBarVisibility": "visible",
     "cmake.generator": "Ninja",
