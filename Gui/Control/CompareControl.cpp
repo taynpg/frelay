@@ -310,6 +310,7 @@ void Compare::TransToLeft()
         const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 2);
         const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 1);
         TransTask task;
+        task.taskUUID = Util::UUID();
         task.isUpload = false;
         task.localId = GlobalData::Ins()->GetLocalID();
         task.localPath = itemT->text();
@@ -330,6 +331,7 @@ void Compare::TransToRight()
         const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 1);
         const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 2);
         TransTask task;
+        task.taskUUID = Util::UUID();
         task.isUpload = true;
         task.localId = GlobalData::Ins()->GetLocalID();
         task.localPath = Util::Join(itemF->text(), ui->tableWidget->item(indexList[i].row(), 0)->text());

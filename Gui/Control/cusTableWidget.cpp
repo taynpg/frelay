@@ -56,6 +56,7 @@ void CustomTableWidget::dropEvent(QDropEvent* event)
             continue;
         }
         TransTask task;
+        task.taskUUID = Util::UUID();
         task.isUpload = isRemote_;
         task.localId = oidCall_();
         task.remoteId = ridCall_();

@@ -166,8 +166,8 @@ void CheckCondition::recvFrame(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
     if (info.command == STRMSG_AC_ANSWER_FILE_EXIST) {
-        remoteNotExits_ = info.list;
-        qInfo() << tr("检查结束，远端不存在的文件数：") << remoteNotExits_.size();
+        infoMsg_ = info;
+        qInfo() << tr("检查结束......");
         msg_ = info.command;
         return;
     }
@@ -192,10 +192,12 @@ void CheckCondition::run()
     isAlreadyInter_ = false;
 
     // 先检查本地文件是否存在
-    for (const auto& task : tasks_) {
+    for (auto& task : tasks_) {
         if (task.isUpload && !Util::FileExist(task.localPath)) {
+            task.localCheckState = FCS_FILE_NOT_EXIST;
         }
-        if (!task.isUpload && Util::FileExist(task.localPath)) {
+        if (!task.isUpload && !Util::DirExist(task.localPath, true)) {
+            task.localCheckState = FCS_DIR_NOT_EXIST;
         }
     }
 
@@ -203,7 +205,8 @@ void CheckCondition::run()
     InfoMsg msg;
     msg.command = STRMSG_AC_CHECK_FILE_EXIST;
     for (const auto& task : tasks_) {
-        msg.list.push_back(task.remotePath);
+        msg.mapData[task.taskUUID].mark = task.isUpload ? STRMSG_AC_UP : STRMSG_AC_DOWN;
+        msg.mapData[task.taskUUID].key = task.remotePath;
     }
 
     auto f = clientCore_->GetBuffer(msg, FBT_MSGINFO_ASK, clientCore_->GetRemoteID());

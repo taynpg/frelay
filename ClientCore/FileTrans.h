@@ -10,7 +10,6 @@
 #include "ClientCore.h"
 
 constexpr int MAX_SEND_TASK = 10;
-
 struct TransTask {
     bool isUpload{false};
     QString localId;
@@ -19,6 +18,9 @@ struct TransTask {
     QString remoteId;
     QString remotePath;
     QString remoteUUID;
+    QString taskUUID;
+    FileCheckState localCheckState{FCS_NORMAL};
+    FileCheckState remoteCheckState{FCS_NORMAL};
 };
 
 enum class TaskState {

@@ -102,7 +102,7 @@ private:
     bool isAlreadyInter_;
     QVector<TransTask> tasks_;
     ClientCore* clientCore_{};
-    QVector<QString> remoteNotExits_;
+    InfoMsg infoMsg_;
 };
 
 #endif // TRANSFORM_H

@@ -145,7 +145,8 @@
         "qgraphicsdropshadoweffect": "cpp",
         "qpushbutton": "cpp",
         "qpainter": "cpp",
-        "qdialog": "cpp"
+        "qdialog": "cpp",
+        "quuid": "cpp"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [

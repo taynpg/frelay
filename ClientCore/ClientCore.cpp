@@ -87,14 +87,19 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
     InfoMsg msg = infoUnpack<InfoMsg>(frame->data);
     // TODO: 处理询问请求
     if (msg.command == STRMSG_AC_CHECK_FILE_EXIST) {
-        InfoMsg ans;
-        ans.command = STRMSG_AC_ANSWER_FILE_EXIST;
-        for (const auto& filePath : msg.list) {
-            if (!Util::FileExist(filePath)) {
-                ans.list.append(filePath);
+        msg.command = STRMSG_AC_ANSWER_FILE_EXIST;
+        for (auto& item : msg.mapData) {
+            if (item.mark == STRMSG_AC_UP) {
+                if (!Util::DirExist(item.key, true)) {
+                    item.properD = static_cast<qint32>(FCS_DIR_NOT_EXIST);
+                }
+            } else {
+                if (!Util::FileExist(item.key)) {
+                    item.properD = static_cast<qint32>(FCS_FILE_NOT_EXIST);
+                }
             }
         }
-        if (!Send<InfoMsg>(ans, FBT_MSGINFO_ANSWER, frame->fid)) {
+        if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
             auto logMsg = tr("给") + frame->fid + tr("返回检查文件存在性消息失败。");
             qCritical() << logMsg;
             return;

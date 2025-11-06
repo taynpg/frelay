@@ -59,6 +59,11 @@ public:
     static QByteArray PackBuffer(const QSharedPointer<FrameBuffer>& frame);
 };
 
+enum FileCheckState {
+    FCS_NORMAL = 0,
+    FCS_DIR_NOT_EXIST,
+    FCS_FILE_NOT_EXIST
+};
 
 // 字符串标识
 #define STRMSG_AC_CHECK_FILE_EXIST "requestCheckFileExist"
@@ -73,6 +78,8 @@ public:
 #define STRMSG_AC_ANSWER_NEW_DIR "answerNewDir"
 #define STRMSG_AC_ASK_FILEINFO "requestFileInfo"
 #define STRMSG_AC_ANSWER_FILEINFO "answerFileInfo"
+#define STRMSG_AC_UP "upAction"
+#define STRMSG_AC_DOWN "downAction"
 
 #define STRMSG_ST_FILEEXIT "fileExist"
 #define STRMSG_ST_FILENOEXIT "fileNotExist"

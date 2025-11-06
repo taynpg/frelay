@@ -14,8 +14,8 @@ struct PropertyData {
     QString properA;
     QString properB;
     QString properC;
-    QString properD;
-    QString properE;
+    qint32 properD;
+    qint32 properE;
 };
 
 struct InfoMsg {

@@ -50,7 +50,8 @@ public:
     static void ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg);
     static QString GetVersion();
     static bool FileExist(const QString& path);
-    static bool DirExist(const QString& path);
+    static bool DirExist(const QString& path, bool isFilePath);
+    static QString UUID();
 };
 
 class DirFileHelper : public QObject

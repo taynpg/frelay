@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QMutex>
 #include <QStandardPaths>
+#include <QUuid>
 #include <fversion.h>
 #include <iostream>
 #include <spdlog/fmt/bundled/color.h>
@@ -130,9 +131,27 @@ bool Util::FileExist(const QString& path)
     return QFile::exists(path);
 }
 
-bool Util::DirExist(const QString& path)
+bool Util::DirExist(const QString& path, bool isFilePath)
 {
-    return QDir(path).exists();
+    if (path.isEmpty()) {
+        return false;
+    }
+
+    QString dirPath = path;
+    if (isFilePath) {
+        QFileInfo fileInfo(path);
+        dirPath = fileInfo.absolutePath();
+    } else {
+        QFileInfo dirInfo(path);
+        dirPath = dirInfo.absoluteFilePath();
+    }
+    QDir dir(dirPath);
+    return dir.exists();
+}
+
+QString Util::UUID()
+{
+    return QUuid::createUuid().toString().remove("{").remove("}");
 }
 
 QString DirFileHelper::GetErr() const
