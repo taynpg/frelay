@@ -145,19 +145,26 @@ void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
     transform_->SetTasks(tasks);
 
     // 检查文件
-    CheckCondition checkThread(this);
-    checkThread.SetTasks(tasks);
-    checkThread.SetClientCore(clientCore_);
+    CheckCondition cond(this);
+    cond.SetTasks(tasks);
+    cond.SetClientCore(clientCore_);
 
     LoadingDialog checking(this);
     checking.setTipsText("正在检查文件...");
 
-    connect(&checkThread, &CheckCondition::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
-    connect(&checking, &LoadingDialog::cancelWaiting, &checkThread, &CheckCondition::interrupCheck);
-    connect(clientCore_, &ClientCore::sigMsgAnswer, &checkThread, &CheckCondition::recvFrame);
+    connect(&cond, &CheckCondition::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+    connect(&checking, &LoadingDialog::cancelWaiting, &cond, &CheckCondition::interrupCheck);
+    connect(clientCore_, &ClientCore::sigMsgAnswer, &cond, &CheckCondition::recvFrame);
 
-    checkThread.start();
+    cond.start();
     checking.exec();
+
+    auto msg = cond.GetInfoMsg();
+    for (auto& data : msg.mapData) {
+        if (data.state == static_cast<qint32>(FCS_NORMAL)) {
+            continue;
+        }
+    }
 
     transform_->exec();
 }

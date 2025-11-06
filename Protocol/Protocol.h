@@ -80,6 +80,9 @@ enum FileCheckState {
 #define STRMSG_AC_ANSWER_FILEINFO "answerFileInfo"
 #define STRMSG_AC_UP "upAction"
 #define STRMSG_AC_DOWN "downAction"
+#define STRMSG_AC_ACCEPT "acceptAction"
+#define STRMSG_AC_REJECT "rejectAction"
+#define STRMSG_AC_CANCEL "cancelAction"
 
 #define STRMSG_ST_FILEEXIT "fileExist"
 #define STRMSG_ST_FILENOEXIT "fileNotExist"

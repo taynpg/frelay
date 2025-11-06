@@ -11,10 +11,10 @@
 struct PropertyData {
     QString key;
     QString mark;
-    QString properA;
+    QString userAction;
     QString properB;
     QString properC;
-    qint32 properD;
+    qint32 state;
     qint32 properE;
 };
 
@@ -38,7 +38,7 @@ struct InfoMsg {
         }
         data << mapData.size();
         for (const auto& item : mapData) {
-            data << item.key << item.mark << item.properA << item.properB << item.properC << item.properD << item.properE;
+            data << item.key << item.mark << item.userAction << item.properB << item.properC << item.state << item.properE;
         }
     }
 
@@ -56,7 +56,7 @@ struct InfoMsg {
         data >> mapSize;
         for (int i = 0; i < mapSize; ++i) {
             PropertyData prop;
-            data >> prop.key >> prop.mark >> prop.properA >> prop.properB >> prop.properC >> prop.properD >> prop.properE;
+            data >> prop.key >> prop.mark >> prop.userAction >> prop.properB >> prop.properC >> prop.state >> prop.properE;
             mapData.insert(prop.key, prop);
         }
     }

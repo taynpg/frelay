@@ -162,6 +162,11 @@ void CheckCondition::SetTasks(const QVector<TransTask>& tasks)
     tasks_ = tasks;
 }
 
+InfoMsg CheckCondition::GetInfoMsg() const
+{
+    return infoMsg_;
+}
+
 void CheckCondition::recvFrame(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);

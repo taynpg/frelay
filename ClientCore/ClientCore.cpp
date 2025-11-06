@@ -91,11 +91,11 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
         for (auto& item : msg.mapData) {
             if (item.mark == STRMSG_AC_UP) {
                 if (!Util::DirExist(item.key, true)) {
-                    item.properD = static_cast<qint32>(FCS_DIR_NOT_EXIST);
+                    item.state = static_cast<qint32>(FCS_DIR_NOT_EXIST);
                 }
             } else {
                 if (!Util::FileExist(item.key)) {
-                    item.properD = static_cast<qint32>(FCS_FILE_NOT_EXIST);
+                    item.state = static_cast<qint32>(FCS_FILE_NOT_EXIST);
                 }
             }
         }
