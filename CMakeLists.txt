@@ -27,11 +27,19 @@ message(STATUS "frelay use MINGW compiler.")
 set(COMPILER_USE_MINGW ON)
 add_definitions(-DCOMPILER_USE_MINGW)
 get_filename_component(CXX_COMPILER_PATH ${CMAKE_CXX_COMPILER} DIRECTORY)
-set(MINGW_DLLS 
-"${CXX_COMPILER_PATH}/libgcc_s_dw2-1.dll"
-"${CXX_COMPILER_PATH}/libstdc++-6.dll"
-"${CXX_COMPILER_PATH}/libwinpthread-1.dll"
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+set(MINGW_DLLS
+    "${CXX_COMPILER_PATH}/libgcc_s_seh-1.dll"
+    "${CXX_COMPILER_PATH}/libstdc++-6.dll"
+    "${CXX_COMPILER_PATH}/libwinpthread-1.dll"
 )
+else()
+set(MINGW_DLLS
+    "${CXX_COMPILER_PATH}/libgcc_s_dw2-1.dll"
+    "${CXX_COMPILER_PATH}/libstdc++-6.dll"
+    "${CXX_COMPILER_PATH}/libwinpthread-1.dll"
+)
+endif()
 endif()
 
 if(WIN32)
