@@ -27,6 +27,7 @@ Control/cusTableWidget.cpp Control/cusTableWidget.h
 Control/cpTableWidget.h Control/cpTableWidget.cpp
 GuiUtil/Config.h GuiUtil/Config.cpp
 ../Res/qss.qrc Form/Loading.h Form/Loading.cpp
+Control/Common.h Control/Common.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

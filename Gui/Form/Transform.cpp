@@ -162,16 +162,25 @@ void CheckCondition::SetTasks(const QVector<TransTask>& tasks)
     tasks_ = tasks;
 }
 
-InfoMsg CheckCondition::GetInfoMsg() const
+QVector<TransTask> CheckCondition::GetTasks() const
 {
-    return infoMsg_;
+    return tasks_;
 }
 
 void CheckCondition::recvFrame(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
     if (info.command == STRMSG_AC_ANSWER_FILE_EXIST) {
-        infoMsg_ = info;
+
+        for (auto& item : info.mapData) {
+            auto it =
+                std::find_if(tasks_.begin(), tasks_.end(), [&item](const TransTask& task) { return task.taskUUID == item.uuid; });
+            if (it == tasks_.end()) {
+                continue;
+            }
+            it->remoteCheckState = static_cast<FileCheckState>(item.state);
+        }
+
         qInfo() << tr("检查结束......");
         msg_ = info.command;
         return;
@@ -209,9 +218,11 @@ void CheckCondition::run()
     // 再检查远程文件是否存在
     InfoMsg msg;
     msg.command = STRMSG_AC_CHECK_FILE_EXIST;
-    for (const auto& task : tasks_) {
-        msg.mapData[task.taskUUID].mark = task.isUpload ? STRMSG_AC_UP : STRMSG_AC_DOWN;
-        msg.mapData[task.taskUUID].key = task.remotePath;
+
+    for (auto& task : tasks_) {
+        msg.mapData[task.taskUUID].uuid = task.taskUUID;
+        msg.mapData[task.taskUUID].command = task.isUpload ? STRMSG_AC_UP : STRMSG_AC_DOWN;
+        msg.mapData[task.taskUUID].path = task.remotePath;
     }
 
     auto f = clientCore_->GetBuffer(msg, FBT_MSGINFO_ASK, clientCore_->GetRemoteID());

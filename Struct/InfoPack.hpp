@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QDataStream>
 #include <QDebug>
+#include <QIODevice>
 
 template <typename T> QByteArray infoPack(const T& obj)
 {

@@ -22,7 +22,7 @@ int test1()
 
 int main()
 {
-    setConsoleMsgHandler();
-    test1();
+    //setConsoleMsgHandler();
+    infoTest3();
     return 0;
 }

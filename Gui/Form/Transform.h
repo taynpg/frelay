@@ -85,7 +85,7 @@ public:
 public:
     void SetClientCore(ClientCore* clientCore);
     void SetTasks(const QVector<TransTask>& tasks);
-    InfoMsg GetInfoMsg() const;
+    QVector<TransTask> GetTasks() const;
 
 Q_SIGNALS:
     void sigCheckOver();
@@ -103,7 +103,6 @@ private:
     bool isAlreadyInter_;
     QVector<TransTask> tasks_;
     ClientCore* clientCore_{};
-    InfoMsg infoMsg_;
 };
 
 #endif // TRANSFORM_H

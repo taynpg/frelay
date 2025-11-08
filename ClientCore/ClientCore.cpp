@@ -89,12 +89,12 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
     if (msg.command == STRMSG_AC_CHECK_FILE_EXIST) {
         msg.command = STRMSG_AC_ANSWER_FILE_EXIST;
         for (auto& item : msg.mapData) {
-            if (item.mark == STRMSG_AC_UP) {
-                if (!Util::DirExist(item.key, true)) {
+            if (item.command == STRMSG_AC_UP) {
+                if (!Util::DirExist(item.path, false)) {
                     item.state = static_cast<qint32>(FCS_DIR_NOT_EXIST);
                 }
             } else {
-                if (!Util::FileExist(item.key)) {
+                if (!Util::FileExist(item.path)) {
                     item.state = static_cast<qint32>(FCS_FILE_NOT_EXIST);
                 }
             }

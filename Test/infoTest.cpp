@@ -2,6 +2,8 @@
 
 #include <QDebug>
 #include <QElapsedTimer>
+#include <InfoMsg.h>
+#include <InfoPack.hpp>
 
 int infoTest1()
 {
@@ -80,4 +82,15 @@ void performanceTest()
         in >> val;
     }
     qDebug() << "New streams:" << timer.elapsed() << "ms";
+}
+int infoTest3()
+{
+    InfoMsg msg1;
+    msg1.mapData["C++"].command = "exec";
+    msg1.command = "FFASS0";
+
+    auto bytes = infoPack<InfoMsg>(msg1);
+    auto msg2 = infoUnpack<InfoMsg>(bytes);
+
+    return 0;
 }

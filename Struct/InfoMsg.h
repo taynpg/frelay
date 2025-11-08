@@ -4,15 +4,15 @@
 #include <QBuffer>
 #include <QDataStream>
 #include <QIODevice>
+#include <QMap>
 #include <QString>
 #include <QVector>
-#include <QMap>
 
 struct PropertyData {
-    QString key;
-    QString mark;
+    QString uuid;
+    QString command;
     QString userAction;
-    QString properB;
+    QString path;
     QString properC;
     qint32 state;
     qint32 properE;
@@ -32,32 +32,39 @@ struct InfoMsg {
     void serialize(QDataStream& data) const
     {
         data << mark << command << msg << fromPath << toPath << size << permissions;
-        data << list.size();
+        data << static_cast<qint32>(list.size());
         for (const auto& item : list) {
             data << item;
         }
-        data << mapData.size();
-        for (const auto& item : mapData) {
-            data << item.key << item.mark << item.userAction << item.properB << item.properC << item.state << item.properE;
+        data << static_cast<qint32>(mapData.size());
+        for (auto it = mapData.constBegin(); it != mapData.constEnd(); ++it) {
+            data << it.key();
+            data << it.value().uuid << it.value().command << it.value().userAction
+                 << it.value().path << it.value().properC << it.value().state << it.value().properE;
         }
     }
 
     void deserialize(QDataStream& data)
     {
         data >> mark >> command >> msg >> fromPath >> toPath >> size >> permissions;
+
         qint32 listSize;
         data >> listSize;
         list.resize(listSize);
         for (auto& item : list) {
             data >> item;
         }
+
         qint32 mapSize;
         data >> mapSize;
-        data >> mapSize;
+        mapData.clear();
         for (int i = 0; i < mapSize; ++i) {
+            QString key;
             PropertyData prop;
-            data >> prop.key >> prop.mark >> prop.userAction >> prop.properB >> prop.properC >> prop.state >> prop.properE;
-            mapData.insert(prop.key, prop);
+            data >> key;
+            data >> prop.uuid >> prop.command >> prop.userAction >> prop.path
+                >> prop.properC >> prop.state >> prop.properE;
+            mapData.insert(key, prop);
         }
     }
 };

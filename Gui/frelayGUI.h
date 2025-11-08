@@ -36,6 +36,7 @@ public:
 
 public slots:
     void HandleTask(const QVector<TransTask>& tasks);
+    bool CheckTaskResult(QVector<TransTask>& tasks);
 
 protected:
     void closeEvent(QCloseEvent* event) override;

@@ -2,10 +2,12 @@
 
 #include <Form/Loading.h>
 #include <QLabel>
+#include <QMessageBox>
 #include <QScreen>
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <fversion.h>
+#include "Control/Common.h"
 
 #include "./ui_frelayGUI.h"
 #include "Control/LogControl.h"
@@ -142,7 +144,6 @@ void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
         qCritical() << QString(tr("未连接到服务器。。。"));
         return;
     }
-    transform_->SetTasks(tasks);
 
     // 检查文件
     CheckCondition cond(this);
@@ -159,14 +160,63 @@ void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
     cond.start();
     checking.exec();
 
-    auto msg = cond.GetInfoMsg();
-    for (auto& data : msg.mapData) {
-        if (data.state == static_cast<qint32>(FCS_NORMAL)) {
+    // 检查结果
+    auto reTasks = cond.GetTasks();
+    if (!CheckTaskResult(reTasks)) {
+        return;
+    }
+    transform_->SetTasks(reTasks);
+    transform_->exec();
+}
+
+bool frelayGUI::CheckTaskResult(QVector<TransTask>& tasks)
+{
+    bool isAccept = false;
+    for (auto& task : tasks) {
+        if (task.localCheckState == FCS_NORMAL && task.remoteCheckState == FCS_NORMAL) {
             continue;
         }
+        if (task.isUpload) {
+            if (task.localCheckState != FCS_NORMAL) {
+                QMessageBox::information(this, tr("文件校验"), tr("本地文件校验失败，请检查文件是否存在：") + task.localPath);
+                return false;
+            }
+            if (task.remoteCheckState != FCS_NORMAL && !isAccept) {
+                auto msg = tr("远端不存在文件夹") + task.remotePath + "，需要自动创建吗？";
+                auto ret =Common::GetAcceptThree(this, "操作确认", msg);
+                if (ret == 0) {
+                    continue;
+                }
+                else if (ret == 1) {
+                    isAccept = true;
+                    continue;
+                }
+                else {
+                    return false;
+                }
+            }
+        } else {
+            if (task.localCheckState != FCS_NORMAL) {
+                auto msg = tr("本地不存在文件夹") + task.localPath + "，需要自动创建吗？";
+                auto ret =Common::GetAcceptThree(this, "操作确认", msg);
+                if (ret == 0) {
+                    continue;
+                }
+                else if (ret == 1) {
+                    isAccept = true;
+                    continue;
+                }
+                else {
+                    return false;
+                }
+            }
+            if (task.remoteCheckState != FCS_NORMAL) {
+                QMessageBox::information(this, tr("文件校验"), tr("远端文件校验失败，请检查文件是否存在：") + task.remotePath);
+                return false;
+            }
+        }
     }
-
-    transform_->exec();
+    return true;
 }
 
 void frelayGUI::closeEvent(QCloseEvent* event)

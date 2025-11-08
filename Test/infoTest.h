@@ -5,6 +5,7 @@
 
 int infoTest1();
 int infoTest2();
+int infoTest3();
 void performanceTest();
 
 #endif
