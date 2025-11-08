@@ -9,7 +9,7 @@ TransForm::TransForm(QWidget* parent) : QDialog(parent), ui(new Ui::TransForm)
 {
     ui->setupUi(this);
 
-    setWindowTitle(tr("TransProgress"));
+    setWindowTitle(tr("传输详情"));
     ui->edFrom->setReadOnly(true);
     ui->edTo->setReadOnly(true);
     ui->pedFrom->setReadOnly(true);
@@ -213,7 +213,7 @@ void CheckCondition::run()
         if (!task.isUpload) {
             if (!Util::DirExist(task.localPath, false)) {
                 task.localCheckState = FCS_DIR_NOT_EXIST;
-            } else if (Util::FileExist(task.localPath)) {
+            } else if (Util::FileExist(Util::Get2FilePath(task.remotePath, task.localPath))) {
                 task.localCheckState = FCS_FILE_EXIST;
             }
         }

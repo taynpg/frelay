@@ -100,7 +100,7 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
                     continue;
                 }
             } else {
-                if (!Util::FileExist(item.localPath)) {
+                if (!Util::FileExist(item.remotePath)) {
                     item.state = static_cast<qint32>(FCS_FILE_NOT_EXIST);
                 }
             }
