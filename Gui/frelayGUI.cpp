@@ -7,9 +7,9 @@
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <fversion.h>
-#include "Control/Common.h"
 
 #include "./ui_frelayGUI.h"
+#include "Control/Common.h"
 #include "Control/LogControl.h"
 
 static LogPrint* logPrint = nullptr;
@@ -171,46 +171,70 @@ void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
 
 bool frelayGUI::CheckTaskResult(QVector<TransTask>& tasks)
 {
-    bool isAccept = false;
+    bool isAutoCreateDirR = false;
+    bool isAutoRecoverR = false;
+    bool isAutoCreateDirL = false;
+    bool isAutoRecoverL = false;
+
     for (auto& task : tasks) {
         if (task.localCheckState == FCS_NORMAL && task.remoteCheckState == FCS_NORMAL) {
             continue;
         }
         if (task.isUpload) {
-            if (task.localCheckState != FCS_NORMAL) {
+            if (task.localCheckState == FCS_FILE_NOT_EXIST) {
                 QMessageBox::information(this, tr("文件校验"), tr("本地文件校验失败，请检查文件是否存在：") + task.localPath);
                 return false;
             }
-            if (task.remoteCheckState != FCS_NORMAL && !isAccept) {
+            if (task.remoteCheckState == FCS_DIR_NOT_EXIST && !isAutoCreateDirR) {
                 auto msg = tr("远端不存在文件夹") + task.remotePath + "，需要自动创建吗？";
-                auto ret =Common::GetAcceptThree(this, "操作确认", msg);
+                auto ret = Common::GetAcceptThree(this, "操作确认", msg);
                 if (ret == 0) {
                     continue;
-                }
-                else if (ret == 1) {
-                    isAccept = true;
+                } else if (ret == 1) {
+                    isAutoCreateDirR = true;
                     continue;
+                } else {
+                    return false;
                 }
-                else {
+            }
+            if (task.remoteCheckState == FCS_FILE_EXIST && !isAutoRecoverR) {
+                auto msg = tr("远端已存在文件") + Util::Get2FilePath(task.localPath, task.remotePath) + "，需要覆盖吗？";
+                auto ret = Common::GetAcceptThree(this, "操作警告", msg);
+                if (ret == 0) {
+                    continue;
+                } else if (ret == 1) {
+                    isAutoRecoverR = true;
+                    continue;
+                } else {
                     return false;
                 }
             }
         } else {
-            if (task.localCheckState != FCS_NORMAL) {
+            if (task.localCheckState == FCS_DIR_NOT_EXIST && !isAutoCreateDirL) {
                 auto msg = tr("本地不存在文件夹") + task.localPath + "，需要自动创建吗？";
-                auto ret =Common::GetAcceptThree(this, "操作确认", msg);
+                auto ret = Common::GetAcceptThree(this, "操作确认", msg);
                 if (ret == 0) {
                     continue;
-                }
-                else if (ret == 1) {
-                    isAccept = true;
+                } else if (ret == 1) {
+                    isAutoCreateDirL = true;
                     continue;
-                }
-                else {
+                } else {
                     return false;
                 }
             }
-            if (task.remoteCheckState != FCS_NORMAL) {
+            if (task.localCheckState == FCS_FILE_EXIST && !isAutoRecoverL) {
+                auto msg = tr("本地已经存在文件") + Util::Get2FilePath(task.remotePath, task.localPath) + "，需要覆盖吗？";
+                auto ret = Common::GetAcceptThree(this, "操作警告", msg);
+                if (ret == 0) {
+                    continue;
+                } else if (ret == 1) {
+                    isAutoRecoverL = true;
+                    continue;
+                } else {
+                    return false;
+                }
+            }
+            if (task.remoteCheckState != FCS_FILE_EXIST) {
                 QMessageBox::information(this, tr("文件校验"), tr("远端文件校验失败，请检查文件是否存在：") + task.remotePath);
                 return false;
             }

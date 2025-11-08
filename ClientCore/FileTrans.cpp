@@ -77,6 +77,22 @@ void FileTrans::ReqDownFile(const TransTask& task)
 
     downTask_->task = task;
     downTask_->totalSize = 0;
+
+    // recv
+    if (!Util::DirExist(info.toPath, false)) {
+        QDir dir;
+        if (!dir.mkpath(info.toPath)) {
+            info.msg = QString(tr("创建目录失败：%1")).arg(info.toPath);
+            qCritical() << info.msg;
+            auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, task.remoteId);
+            if (!ClientCore::syncInvoke(clientCore_, f)) {
+                qCritical() << QString(tr("%1 回复 %2 失败。")).arg(info.msg, f->fid);
+            }
+            return;
+        }
+        qInfo() << QString(tr("目录 %1 不存在，已自动创建。")).arg(info.toPath);
+    }
+
     downTask_->file.setFileName(Util::Get2FilePath(task.remotePath, task.localPath));
     if (!downTask_->file.open(QIODevice::WriteOnly)) {
         qCritical() << QString(tr("打开文件 [%1] 失败。")).arg(downTask_->file.fileName());
@@ -178,6 +194,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
         }
         qInfo() << QString(tr("目录 %1 不存在，已自动创建。")).arg(info.toPath);
     }
+
     auto newerPath = Util::Get2FilePath(info.fromPath, info.toPath);
     downTask_->file.setFileName(newerPath);
     if (!downTask_->file.open(QIODevice::WriteOnly)) {

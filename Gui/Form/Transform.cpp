@@ -210,8 +210,12 @@ void CheckCondition::run()
         if (task.isUpload && !Util::FileExist(task.localPath)) {
             task.localCheckState = FCS_FILE_NOT_EXIST;
         }
-        if (!task.isUpload && !Util::DirExist(task.localPath, true)) {
-            task.localCheckState = FCS_DIR_NOT_EXIST;
+        if (!task.isUpload) {
+            if (!Util::DirExist(task.localPath, false)) {
+                task.localCheckState = FCS_DIR_NOT_EXIST;
+            } else if (Util::FileExist(task.localPath)) {
+                task.localCheckState = FCS_FILE_EXIST;
+            }
         }
     }
 
@@ -222,7 +226,8 @@ void CheckCondition::run()
     for (auto& task : tasks_) {
         msg.mapData[task.taskUUID].uuid = task.taskUUID;
         msg.mapData[task.taskUUID].command = task.isUpload ? STRMSG_AC_UP : STRMSG_AC_DOWN;
-        msg.mapData[task.taskUUID].path = task.remotePath;
+        msg.mapData[task.taskUUID].localPath = task.localPath;
+        msg.mapData[task.taskUUID].remotePath = task.remotePath;
     }
 
     auto f = clientCore_->GetBuffer(msg, FBT_MSGINFO_ASK, clientCore_->GetRemoteID());

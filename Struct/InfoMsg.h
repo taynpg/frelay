@@ -12,8 +12,8 @@ struct PropertyData {
     QString uuid;
     QString command;
     QString userAction;
-    QString path;
-    QString properC;
+    QString localPath;
+    QString remotePath;
     qint32 state;
     qint32 properE;
 };
@@ -40,7 +40,7 @@ struct InfoMsg {
         for (auto it = mapData.constBegin(); it != mapData.constEnd(); ++it) {
             data << it.key();
             data << it.value().uuid << it.value().command << it.value().userAction
-                 << it.value().path << it.value().properC << it.value().state << it.value().properE;
+                 << it.value().localPath << it.value().remotePath << it.value().state << it.value().properE;
         }
     }
 
@@ -62,8 +62,8 @@ struct InfoMsg {
             QString key;
             PropertyData prop;
             data >> key;
-            data >> prop.uuid >> prop.command >> prop.userAction >> prop.path
-                >> prop.properC >> prop.state >> prop.properE;
+            data >> prop.uuid >> prop.command >> prop.userAction >> prop.localPath
+                >> prop.remotePath >> prop.state >> prop.properE;
             mapData.insert(key, prop);
         }
     }

@@ -62,7 +62,8 @@ public:
 enum FileCheckState {
     FCS_NORMAL = 0,
     FCS_DIR_NOT_EXIST,
-    FCS_FILE_NOT_EXIST
+    FCS_FILE_NOT_EXIST,
+    FCS_FILE_EXIST
 };
 
 // 字符串标识
