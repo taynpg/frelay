@@ -4,10 +4,19 @@
 #include <iostream>
 #include <memory>
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
 #include "Console.h"
 
 int main(int argc, char* argv[])
 {
+
+#if defined(_WIN32)
+    SetConsoleOutputCP(CP_UTF8);
+#endif
+
     auto ver = Util::GetVersion();
     std::cout << "==============> " << ver.toStdString() << std::endl;
 
