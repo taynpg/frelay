@@ -5,7 +5,7 @@ qt_path="/home/${current_user}/Qt5.14.2/5.14.2/gcc_64"
 if [ -d "$qt_path" ]; then
     echo "Found Qt directory: $qt_path"
 
-    cmake -B../build -S../ -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$qt_path" -DQT_DEFAULT_MAJOR_VERSION=5 -DCOMPILE_GUI=ON
+    cmake -B../build -S../ -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$qt_path" -DQT_DEFAULT_MAJOR_VERSION=5 -DCOMPILE_GUI=ON -DRELEASE_MARK=ON
     cmake --build ../build --config Release
     
     if [ $? -eq 0 ]; then

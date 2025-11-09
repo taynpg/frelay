@@ -5,8 +5,13 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(PROJECT_URL "https://github.com/taynpg/frelay")
+
+if(DEFINED RELEASE_MARK)
+message(STATUS "Set RELEASE_MARK => ${RELEASE_MARK}.")
+set(DEVELOP_MARK "release")
+else()
 set(DEVELOP_MARK "dev")
-#set(DEVELOP_MARK "release")
+endif()
 
 if(NOT DEFINED QT_DEFAULT_MAJOR_VERSION)
 set(QT_DEFAULT_MAJOR_VERSION 6)
