@@ -15,6 +15,7 @@
 #include <QTcpSocket>
 #include <QThread>
 #include <array>
+#include <QReadWriteLock>
 
 class ClientCore : public QObject
 {
@@ -81,6 +82,7 @@ signals:
     void sigMsgAsk(QSharedPointer<FrameBuffer> frame);
     void sigMsgAnswer(QSharedPointer<FrameBuffer> frame);
     void sigFlowBack(QSharedPointer<FrameBuffer> frame);
+    void sigTransInterrupt(QSharedPointer<FrameBuffer> frame);
 
 signals:
     void conSuccess();
@@ -99,10 +101,18 @@ public:
     void SetRemoteID(const QString& id);
     QString GetRemoteID();
     QString GetOwnID();
+    void pushID(const QString& id);
+    void popID(const QString& id);
 
 public:
     QMutex conMutex_;
     QString ownID_;
+
+    // 这是被动发送时，对方ID。
+    QReadWriteLock rwIDLock_;
+    QVector<QString> remoteIDs_;
+
+    // 这是主动通信时的对方ID。
     QString remoteID_;
 
     QMutex sockMut_;

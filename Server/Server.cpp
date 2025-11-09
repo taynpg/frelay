@@ -210,7 +210,7 @@ void Server::replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<Fram
         if (!cl) {
             auto rf = QSharedPointer<FrameBuffer>::create();
             rf->type = FBT_SER_MSG_OFFLINE;
-            rf->fid = id_;
+            rf->fid = frame->tid;
             rf->tid = frame->fid;
             sendData(client->socket, rf);
         }

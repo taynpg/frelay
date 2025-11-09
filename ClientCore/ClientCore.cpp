@@ -212,6 +212,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         break;
     }
     case FBT_SER_MSG_OFFLINE: {
+        popID(frame->fid);
         emit sigOffline(frame);
         break;
     }
@@ -225,6 +226,10 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     }
     case FBT_SER_FLOW_LIMIT: {
         emit sigFlowBack(frame);
+        break;
+    }
+    case FBT_CLI_TRANS_INTERRUPT: {
+        emit sigTransInterrupt(frame);
         break;
     }
     default:
@@ -285,6 +290,20 @@ QString ClientCore::GetOwnID()
     return ownID_;
 }
 
+void ClientCore::pushID(const QString& id)
+{
+    QWriteLocker locker(&rwIDLock_);
+    if (!remoteIDs_.contains(id)) {
+        remoteIDs_.push_back(id);
+    }
+}
+
+void ClientCore::popID(const QString& id)
+{
+    QWriteLocker locker(&rwIDLock_);
+    remoteIDs_.removeAll(id);
+}
+
 SocketWorker::SocketWorker(ClientCore* core, QObject* parent) : QThread(parent), core_(core)
 {
     // connect(core_, &ClientCore::sigDisconnect, this, [this]() {
@@ -328,10 +347,17 @@ void HeatBeat::run()
         }
         ClientCore::syncInvoke(core_, frame);
         auto rid = core_->GetRemoteID();
-        if (rid.isEmpty()) {
-            continue;
+        if (!rid.isEmpty()) {
+            auto frame2 = core_->GetBuffer(info, FBT_SER_MSG_JUDGE_OTHER_ALIVE, rid);
+            ClientCore::syncInvoke(core_, frame2);
         }
-        auto frame2 = core_->GetBuffer(info, FBT_SER_MSG_JUDGE_OTHER_ALIVE, rid);
-        ClientCore::syncInvoke(core_, frame2);
+
+        {
+            QReadLocker loker(&core_->rwIDLock_);
+            for (auto& id : core_->remoteIDs_) {
+                auto frame3 = core_->GetBuffer(info, FBT_SER_MSG_JUDGE_OTHER_ALIVE, id);
+                ClientCore::syncInvoke(core_, frame3);
+            }
+        }
     }
 }

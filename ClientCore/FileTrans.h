@@ -71,6 +71,9 @@ public:
     qint32 GetSendProgress();
     qint32 GetDownProgress();
 
+public:
+    void Interrupt(bool notic);
+
 private:
     void fbtReqSend(QSharedPointer<FrameBuffer> frame);
     void fbtReqDown(QSharedPointer<FrameBuffer> frame);

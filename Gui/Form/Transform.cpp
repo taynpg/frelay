@@ -34,6 +34,10 @@ void TransForm::SetClientCore(ClientCore* clientCore)
 {
     clientCore_ = clientCore;
     fileTrans_ = new FileTrans(clientCore_);
+    connect(ui->btnCancel, &QPushButton::clicked, this, [this]() {
+        fileTrans_->Interrupt(true);
+        close();
+    });
 }
 
 void TransForm::SetTasks(const QVector<TransTask>& tasks)
@@ -68,7 +72,7 @@ void TransForm::startTask()
                     break;
                 }
                 emit sigProgress(progress);
-                QThread::msleep(2);
+                QThread::msleep(1);
             }
         } else {
             fileTrans_->ReqDownFile(task);
@@ -86,7 +90,7 @@ void TransForm::startTask()
                     break;
                 }
                 emit sigProgress(progress);
-                QThread::msleep(2);
+                QThread::msleep(1);
             }
         }
         ++curTaskNum_;

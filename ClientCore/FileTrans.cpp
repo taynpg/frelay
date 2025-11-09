@@ -69,8 +69,6 @@ void FileTrans::ReqSendFile(const TransTask& task)
 
 void FileTrans::ReqDownFile(const TransTask& task)
 {
-    // TODO: check if running...
-
     // start
     InfoMsg info;
     info.toPath = task.localPath;
@@ -163,6 +161,8 @@ void FileTrans::RegisterSignal()
     connect(clientCore_, &ClientCore::sigFileInfo, this, [this](QSharedPointer<FrameBuffer> frame) { fbtFileInfo(frame); });
     connect(clientCore_, &ClientCore::sigTransFailed, this, [this](QSharedPointer<FrameBuffer> frame) { fbtTransFailed(frame); });
     connect(clientCore_, &ClientCore::sigOffline, this, [this](QSharedPointer<FrameBuffer> frame) { fbtInterrupt(frame); });
+    connect(clientCore_, &ClientCore::sigTransInterrupt, this,
+            [this](QSharedPointer<FrameBuffer> frame) { fbtInterrupt(frame); });
 }
 
 // The other party requests to send, prepare to receive.
@@ -221,6 +221,9 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
         downTask_->file.close();
         return;
     }
+
+    // 需要记录对方的ID，用于心跳检测
+    clientCore_->pushID(frame->fid);
     downTask_->state = TaskState::STATE_RUNNING;
 }
 
@@ -228,10 +231,6 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
 void FileTrans::fbtReqDown(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    // judge is same client's same file.
-
-    // judge if file exits etc.
-
     // send
     auto doTask = QSharedPointer<DoTransTask>::create();
     doTask->file.setFileName(info.fromPath);
@@ -261,6 +260,10 @@ void FileTrans::fbtReqDown(QSharedPointer<FrameBuffer> frame)
     doTask->task.isUpload = true;
     doTask->task.localPath = info.fromPath;
     doTask->task.remoteId = frame->fid;
+
+    // 需要记录对方的ID，用于心跳检测
+    clientCore_->pushID(frame->fid);
+
     SendFile(doTask);
 }
 
@@ -347,16 +350,41 @@ void FileTrans::fbtTransFailed(QSharedPointer<FrameBuffer> frame)
     downTask_->state = TaskState::STATE_FAILED;
 }
 
-void FileTrans::fbtInterrupt(QSharedPointer<FrameBuffer> frame)
+void FileTrans::Interrupt(bool notic)
 {
     if (downTask_->state == TaskState::STATE_RUNNING) {
         qWarning() << QString(tr("传输文件 %1 中断。")).arg(downTask_->file.fileName());
+        downTask_->file.close();
+
+        if (notic) {
+            InfoMsg info;
+            info.msg = QString(tr("传输文件 %1 主动中断。")).arg(downTask_->file.fileName());
+            auto f = clientCore_->GetBuffer(info, FBT_CLI_TRANS_INTERRUPT, downTask_->task.remoteId);
+            if (!ClientCore::syncInvoke(clientCore_, f)) {
+                qCritical() << QString(tr("发送 %1 信息给 %2 失败。")).arg(info.msg).arg(downTask_->task.remoteId);
+            }
+        }
+
         downTask_->state = TaskState::STATE_NONE;
     }
     if (sendTask_->state == TaskState::STATE_RUNNING) {
         qWarning() << QString(tr("传输文件 %1 中断。")).arg(sendTask_->file.fileName());
+        sendTask_->file.close();
+
+        InfoMsg info;
+        info.msg = QString(tr("传输文件 %1 主动中断。")).arg(sendTask_->file.fileName());
+        auto f = clientCore_->GetBuffer(info, FBT_CLI_TRANS_INTERRUPT, sendTask_->task.remoteId);
+        if (!ClientCore::syncInvoke(clientCore_, f)) {
+            qCritical() << QString(tr("发送 %1 信息给 %2 失败。")).arg(info.msg).arg(sendTask_->task.remoteId);
+        }
+
         sendTask_->state = TaskState::STATE_NONE;
     }
+}
+
+void FileTrans::fbtInterrupt(QSharedPointer<FrameBuffer> frame)
+{
+    Interrupt(false);
 }
 
 void FileTrans::SendFile(const QSharedPointer<DoTransTask>& task)
@@ -387,7 +415,6 @@ void SendThread::run()
     isSuccess_ = true;
     delay_ = 0;
     bool invokeSuccess = false;
-    qInfo() << tr("开始发送文件：") << task_->file.fileName();
     while (!task_->file.atEnd()) {
         auto frame = QSharedPointer<FrameBuffer>::create();
         frame->tid = task_->task.remoteId;
@@ -414,12 +441,16 @@ void SendThread::run()
         // 关键点：这里不调用，无法中途收到别人发的数据。
         QCoreApplication::processEvents();
     }
-    qInfo() << tr("结束发送文件：") << task_->file.fileName();
-    InfoMsg info;
-    auto f = cliCore_->GetBuffer(info, FBT_CLI_TRANS_DONE, task_->task.remoteId);
-    ClientCore::syncInvoke(cliCore_, f);
-    task_->file.close();
-    task_->state = TaskState::STATE_FINISH;
+    qInfo() << QString(tr("结束发送文件：%1")).arg(task_->file.fileName());
+
+    // 不是Open表示被别人关闭了，就不发送结束信号了。
+    if (task_->file.isOpen()) {
+        InfoMsg info;
+        auto f = cliCore_->GetBuffer(info, FBT_CLI_TRANS_DONE, task_->task.remoteId);
+        ClientCore::syncInvoke(cliCore_, f);
+        task_->file.close();
+        task_->state = TaskState::STATE_FINISH;
+    }
 }
 
 void SendThread::setTask(const QSharedPointer<DoTransTask>& task)
