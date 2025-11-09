@@ -42,8 +42,13 @@ private:
     void replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame);
     bool sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame);
 
+    // 流量控制
+    bool sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointer<FrameBuffer> frame);
+    BlockLevel getBlockLevel(QTcpSocket* socket);
+
     QString id_;
     QMap<QString, QSharedPointer<ClientInfo>> clients_;
+    QMap<QString, int> flowBackCount_;
     QReadWriteLock rwLock_;
     QTimer* monitorTimer_;
 };

@@ -1,5 +1,6 @@
 ﻿#include "FileTrans.h"
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
 
@@ -362,6 +363,8 @@ void FileTrans::SendFile(const QSharedPointer<DoTransTask>& task)
 {
     auto* sendThread = new SendThread(clientCore_);
     sendThread->setTask(task);
+    connect(clientCore_, &ClientCore::sigFlowBack, sendThread, &SendThread::fbtFlowBack);
+
     QMutexLocker locker(&sthMut_);
     upTasks_[task->task.localId] = sendThread;
     sendThread->run();
@@ -371,13 +374,30 @@ SendThread::SendThread(ClientCore* clientCore) : cliCore_(clientCore)
 {
 }
 
+// 发送速度控制
+void SendThread::fbtFlowBack(QSharedPointer<FrameBuffer> frame)
+{
+    auto msg = infoUnpack<InfoMsg>(frame->data);
+    delay_ = msg.mark * BLOCK_LEVEL_MULTIPLE;
+}
+
+// constexpr int SendThread::sendDelay()
+// {
+//     // 这里限定，frlay的最大发送速度，目前是 200MB/s。
+//     constexpr int MAX_SEND_SPD = 1024 * 1024 * 200;
+//     constexpr double DELAY = (static_cast<double>(CHUNK_BUF_SIZE) / MAX_SEND_SPD) * 1000;
+//     int minDelay = qMax(static_cast<int>(DELAY), 1);
+//     return minDelay;
+// }
+
 void SendThread::run()
 {
     // task's file shoule be already opened.
     isSuccess_ = true;
+    delay_ = 0;
     bool invokeSuccess = false;
+    qInfo() << tr("开始发送文件：") << task_->file.fileName();
     while (!task_->file.atEnd()) {
-
         auto frame = QSharedPointer<FrameBuffer>::create();
         frame->tid = task_->task.remoteId;
         frame->type = FBT_CLI_FILE_BUFFER;
@@ -390,6 +410,9 @@ void SendThread::run()
             break;
         }
         frame->data.resize(br);
+        if (delay_ > 0) {
+            QThread::msleep(delay_);
+        }
         invokeSuccess = QMetaObject::invokeMethod(cliCore_, "SendFrame", Qt::BlockingQueuedConnection,
                                                   Q_RETURN_ARG(bool, isSuccess_), Q_ARG(QSharedPointer<FrameBuffer>, frame));
         if (!invokeSuccess || !isSuccess_) {
@@ -397,7 +420,10 @@ void SendThread::run()
             break;
         }
         task_->tranSize += frame->data.size();
+        // 关键点：这里不调用，无法中途收到别人发的数据。
+        QCoreApplication::processEvents();
     }
+    qInfo() << tr("结束发送文件：") << task_->file.fileName();
     InfoMsg info;
     auto f = cliCore_->GetBuffer(info, FBT_CLI_TRANS_DONE, task_->task.remoteId);
     ClientCore::syncInvoke(cliCore_, f);

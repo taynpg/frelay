@@ -7,7 +7,12 @@
 #include <QString>
 #include <functional>
 
-constexpr quint32 CHUNK_BUF_SIZE = 1 * 1024 * 1024;
+// 一帧包大小
+constexpr quint32 CHUNK_BUF_SIZE = 1 * 1024 * 512;
+// 流量背压倍率
+constexpr quint32 FLOW_BACK_MULTIPLE = 50;
+// 阻塞等级放大倍率
+constexpr quint32 BLOCK_LEVEL_MULTIPLE = 5;
 
 // It is specified here that the first 30 contents (inclusive) are
 // used for communication with the server.
@@ -21,6 +26,7 @@ enum FrameBufferType : uint16_t {
     FBT_SER_MSG_FORWARD_FAILED,
     FBT_SER_MSG_JUDGE_OTHER_ALIVE,
     FBT_SER_MSG_OFFLINE,
+    FBT_SER_FLOW_LIMIT,
     FBT_CLI_BIN_FILEDATA = 31,
     FBT_CLI_MSG_COMMUNICATE,
     FBT_CLI_ASK_DIRFILE,
@@ -47,6 +53,19 @@ struct FrameBuffer {
     QString tid;
     FrameBufferType type = FBT_NONE;
     bool sendRet;
+};
+
+// 拥堵等级，越高越堵
+enum BlockLevel {
+    BL_LEVEL_NORMAL = 0,
+    BL_LEVEL_1 = 1,
+    BL_LEVEL_2 = 3,
+    BL_LEVEL_3 = 5,
+    BL_LEVEL_4 = 10,
+    BL_LEVEL_5 = 20,
+    BL_LEVEL_6 = 50,
+    BL_LEVEL_7 = 100,
+    BL_LEVEL_8 = 1000
 };
 
 class Protocol

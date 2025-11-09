@@ -80,6 +80,7 @@ signals:
     void sigYourId(QSharedPointer<FrameBuffer> frame);
     void sigMsgAsk(QSharedPointer<FrameBuffer> frame);
     void sigMsgAnswer(QSharedPointer<FrameBuffer> frame);
+    void sigFlowBack(QSharedPointer<FrameBuffer> frame);
 
 signals:
     void conSuccess();

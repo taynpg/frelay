@@ -48,11 +48,16 @@ public:
 public:
     void run() override;
     void setTask(const QSharedPointer<DoTransTask>& task);
+    void fbtFlowBack(QSharedPointer<FrameBuffer> frame);
+
+// private:
+//     static constexpr int sendDelay();
 
 private:
     bool isSuccess_{false};
     ClientCore* cliCore_;
     quint32 curSendCount_{0};
+    qint32 delay_{};
     QSharedPointer<DoTransTask> task_;
 };
 

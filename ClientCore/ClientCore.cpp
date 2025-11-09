@@ -223,6 +223,10 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         emit sigMsgAnswer(frame);
         break;
     }
+    case FBT_SER_FLOW_LIMIT: {
+        emit sigFlowBack(frame);
+        break;
+    }
     default:
         qCritical() << QString("未知的帧类型： %1").arg(frame->type);
         break;

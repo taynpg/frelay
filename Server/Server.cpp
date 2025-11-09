@@ -76,6 +76,7 @@ void Server::onNewConnection()
     {
         QWriteLocker locker(&rwLock_);
         clients_.insert(clientId, client);
+        flowBackCount_[clientId] = 0;
     }
 
     qInfo() << "Client connected:" << clientId;
@@ -116,7 +117,7 @@ void Server::processClientData(QSharedPointer<ClientInfo> client)
         }
         frame->fid = client->id;
         if (frame->type <= 30) {
-            //frame->tid = "server";
+            // frame->tid = "server";
             replyRequest(client, frame);
         } else {
             if (!forwardData(client, frame)) {
@@ -126,17 +127,41 @@ void Server::processClientData(QSharedPointer<ClientInfo> client)
     }
 }
 
+bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointer<FrameBuffer> frame)
+{
+    auto flowLimit = [this](QTcpSocket* fsoc, BlockLevel aLevel) {
+        InfoMsg msg;
+        msg.mark = static_cast<qint32>(aLevel);
+        auto f = QSharedPointer<FrameBuffer>::create();
+        f->type = FBT_SER_FLOW_LIMIT;
+        f->data = infoPack<InfoMsg>(msg);
+        if (!sendData(fsoc, f)) {
+            qWarning() << "Failed to send flow limit message to" << fsoc->property("clientId").toString();
+        }
+    };
+
+    if (flowBackCount_[fsoc->property("clientId").toString()] > FLOW_BACK_MULTIPLE) {
+        auto level = getBlockLevel(tsoc);
+        flowLimit(fsoc, level);
+        //qDebug() << "Flow back count exceeded, block level:" << level;
+    }
+    flowBackCount_[fsoc->property("clientId").toString()]++;
+    return sendData(tsoc, frame);
+}
+
 bool Server::forwardData(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame)
 {
     QSharedPointer<ClientInfo> targetClient;
+    QSharedPointer<ClientInfo> fromClient;
 
     {
         QReadLocker locker(&rwLock_);
         targetClient = clients_.value(frame->tid);
+        fromClient = clients_.value(frame->fid);
     }
 
-    if (targetClient) {
-        return sendData(targetClient->socket, frame);
+    if (targetClient && fromClient) {
+        return sendWithFlowCheck(fromClient->socket, targetClient->socket, frame);
     } else {
         auto errorFrame = QSharedPointer<FrameBuffer>::create();
         errorFrame->type = FBT_SER_MSG_FORWARD_FAILED;
@@ -169,7 +194,7 @@ void Server::replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<Fram
             }
         }
         if (cl) {
-            //qDebug() << "Client" << cl->id << "heartbeat received";
+            // qDebug() << "Client" << cl->id << "heartbeat received";
             cl->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
         }
         break;
@@ -207,8 +232,38 @@ bool Server::sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame)
     if (data.isEmpty()) {
         return false;
     }
-
     return socket->write(data) == data.size();
+}
+
+BlockLevel Server::getBlockLevel(QTcpSocket* socket)
+{
+    auto b = socket->bytesToWrite();
+    constexpr auto one = CHUNK_BUF_SIZE;
+    if (b > one * 1000) {
+        return BL_LEVEL_8;
+    }
+    if (b > one * 200) {
+        return BL_LEVEL_7;
+    }
+    if (b > one * 100) {
+        return BL_LEVEL_6;
+    }
+    if (b > one * 50) {
+        return BL_LEVEL_5;
+    }
+    if (b > one * 30) {
+        return BL_LEVEL_4;
+    }
+    if (b > one * 10) {
+        return BL_LEVEL_3;
+    }
+    if (b > one * 5) {
+        return BL_LEVEL_2;
+    }
+    if (b > one * 1) {
+        return BL_LEVEL_1;
+    }
+    return BL_LEVEL_NORMAL;
 }
 
 void Server::onClientDisconnected()
@@ -224,6 +279,9 @@ void Server::onClientDisconnected()
         QWriteLocker locker(&rwLock_);
         if (clients_.count(clientId)) {
             clients_.remove(clientId);
+        }
+        if (flowBackCount_.count(clientId)) {
+            flowBackCount_.remove(clientId);
         }
     }
 
