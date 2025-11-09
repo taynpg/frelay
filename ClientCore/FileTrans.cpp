@@ -381,15 +381,6 @@ void SendThread::fbtFlowBack(QSharedPointer<FrameBuffer> frame)
     delay_ = msg.mark * BLOCK_LEVEL_MULTIPLE;
 }
 
-// constexpr int SendThread::sendDelay()
-// {
-//     // 这里限定，frlay的最大发送速度，目前是 200MB/s。
-//     constexpr int MAX_SEND_SPD = 1024 * 1024 * 200;
-//     constexpr double DELAY = (static_cast<double>(CHUNK_BUF_SIZE) / MAX_SEND_SPD) * 1000;
-//     int minDelay = qMax(static_cast<int>(DELAY), 1);
-//     return minDelay;
-// }
-
 void SendThread::run()
 {
     // task's file shoule be already opened.
