@@ -1,6 +1,6 @@
 ﻿# Prerequisites
 *.d
-
+.qtcreator
 # Compiled Object files
 *.slo
 *.lo
@@ -11,6 +11,7 @@ out
 # Precompiled Headers
 *.gch
 *.pch
+
 
 # Compiled Dynamic libraries
 *.so
