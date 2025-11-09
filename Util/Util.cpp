@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QMutex>
 #include <QStandardPaths>
+#include <QStorageInfo>
 #include <QUuid>
 #include <fversion.h>
 #include <iostream>
@@ -152,6 +153,18 @@ bool Util::DirExist(const QString& path, bool isFilePath)
 QString Util::UUID()
 {
     return QUuid::createUuid().toString().remove("{").remove("}");
+}
+
+QVector<QString> Util::GetLocalDrivers()
+{
+    QVector<QString> result;
+    auto drivers = QStorageInfo::mountedVolumes();
+    for (const auto& driver : drivers) {
+        if (driver.isValid() && driver.isReady()) {
+            result.push_back(driver.rootPath());
+        }
+    }
+    return result;
 }
 
 QString DirFileHelper::GetErr() const

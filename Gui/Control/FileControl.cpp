@@ -109,17 +109,26 @@ void FileManager::InitMenu()
     menu_->addSeparator();
 }
 
-void FileManager::ShowPath(const QString& path)
+void FileManager::ShowPath(const QString& path, const QStringList& drivers)
 {
     QMutexLocker locker(&cbMut_);
+
     int existingIndex = ui->comboBox->findText(path);
     if (existingIndex != -1) {
         ui->comboBox->removeItem(existingIndex);
     } else if (ui->comboBox->count() >= 20) {
         ui->comboBox->removeItem(ui->comboBox->count() - 1);
     }
-    ui->comboBox->insertItem(0, path);
+    for (const auto& driver : drivers) {
+        if (ui->comboBox->findText(driver) == -1) {
+            ui->comboBox->insertItem(0, driver);
+        }
+    }
+    if (ui->comboBox->findText(path) == -1) {
+        ui->comboBox->insertItem(0, path);
+    }
     ui->comboBox->setCurrentIndex(0);
+    drivers_ = drivers;
 }
 
 void FileManager::ShowFile(const DirFileInfoVec& info)
@@ -133,7 +142,7 @@ void FileManager::ShowFile(const DirFileInfoVec& info)
     RefreshTab();
     ui->tableWidget->resizeColumnToContents(0);
     SetRoot(currentInfo_.root);
-    ShowPath(GetRoot());
+    ShowPath(GetRoot(), drivers_);
 }
 
 void FileManager::SetRoot(const QString& path)
@@ -479,7 +488,7 @@ void FileManager::evtUp()
     auto r = fileHelper_->GetDirFile(path);
     if (r) {
         SetRoot(path);
-        ShowPath(GetRoot());
+        ShowPath(GetRoot(), drivers_);
     }
 }
 

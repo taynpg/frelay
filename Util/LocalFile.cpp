@@ -11,7 +11,7 @@ LocalFile::LocalFile(QObject* parent) : DirFileHelper(parent)
 bool LocalFile::GetHome()
 {
     auto home = Util::GetUserHome();
-    emit sigHome(home);
+    emit sigHome(home, Util::GetLocalDrivers());
     return true;
 }
 

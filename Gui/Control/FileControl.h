@@ -46,7 +46,7 @@ signals:
 private:
     void InitControl();
     void InitMenu();
-    void ShowPath(const QString& path);
+    void ShowPath(const QString& path, const QStringList& drivers);
     void ShowFile(const DirFileInfoVec& info);
     void doubleClick(int row, int column);
     void SetRoot(const QString& path);
@@ -70,6 +70,7 @@ private:
     ClientCore* cliCore_;
     QMutex cbMut_;
     QMutex tbMut_;
+    QStringList drivers_;
     QSet<QString> fileTypes_;
     QSet<QString> curSelectTypes_;
     DirFileInfoVec currentInfo_;

@@ -52,6 +52,7 @@ public:
     static bool FileExist(const QString& path);
     static bool DirExist(const QString& path, bool isFilePath);
     static QString UUID();
+    static QVector<QString> GetLocalDrivers();
 };
 
 class DirFileHelper : public QObject
@@ -65,7 +66,7 @@ public:
     QString GetErr() const;
 
 signals:
-    void sigHome(const QString& path);
+    void sigHome(const QString& path, const QStringList& drivers);
     void sigDirFile(const DirFileInfoVec& dirFile);
 
 protected:

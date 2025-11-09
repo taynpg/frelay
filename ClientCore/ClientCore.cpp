@@ -152,6 +152,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     case FrameBufferType::FBT_CLI_ASK_HOME: {
         InfoMsg info;
         info.msg = Util::GetUserHome();
+        info.list = Util::GetLocalDrivers();
         if (!Send<InfoMsg>(info, FBT_CLI_ANS_HOME, frame->fid)) {
             qCritical() << QString(tr("send home failed."));
             return;
@@ -161,7 +162,7 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
     case FrameBufferType::FBT_CLI_ANS_HOME: {
         InfoMsg info = infoUnpack<InfoMsg>(frame->data);
         qInfo() << QString(tr("用户目录：%1")).arg(info.msg);
-        emit sigPath(info.msg);
+        emit sigPath(info.msg, info.list);
         break;
     }
     case FrameBufferType::FBT_SER_MSG_FORWARD_FAILED: {

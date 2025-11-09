@@ -64,7 +64,7 @@ public:
 
 signals:
     void sigDisconnect();
-    void sigPath(const QString& path);
+    void sigPath(const QString& path, const QStringList& drivers);
     void sigClients(const InfoClientVec& clients);
     void sigFiles(const DirFileInfoVec& files);
     void sigReqSend(QSharedPointer<FrameBuffer> frame);
