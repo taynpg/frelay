@@ -82,6 +82,8 @@ void Compare::InitControl()
     connect(ui->btnLoad, &QPushButton::clicked, this, &Compare::Load);
     connect(ui->btnLeft, &QPushButton::clicked, this, &Compare::TransToLeft);
     connect(ui->btnRight, &QPushButton::clicked, this, &Compare::TransToRight);
+    connect(ui->btnSearch, &QPushButton::clicked, this, &Compare::Search);
+    connect(ui->btnReset, &QPushButton::clicked, this, &Compare::Reset);
 
     // 测试代码
     connect(ui->btnReplace, &QPushButton::clicked, this, [this]() {
@@ -130,6 +132,11 @@ void Compare::Save()
         return;
     }
 
+    if (!isResource_) {
+        QMessageBox::information(this, tr("提示"), tr("请先重置搜索结果后操作。"));
+        return;
+    }
+
     QFile file("CompareData.xml");
     if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
         FTCommon::msg(this, tr("打开数据文件失败。"));
@@ -165,13 +172,26 @@ void Compare::Save()
     }
 
     QStringList paths;
+    items_.clear();
+
     for (int row = 0; row < ui->tableWidget->rowCount(); ++row) {
         QTableWidgetItem* fileName = ui->tableWidget->item(row, 0);
         QTableWidgetItem* localItem = ui->tableWidget->item(row, 1);
         QTableWidgetItem* remoteItem = ui->tableWidget->item(row, 2);
-        paths << (fileName ? fileName->text() : "");
-        paths << (localItem ? localItem->text() : "");
-        paths << (remoteItem ? remoteItem->text() : "");
+
+        auto baseName = (fileName ? fileName->text() : "");
+        auto localDir = (localItem ? localItem->text() : "");
+        auto remoteDir = (remoteItem ? remoteItem->text() : "");
+        
+        CompareItem item;
+        item.baseName = baseName;
+        item.localDir = localDir;
+        item.remoteDir = remoteDir;
+        items_.push_back(item);
+
+        paths << baseName;
+        paths << localDir;
+        paths << remoteDir;
     }
 
     dataMap[titleKey] = paths;
@@ -221,6 +241,9 @@ void Compare::Load()
         return;
     }
 
+    items_.clear();
+    isResource_ = true;
+    ui->tableWidget->setIsResource(isResource_);
     QXmlStreamReader reader(&file);
     bool found = false;
 
@@ -246,6 +269,12 @@ void Compare::Load()
                 for (int i = 0; i < paths.size(); i += 3) {
                     int row = ui->tableWidget->rowCount();
                     ui->tableWidget->insertRow(row);
+
+                    CompareItem item;
+                    item.baseName = paths[i];
+                    item.localDir = paths[i + 1];
+                    item.remoteDir = paths[i + 2];
+                    items_.push_back(item);
 
                     QTableWidgetItem* fileName = new QTableWidgetItem(paths[i]);
                     QTableWidgetItem* localItem = new QTableWidgetItem(paths[i + 1]);
@@ -299,6 +328,48 @@ void Compare::LoadTitles()
 
     if (ui->comboBox->count() > 0) {
         ui->comboBox->setCurrentIndex(0);
+    }
+}
+
+void Compare::Search()
+{
+    auto key = ui->edSearch->text().trimmed();
+    if (key.isEmpty()) {
+        return;
+    }
+
+    key = key.toUpper();
+    QVector<CompareItem> result;
+    for (const auto& item : items_) {
+        auto baseNameU = item.baseName.toUpper();
+        auto localDirU = item.localDir.toUpper();
+        auto remoteDirU = item.remoteDir.toUpper();
+
+        if (baseNameU.contains(key) || localDirU.contains(key) || remoteDirU.contains(key)) {
+            result.push_back(item);
+        }
+    }
+    SetResult(result);
+    isResource_ = false;
+    ui->tableWidget->setIsResource(isResource_);
+}
+
+void Compare::Reset()
+{
+    SetResult(items_);
+    isResource_ = true;
+    ui->tableWidget->setIsResource(isResource_);
+}
+
+void Compare::SetResult(const QVector<CompareItem>& items)
+{
+    ui->tableWidget->setRowCount(0);
+    for (const auto& item : items) {
+        int row = ui->tableWidget->rowCount();
+        ui->tableWidget->insertRow(row);
+        ui->tableWidget->setItem(row, 0, new QTableWidgetItem(item.baseName));
+        ui->tableWidget->setItem(row, 1, new QTableWidgetItem(item.localDir));
+        ui->tableWidget->setItem(row, 2, new QTableWidgetItem(item.remoteDir));
     }
 }
 

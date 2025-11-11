@@ -90,14 +90,14 @@
       <widget class="QLineEdit" name="edSearch"/>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton">
+      <widget class="QPushButton" name="btnSearch">
        <property name="text">
         <string>搜索</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="btnReset">
        <property name="text">
         <string>重置</string>
        </property>

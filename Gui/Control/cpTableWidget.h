@@ -13,9 +13,15 @@ public:
     explicit CpTableWidget(QWidget* parent = nullptr);
     ~CpTableWidget() override;
 
+public:
+    void setIsResource(bool isResource);
+
 protected:
     void dropEvent(QDropEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event);
+
+private:
+    bool isResource_{};
 };
 
 #endif   // CP_TABLEWIDET_H

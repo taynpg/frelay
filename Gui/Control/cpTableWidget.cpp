@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QDrag>
+#include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
 #include <Util.h>
@@ -17,8 +18,19 @@ CpTableWidget::~CpTableWidget()
 {
 }
 
+void CpTableWidget::setIsResource(bool isResource)
+{
+    isResource_ = isResource;
+}
+
 void CpTableWidget::dropEvent(QDropEvent* event)
 {
+    if (!isResource_) {
+        QMessageBox::information(this, tr("提示"), tr("请先重置搜索结果后操作。"));
+        event->ignore();
+        return;
+    }
+
     if (!event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist")) {
         event->ignore();
         return;

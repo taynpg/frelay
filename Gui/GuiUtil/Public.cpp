@@ -5,7 +5,7 @@
 
 void FTCommon::msg(QWidget* parent, const QString& content)
 {
-    QMessageBox::information(parent, QObject::tr("prompt"), content);
+    QMessageBox::information(parent, QObject::tr("提示"), content);
 }
 
 bool FTCommon::affirm(QWidget* parent, const QString& titile, const QString& content)

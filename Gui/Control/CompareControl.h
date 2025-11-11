@@ -10,6 +10,12 @@ namespace Ui {
 class Compare;
 }
 
+struct CompareItem {
+    QString baseName;
+    QString localDir;
+    QString remoteDir;
+};
+
 class Compare : public QWidget
 {
     Q_OBJECT
@@ -31,6 +37,9 @@ private:
     void Save();
     void Load();
     void LoadTitles();
+    void Search();
+    void Reset();
+    void SetResult(const QVector<CompareItem>& items);
 
     void TransToLeft();
     void TransToRight();
@@ -41,6 +50,10 @@ private slots:
 private:
     QMenu* menu_;
     Ui::Compare* ui;
+
+    // 现要求，保存、删除、拖入必须重置。
+    bool isResource_{};
+    QVector<CompareItem> items_;
 };
 
 #endif   // COMPARECONTROL_H
