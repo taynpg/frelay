@@ -7,6 +7,11 @@
 
 int main(int argc, char* argv[])
 {
+    qRegisterMetaType<QSharedPointer<FrameBuffer>>("QSharedPointer<FrameBuffer>");
+    qRegisterMetaType<InfoClientVec>("InfoClientVec");
+    qRegisterMetaType<DirFileInfoVec>("DirFileInfoVec");
+    qRegisterMetaType<TransTask>("TransTask");
+    qRegisterMetaType<QVector<QString>>("QVector<QString>");
 
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -22,10 +27,6 @@ int main(int argc, char* argv[])
 #endif
 
     qInstallMessageHandler(frelayGUI::ControlMsgHander);
-    qRegisterMetaType<QSharedPointer<FrameBuffer>>("QSharedPointer<FrameBuffer>");
-    qRegisterMetaType<InfoClientVec>("InfoClientVec");
-    qRegisterMetaType<DirFileInfoVec>("DirFileInfoVec");
-    qRegisterMetaType<TransTask>("TransTask");
 
     frelayGUI w;
 

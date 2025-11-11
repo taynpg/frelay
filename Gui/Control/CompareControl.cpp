@@ -3,6 +3,7 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
+#include <QMessageBox>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
@@ -306,6 +307,11 @@ void Compare::TransToLeft()
     QVector<TransTask> tasks;
     QModelIndexList indexList = ui->tableWidget->selectionModel()->selectedRows();
 
+    if (indexList.size() < 1) {
+        QMessageBox::information(this, tr("提示"), tr("请选择要下载的文件。"));
+        return;
+    }
+
     for (int i = 0; i < indexList.size(); ++i) {
         const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 2);
         const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 1);
@@ -326,6 +332,11 @@ void Compare::TransToRight()
 {
     QVector<TransTask> tasks;
     QModelIndexList indexList = ui->tableWidget->selectionModel()->selectedRows();
+
+    if (indexList.size() < 1) {
+        QMessageBox::information(this, tr("提示"), tr("请选择要上传的文件。"));
+        return;
+    }
 
     for (int i = 0; i < indexList.size(); ++i) {
         const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 1);

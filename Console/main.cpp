@@ -12,6 +12,11 @@
 
 int main(int argc, char* argv[])
 {
+    qRegisterMetaType<QSharedPointer<FrameBuffer>>("QSharedPointer<FrameBuffer>");
+    qRegisterMetaType<InfoClientVec>("InfoClientVec");
+    qRegisterMetaType<DirFileInfoVec>("DirFileInfoVec");
+    qRegisterMetaType<TransTask>("TransTask");
+    qRegisterMetaType<QVector<QString>>("QVector<QString>");
 
 #if defined(_WIN32)
     SetConsoleOutputCP(CP_UTF8);
@@ -24,11 +29,6 @@ int main(int argc, char* argv[])
         std::cerr << "==============> Usage arg is ip port." << std::endl;
         return 0;
     }
-
-    qRegisterMetaType<QSharedPointer<FrameBuffer>>("QSharedPointer<FrameBuffer>");
-    qRegisterMetaType<InfoClientVec>("InfoClientVec");
-    qRegisterMetaType<DirFileInfoVec>("DirFileInfoVec");
-    qRegisterMetaType<TransTask>("TransTask");
 
     QCoreApplication app(argc, argv);
 
