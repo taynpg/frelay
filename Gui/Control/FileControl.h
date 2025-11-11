@@ -56,6 +56,7 @@ private:
     void GenFilter();
     void ShowFilterForm();
     void CopyFullPath();
+    void ShowProperties();
 
 public slots:
     void evtHome();

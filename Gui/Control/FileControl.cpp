@@ -11,6 +11,7 @@
 #include <QListWidget>
 #include <QTableWidgetItem>
 #include <RemoteFile.h>
+#include "Form/FileInfoForm.h"
 
 #include "GuiUtil/Public.h"
 #include "ui_FileControl.h"
@@ -106,6 +107,7 @@ void FileManager::InitMenu()
     menu_ = new QMenu(ui->tableWidget);
     menu_->addAction(tr("过滤器"), this, &FileManager::ShowFilterForm);
     menu_->addAction(tr("复制文件路径"), this, &FileManager::CopyFullPath);
+    menu_->addAction(tr("属性"), this, &FileManager::ShowProperties);
     menu_->addSeparator();
 }
 
@@ -450,6 +452,23 @@ void FileManager::CopyFullPath()
     if (!found) {
         FTCommon::msg(this, QString(tr("%1 not found.")).arg(key));
     }
+}
+
+void FileManager::ShowProperties()
+{
+    int row = ui->tableWidget->currentRow();
+    if (row < 0) {
+        return;
+    }
+    auto* info = new FileInfo(this);
+
+    info->baseName_ = ui->tableWidget->item(row, 1)->text();
+    info->dirName_ = isRemote_ ? GlobalData::Ins()->GetRemoteRoot() : GlobalData::Ins()->GetLocalRoot();
+    info->fileTime_ = ui->tableWidget->item(row, 2)->text();
+    info->fileType_ = ui->tableWidget->item(row, 3)->text();
+    info->fileSize_ = ui->tableWidget->item(row, 4)->text();
+
+    info->exec();
 }
 
 QString FileManager::GetRoot()

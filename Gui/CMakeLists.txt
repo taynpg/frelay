@@ -28,6 +28,7 @@ Control/cpTableWidget.h Control/cpTableWidget.cpp
 GuiUtil/Config.h GuiUtil/Config.cpp
 ../Res/qss.qrc Form/Loading.h Form/Loading.cpp
 Control/Common.h Control/Common.cpp
+Form/FileInfoForm.h Form/FileInfoForm.cpp Form/FileInfoForm.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
