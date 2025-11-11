@@ -46,13 +46,13 @@ signals:
 private:
     void InitControl();
     void InitMenu();
-    void ShowPath(const QString& path, const QStringList& drivers);
+    void ShowPath(const QString& path, const QVector<QString>& drivers);
     void ShowFile(const DirFileInfoVec& info);
     void doubleClick(int row, int column);
     void SetRoot(const QString& path);
     void SortFileInfo(SortMethod method);
     void HeaderClicked(int column);
-    void FilterFile(const QStringList& selectedTypes);
+    void FilterFile(const QVector<QString>& selectedTypes);
     void GenFilter();
     void ShowFilterForm();
     void CopyFullPath();
@@ -70,7 +70,7 @@ private:
     ClientCore* cliCore_;
     QMutex cbMut_;
     QMutex tbMut_;
-    QStringList drivers_;
+    QVector<QString> drivers_;
     QSet<QString> fileTypes_;
     QSet<QString> curSelectTypes_;
     DirFileInfoVec currentInfo_;

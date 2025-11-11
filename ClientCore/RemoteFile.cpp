@@ -12,7 +12,7 @@ void RemoteFile::setClientCore(ClientCore* cliCore)
 {
     cliCore_ = cliCore;
     connect(cliCore_, &ClientCore::sigPath, this,
-            [this](const QString& path, const QStringList& drivers) { sigHome(path, drivers); });
+            [this](const QString& path, const QVector<QString>& drivers) { sigHome(path, drivers); });
     connect(cliCore_, &ClientCore::sigFiles, this, [this](const DirFileInfoVec& files) { sigDirFile(files); });
 }
 

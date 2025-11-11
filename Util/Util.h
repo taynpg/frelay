@@ -66,7 +66,7 @@ public:
     QString GetErr() const;
 
 signals:
-    void sigHome(const QString& path, const QStringList& drivers);
+    void sigHome(const QString& path, const QVector<QString>& drivers);
     void sigDirFile(const DirFileInfoVec& dirFile);
 
 protected:

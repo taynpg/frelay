@@ -109,7 +109,7 @@ void FileManager::InitMenu()
     menu_->addSeparator();
 }
 
-void FileManager::ShowPath(const QString& path, const QStringList& drivers)
+void FileManager::ShowPath(const QString& path, const QVector<QString>& drivers)
 {
     QMutexLocker locker(&cbMut_);
 
@@ -349,7 +349,7 @@ void FileManager::SetUiCurrentPath(const QString& path)
     ui->comboBox->setCurrentText(path);
 }
 
-void FileManager::FilterFile(const QStringList& selectedTypes)
+void FileManager::FilterFile(const QVector<QString>& selectedTypes)
 {
     if (selectedTypes.contains("*")) {
         currentShowInfo_.vec = currentInfo_.vec;
@@ -415,7 +415,7 @@ void FileManager::ShowFilterForm()
     dialog.setLayout(&layout);
 
     if (dialog.exec() == QDialog::Accepted) {
-        QStringList selectedTypes;
+        QVector<QString> selectedTypes;
         for (int i = 0; i < listWidget.count(); ++i) {
             QListWidgetItem* item = listWidget.item(i);
             if (item->checkState() == Qt::Checked) {
