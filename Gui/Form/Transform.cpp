@@ -110,6 +110,7 @@ void TransForm::setProgress(double val)
 void TransForm::handleFailed()
 {
     ui->progressBar->setValue(0);
+    QMessageBox::information(this, tr("提示"), tr("传输失败"));
 }
 
 void TransForm::handleDone()

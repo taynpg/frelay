@@ -332,6 +332,7 @@ void FileTrans::fbtCanotSend(QSharedPointer<FrameBuffer> frame)
     if (sendTask_->file.isOpen()) {
         sendTask_->file.close();
     }
+    sendTask_->state = TaskState::STATE_FAILED;
 }
 
 void FileTrans::fbtCanSend(QSharedPointer<FrameBuffer> frame)
