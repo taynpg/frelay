@@ -17,6 +17,12 @@
 | frelayConsole | 控制台 | 命令行客户端，没有操作功能，一般配合另外一个带GUI的客户端使用。 |
 | frelayGUI     | GUI    | GUI客户端。                                                  |
 
+## 示例图
+
+![示例图片](https://github.com/taynpg/frelay/raw/main/img/10.png)
+
+![示例图片](https://github.com/taynpg/frelay/raw/main/img/xp.png)
+
 ## 注意事项
 
 - 请使用版本一致的三个组件，不可混用。
