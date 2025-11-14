@@ -22,7 +22,7 @@ Control/ConnectControl.h Control/ConnectControl.cpp Control/ConnectControl.ui
 Control/CompareControl.h Control/CompareControl.cpp Control/CompareControl.ui
 GuiUtil/Public.h GuiUtil/Public.cpp
 Form/Transform.h Form/Transform.cpp Form/Transform.ui
-../Res/frelay.qrc ../Res/ico.rc
+../Res/frelay.qrc ../Res/ico.rc ../Res/QtTheme.qrc 
 Control/cusTableWidget.cpp Control/cusTableWidget.h
 Control/cpTableWidget.h Control/cpTableWidget.cpp
 GuiUtil/Config.h GuiUtil/Config.cpp
