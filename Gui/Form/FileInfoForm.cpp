@@ -6,7 +6,7 @@ FileInfo::FileInfo(QWidget* parent) : QDialog(parent), ui(new Ui::FileInfo)
 {
     ui->setupUi(this);
     InitControl();
-    setWindowTitle(tr("属性"));
+    setFixedSize(minimumSizeHint());
 }
 
 FileInfo::~FileInfo()
@@ -28,4 +28,6 @@ void FileInfo::InitControl()
 {
     ui->pedDir->setReadOnly(true);
     ui->pedName->setReadOnly(true);
+
+    connect(ui->btnClose, &QPushButton::clicked, this, &FileInfo::close);
 }

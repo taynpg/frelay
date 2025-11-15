@@ -467,7 +467,7 @@ void FileManager::ShowProperties()
     info->fileTime_ = ui->tableWidget->item(row, 2)->text();
     info->fileType_ = ui->tableWidget->item(row, 3)->text();
     info->fileSize_ = ui->tableWidget->item(row, 4)->text();
-
+    info->setWindowTitle(isRemote_ ? tr("远程文件属性") : tr("本地文件属性"));
     info->exec();
 }
 
