@@ -42,5 +42,10 @@ int main(int argc, char* argv[])
     helper->RunWorker(core.get());
     helper->Connect();
 
+    QObject::connect(core.get(), &ClientCore::sigDisconnect, [&app](){
+        qWarning() << "Abnormal state, quit...";
+        app.exit();
+    });
+
     return app.exec();
 }
