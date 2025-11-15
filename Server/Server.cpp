@@ -103,6 +103,12 @@ void Server::onReadyRead()
     }
 
     if (client) {
+        if (client->buffer.size() > MAX_INVALID_PACKET_SIZE) {
+            auto mg = QString("Client %1 buffer size exceeded, XXXXX...").arg(client->id);
+            qWarning() << mg;
+            socket->disconnectFromHost();
+            return;
+        }
         client->buffer.append(socket->readAll());
         processClientData(client);
     }
@@ -143,7 +149,7 @@ bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointe
     if (flowBackCount_[fsoc->property("clientId").toString()] > FLOW_BACK_MULTIPLE) {
         auto level = getBlockLevel(tsoc);
         flowLimit(fsoc, level);
-        //qDebug() << "Flow back count exceeded, block level:" << level;
+        // qDebug() << "Flow back count exceeded, block level:" << level;
     }
     flowBackCount_[fsoc->property("clientId").toString()]++;
     return sendData(tsoc, frame);
