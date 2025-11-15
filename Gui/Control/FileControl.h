@@ -58,6 +58,12 @@ private:
     void CopyFullPath();
     void ShowProperties();
     void UpDown();
+    
+private:
+    void OperNewFolder();
+    void OperDelete();
+    void OperRename();
+    void WaitMsg();
 
 public slots:
     void evtHome();

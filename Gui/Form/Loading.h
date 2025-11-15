@@ -25,6 +25,7 @@ public:
 
 public:
     int exec() override;
+    bool isUserCancel() const;
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -39,6 +40,7 @@ public slots:
     void cancelBtnClicked();
 
 private:
+    bool isUserCancel_{};
     QFrame* m_pCenterFrame;
     QLabel* m_pMovieLabel;
     QMovie* m_pLoadingMovie;

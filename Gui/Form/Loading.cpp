@@ -13,6 +13,7 @@ LoadingDialog::LoadingDialog(QWidget* parent) : QDialog(parent)
  */
 void LoadingDialog::initUi()
 {
+    isUserCancel_ = false;
     this->setFixedSize(250, 250);
     m_pCenterFrame = new QFrame(this);
     m_pCenterFrame->setGeometry(10, 10, 230, 230);
@@ -50,7 +51,10 @@ void LoadingDialog::initUi()
                                 "}");
     m_pCancelBtn->setGeometry(25, 180, 180, 35);
     m_pCancelBtn->setEnabled(true);
-    connect(m_pCancelBtn, &QPushButton::clicked, this, &LoadingDialog::cancelBtnClicked);
+    connect(m_pCancelBtn, &QPushButton::clicked, this, [this]() {
+        isUserCancel_ = true;
+        cancelBtnClicked();
+    });
 
     // 实例阴影shadow
     QGraphicsDropShadowEffect* shadow = new QGraphicsDropShadowEffect(this);
@@ -136,6 +140,11 @@ int LoadingDialog::exec()
 {
     isShow_ = true;
     return QDialog::exec();
+}
+
+bool LoadingDialog::isUserCancel() const
+{
+    return isUserCancel_;
 }
 
 LoadingDialog::~LoadingDialog()

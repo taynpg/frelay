@@ -115,6 +115,9 @@ void FileManager::InitMenu()
     menu_->addAction(tr("过滤器"), this, &FileManager::ShowFilterForm);
     menu_->addAction(tr("复制文件路径"), this, &FileManager::CopyFullPath);
     menu_->addAction(tr("属性"), this, &FileManager::ShowProperties);
+    menu_->addAction(tr("重命名"), this, &FileManager::OperRename);
+    menu_->addAction(tr("删除"), this, &FileManager::OperDelete);
+    menu_->addAction(tr("新建文件夹"), this, &FileManager::OperNewFolder);
     menu_->addSeparator();
 }
 
@@ -519,6 +522,22 @@ void FileManager::UpDown()
         return;
     }
     emit sigSendTasks(tasks);
+}
+
+void FileManager::OperNewFolder()
+{
+}
+
+void FileManager::OperDelete()
+{
+}
+
+void FileManager::OperRename()
+{
+}
+
+void FileManager::WaitMsg()
+{
 }
 
 QString FileManager::GetRoot()

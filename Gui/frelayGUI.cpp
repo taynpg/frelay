@@ -154,15 +154,24 @@ void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
     checking.setTipsText("正在检查文件...");
 
     connect(&cond, &CheckCondition::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
-    connect(&checking, &LoadingDialog::cancelWaiting, &cond, &CheckCondition::interrupCheck);
     connect(clientCore_, &ClientCore::sigMsgAnswer, &cond, &CheckCondition::recvFrame);
 
     cond.start();
     checking.exec();
 
+    if (checking.isUserCancel()) {
+        cond.interrupCheck();
+        cond.wait();
+        return;
+    }
+
     // 检查结果
     auto reTasks = cond.GetTasks();
     if (!CheckTaskResult(reTasks)) {
+        cond.wait();
+        return;
+    }
+    if (reTasks.empty()) {
         return;
     }
     transform_->SetTasks(reTasks);

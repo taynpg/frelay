@@ -172,6 +172,11 @@ QVector<TransTask> CheckCondition::GetTasks() const
     return tasks_;
 }
 
+bool CheckCondition::IsQuit() const
+{
+    return isAlreadyInter_;
+}
+
 void CheckCondition::recvFrame(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
@@ -199,12 +204,18 @@ void CheckCondition::interrupCheck()
     if (!isAlreadyInter_) {
         isAlreadyInter_ = true;
         qWarning() << tr("中断文件校验......");
+        tasks_.clear();
         emit sigCheckOver();
     }
 }
 
 void CheckCondition::run()
 {
+    if (tasks_.empty()) {
+        qInfo() << tr("没有需要校验的文件或者被中断......");
+        return;
+    }
+
     qInfo() << tr("开始文件校验......");
     isRun_ = true;
     msg_.clear();
@@ -243,7 +254,11 @@ void CheckCondition::run()
         return;
     }
     while (isRun_) {
-        QThread::msleep(10);
+        QThread::msleep(1);
+        if (isAlreadyInter_) {
+            qInfo() << tr("线程中断文件校验等待......");
+            return;
+        }
         if (msg_.isEmpty()) {
             continue;
         }

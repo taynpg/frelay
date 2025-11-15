@@ -86,6 +86,7 @@ public:
     void SetClientCore(ClientCore* clientCore);
     void SetTasks(const QVector<TransTask>& tasks);
     QVector<TransTask> GetTasks() const;
+    bool IsQuit() const;
 
 Q_SIGNALS:
     void sigCheckOver();
