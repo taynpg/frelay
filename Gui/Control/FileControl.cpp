@@ -9,10 +9,11 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QMessageBox>
 #include <QTableWidgetItem>
 #include <RemoteFile.h>
-#include "Form/FileInfoForm.h"
 
+#include "Form/FileInfoForm.h"
 #include "GuiUtil/Public.h"
 #include "ui_FileControl.h"
 
@@ -55,6 +56,12 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
     if (type == 0) {
         evtHome();
         evtFile();
+    }
+
+    if (isRemote_) {
+        menu_->addAction(tr("下载"), this, &FileManager::UpDown);
+    } else {
+        menu_->addAction(tr("上传"), this, &FileManager::UpDown);
     }
 }
 
@@ -469,6 +476,49 @@ void FileManager::ShowProperties()
     info->fileSize_ = ui->tableWidget->item(row, 4)->text();
     info->setWindowTitle(isRemote_ ? tr("远程文件属性") : tr("本地文件属性"));
     info->exec();
+}
+
+void FileManager::UpDown()
+{
+    auto datas = ui->tableWidget->selectedItems();
+    if (datas.isEmpty()) {
+        return;
+    }
+    if (datas.size() % 5 != 0) {
+        QMessageBox::information(this, tr("提示"), tr("请选择完整的行。"));
+        return;
+    }
+    QVector<TransTask> tasks;
+    for (int i = 0; i < (datas.size() / 5); ++i) {
+        if (datas[i * 5 + 3]->text() != "File") {
+            qDebug() << QString(tr("暂不支持传输文件夹：%1")).arg(datas[i * 5 + 3]->text());
+            continue;
+        }
+        /*
+            要注意这一块的逻辑，本软件的所讲的【上传】【下载】都是针对本地。
+            这里的任务拼接和 DropEvent 有所不同，
+            DropEvent 是接收方负责拼接任务，但是这里是发送方拼接任务。
+
+            所以这里的拼接逻辑需要注意。
+        */
+        TransTask task;
+        task.taskUUID = Util::UUID();
+        task.isUpload = !isRemote_;
+        task.localId = cliCore_->GetOwnID();
+        task.remoteId = cliCore_->GetRemoteID();
+        if (isRemote_) {
+            task.remotePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), datas[i * 5 + 1]->text());
+            task.localPath = GlobalData::Ins()->GetLocalRoot();
+        } else {
+            task.remotePath = GlobalData::Ins()->GetRemoteRoot();
+            task.localPath = Util::Join(GlobalData::Ins()->GetLocalRoot(), datas[i * 5 + 1]->text());
+        }
+        tasks.push_back(task);
+    }
+    if (tasks.isEmpty()) {
+        return;
+    }
+    emit sigSendTasks(tasks);
 }
 
 QString FileManager::GetRoot()

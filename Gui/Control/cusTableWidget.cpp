@@ -52,7 +52,7 @@ void CustomTableWidget::dropEvent(QDropEvent* event)
 
     for (int i = 0; i < (parseData.size() / 5); ++i) {
         if (parseData[i * 5 + 3] != "File") {
-            qDebug() << QString(tr("Not Handle %1")).arg(parseData[i * 5 + 1]);
+            qDebug() << QString(tr("暂不支持传输文件夹：%1")).arg(parseData[i * 5 + 1]);
             continue;
         }
         TransTask task;
@@ -68,6 +68,10 @@ void CustomTableWidget::dropEvent(QDropEvent* event)
             task.remotePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), parseData[i * 5 + 1]);
         }
         tasks.push_back(task);
+    }
+
+    if (tasks.empty()) {
+        return;
     }
     emit sigTasks(tasks);
 }

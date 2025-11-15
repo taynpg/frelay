@@ -105,4 +105,4 @@ private:
     ClientCore* clientCore_{};
 };
 
-#endif // TRANSFORM_H
+#endif   // TRANSFORM_H

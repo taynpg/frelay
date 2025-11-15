@@ -289,6 +289,7 @@ void FileTrans::fbtCanDown(QSharedPointer<FrameBuffer> frame)
     downTask_->permission = info.permissions;
     downTask_->totalSize = info.size;
     downTask_->tranSize = 0;
+    isSend_ = false;
     qDebug() << QString(tr("Can Down trans file:%1.")).arg(info.fromPath);
 }
 
@@ -339,6 +340,7 @@ void FileTrans::fbtCanSend(QSharedPointer<FrameBuffer> frame)
 {
     InfoMsg info = infoUnpack<InfoMsg>(frame->data);
     qInfo() << QString(tr("开始发送 %1 到 %2")).arg(info.fromPath, frame->fid);
+    isSend_ = true;
     SendFile(sendTask_);
 }
 
@@ -353,7 +355,7 @@ void FileTrans::fbtTransFailed(QSharedPointer<FrameBuffer> frame)
 
 void FileTrans::Interrupt(bool notic)
 {
-    if (downTask_->state == TaskState::STATE_RUNNING) {
+    if (!isSend_ && downTask_->state == TaskState::STATE_RUNNING) {
         qWarning() << QString(tr("传输文件 %1 中断。")).arg(downTask_->file.fileName());
         downTask_->file.close();
 
@@ -368,7 +370,7 @@ void FileTrans::Interrupt(bool notic)
 
         downTask_->state = TaskState::STATE_NONE;
     }
-    if (sendTask_->state == TaskState::STATE_RUNNING) {
+    if (isSend_ && sendTask_->state == TaskState::STATE_RUNNING) {
         qWarning() << QString(tr("传输文件 %1 中断。")).arg(sendTask_->file.fileName());
         sendTask_->file.close();
 

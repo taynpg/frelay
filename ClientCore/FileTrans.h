@@ -98,8 +98,9 @@ private:
     QMutex lMut_;
     QMutex rMut_;
 
-    ClientCore* clientCore_;
     QMutex sthMut_;
+    bool isSend_{};
+    ClientCore* clientCore_;
     QMap<QString, QThread*> upTasks_;
 };
 

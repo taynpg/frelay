@@ -92,6 +92,9 @@ void Compare::InitControl()
     });
 
     LoadTitles();
+
+    isResource_ = true;
+    ui->tableWidget->setIsResource(isResource_);
 }
 
 void Compare::InitTabWidget()

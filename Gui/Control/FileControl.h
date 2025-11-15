@@ -57,6 +57,7 @@ private:
     void ShowFilterForm();
     void CopyFullPath();
     void ShowProperties();
+    void UpDown();
 
 public slots:
     void evtHome();
