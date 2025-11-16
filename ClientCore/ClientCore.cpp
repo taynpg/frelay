@@ -132,6 +132,16 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
         }
         return;
     }
+    if (msg.command == STRMSG_AC_NEW_DIR) {
+        msg.command = STRMSG_AC_ANSWER_NEW_DIR;
+        msg.msg = Util::NewDir(msg.fromPath);
+        if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
+            auto logMsg = tr("给") + frame->fid + tr("返回新建结果消息失败。");
+            qCritical() << logMsg;
+            return;
+        }
+        return;
+    }
     // 未知信息
     qWarning() << QString(tr("未知询问信息类型：%1")).arg(msg.command);
 }

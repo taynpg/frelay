@@ -5,9 +5,9 @@
 #include <FileTrans.h>
 #include <InfoDirFile.h>
 #include <QDialogButtonBox>
-#include <QTableWidgetItem>
 #include <QMenu>
 #include <QMutex>
+#include <QTableWidgetItem>
 #include <QWidget>
 #include <Util.h>
 #include <map>
@@ -72,6 +72,7 @@ private:
     void InitMenu();
     void ShowPath(const QString& path, const QVector<QString>& drivers);
     void ShowFile(const DirFileInfoVec& info);
+    void ShowFileItem(const DirFileInfo& f, int i);
     void doubleClick(int row, int column);
     void SetRoot(const QString& path);
     void SortFileInfo(SortMethod method);

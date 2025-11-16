@@ -280,3 +280,33 @@ QString Util::Delete(const QString& path)
         return tr("不支持的文件类型: %1").arg(path);
     }
 }
+
+QString Util::NewDir(const QString& path)
+{
+    if (path.isEmpty()) {
+        return tr("路径不能为空");
+    }
+
+    if (QDir(path).exists()) {
+        return tr("目录已存在: %1").arg(path);
+    }
+
+    QFileInfo pathInfo(path);
+    QDir parentDir = pathInfo.absoluteDir();
+
+    if (!parentDir.exists()) {
+        return tr("父目录不存在: %1").arg(parentDir.absolutePath());
+    }
+
+    QFileInfo parentInfo(parentDir.absolutePath());
+    if (!parentInfo.isWritable()) {
+        return tr("父目录无写入权限: %1").arg(parentDir.absolutePath());
+    }
+
+    QDir dir;
+    if (dir.mkpath(path)) {
+        return "";
+    } else {
+        return tr("创建目录失败: %1").arg(path);
+    }
+}

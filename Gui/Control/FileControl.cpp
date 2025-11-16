@@ -241,6 +241,72 @@ void FileManager::SortFileInfo(SortMethod method)
     }
 }
 
+void FileManager::ShowFileItem(const DirFileInfo& f, int i)
+{
+    // ***********************************************************************************
+    auto* iconItem = new QTableWidgetItem("");
+    iconItem->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    iconItem->setFlags(iconItem->flags() & ~Qt::ItemIsEditable);
+    ui->tableWidget->setItem(i, 0, iconItem);
+
+    // ***********************************************************************************
+    auto* fileItem = new QTableWidgetItem(f.name);
+    fileItem->setFlags(fileItem->flags() & ~Qt::ItemIsEditable);
+    ui->tableWidget->setItem(i, 1, fileItem);
+    QDateTime modifyTime = QDateTime::fromMSecsSinceEpoch(f.lastModified);
+
+    // ***********************************************************************************
+    QString timeStr = modifyTime.toString("yyyy-MM-dd hh:mm:ss");
+    auto* timeItem = new QTableWidgetItem(timeStr);
+    timeItem->setFlags(timeItem->flags() & ~Qt::ItemIsEditable);
+    ui->tableWidget->setItem(i, 2, timeItem);
+
+    // ***********************************************************************************
+    QString typeStr;
+    switch (f.type) {
+    case File:
+        typeStr = "File";
+        iconItem->setIcon(QApplication::style()->standardIcon(QStyle::SP_FileIcon));
+        break;
+    case Dir:
+        typeStr = "Dir";
+        iconItem->setIcon(QApplication::style()->standardIcon(QStyle::SP_DirIcon));
+        break;
+    case Link:
+        typeStr = "Link";
+        break;
+    case Other:
+        typeStr = "Other";
+        break;
+    default:
+        typeStr = "Unknown";
+        break;
+    }
+
+    // ***********************************************************************************
+    auto* typeItem = new QTableWidgetItem(typeStr);
+    typeItem->setFlags(typeItem->flags() & ~Qt::ItemIsEditable);
+    ui->tableWidget->setItem(i, 3, typeItem);
+
+    // ***********************************************************************************
+    QString sizeStr;
+    if (f.size < 1024) {
+        sizeStr = QString::number(f.size) + " B";
+    } else if (f.size < 1024 * 1024) {
+        sizeStr = QString::number(f.size / 1024.0, 'f', 2) + " KB";
+    } else {
+        sizeStr = QString::number(f.size / (1024.0 * 1024.0), 'f', 2) + " MB";
+    }
+    QTableWidgetItem* item = nullptr;
+    if (f.type == File) {
+        item = new QTableWidgetItem(sizeStr);
+    } else {
+        item = new QTableWidgetItem("");
+    }
+    item->setFlags(item->flags() & ~Qt::ItemIsEditable);
+    ui->tableWidget->setItem(i, 4, item);
+}
+
 void FileManager::RefreshTab()
 {
     userScrol_ = false;
@@ -251,70 +317,7 @@ void FileManager::RefreshTab()
 
         ui->tableWidget->insertRow(ui->tableWidget->rowCount());
         const DirFileInfo& fileInfo = currentShowInfo_.vec[i];
-
-        // ***********************************************************************************
-        auto* iconItem = new QTableWidgetItem("");
-        iconItem->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-        iconItem->setFlags(iconItem->flags() & ~Qt::ItemIsEditable);
-        ui->tableWidget->setItem(i, 0, iconItem);
-
-        // ***********************************************************************************
-        auto* fileItem = new QTableWidgetItem(fileInfo.name);
-        fileItem->setFlags(fileItem->flags() & ~Qt::ItemIsEditable);
-        ui->tableWidget->setItem(i, 1, fileItem);
-        QDateTime modifyTime = QDateTime::fromMSecsSinceEpoch(fileInfo.lastModified);
-
-        // ***********************************************************************************
-        QString timeStr = modifyTime.toString("yyyy-MM-dd hh:mm:ss");
-        auto* timeItem = new QTableWidgetItem(timeStr);
-        timeItem->setFlags(timeItem->flags() & ~Qt::ItemIsEditable);
-        ui->tableWidget->setItem(i, 2, timeItem);
-
-        // ***********************************************************************************
-        QString typeStr;
-        switch (fileInfo.type) {
-        case File:
-            typeStr = "File";
-            iconItem->setIcon(QApplication::style()->standardIcon(QStyle::SP_FileIcon));
-            break;
-        case Dir:
-            typeStr = "Dir";
-            iconItem->setIcon(QApplication::style()->standardIcon(QStyle::SP_DirIcon));
-            break;
-        case Link:
-            typeStr = "Link";
-            break;
-        case Other:
-            typeStr = "Other";
-            break;
-        default:
-            typeStr = "Unknown";
-            break;
-        }
-
-        // ***********************************************************************************
-        auto* typeItem = new QTableWidgetItem(typeStr);
-        typeItem->setFlags(typeItem->flags() & ~Qt::ItemIsEditable);
-        ui->tableWidget->setItem(i, 3, typeItem);
-
-        // ***********************************************************************************
-        QString sizeStr;
-        if (fileInfo.size < 1024) {
-            sizeStr = QString::number(fileInfo.size) + " B";
-        } else if (fileInfo.size < 1024 * 1024) {
-            sizeStr = QString::number(fileInfo.size / 1024.0, 'f', 2) + " KB";
-        } else {
-            sizeStr = QString::number(fileInfo.size / (1024.0 * 1024.0), 'f', 2) + " MB";
-        }
-        QTableWidgetItem* item = nullptr;
-        if (fileInfo.type == File) {
-            item = new QTableWidgetItem(sizeStr);
-        } else {
-            item = new QTableWidgetItem("");
-        }
-        item->setFlags(item->flags() & ~Qt::ItemIsEditable);
-        ui->tableWidget->setItem(i, 4, item);
-
+        ShowFileItem(fileInfo, i);
         if (i % 50 == 0) {
             QGuiApplication::processEvents();
         }
@@ -541,6 +544,77 @@ void FileManager::UpDown()
 
 void FileManager::OperNewFolder()
 {
+    QInputDialog dialog(this);
+    dialog.setWindowTitle("输入");
+    dialog.setLabelText("要新建的文件夹名称:");
+    dialog.setOkButtonText("确定");
+    dialog.setCancelButtonText("取消");
+    dialog.setFixedSize(dialog.minimumSizeHint());
+
+    QString text;
+    if (dialog.exec() == QDialog::Accepted) {
+        text = dialog.textValue().trimmed();
+        if (text.isEmpty()) {
+            return;
+        }
+    } else {
+        return;
+    }
+
+    auto folder = Util::Join(GetRoot(), text);
+    if (!isRemote_) {
+        QString ret = Util::NewDir(folder);
+        if (ret.isEmpty()) {
+            QMessageBox::information(this, tr("提示"), tr("创建%1成功").arg(folder));
+            DirFileInfo nf;
+            nf.size = 0;
+            nf.type = Dir;
+            nf.fullPath = folder;
+            nf.name = text;
+            nf.lastModified = QDateTime::currentDateTime().toMSecsSinceEpoch();
+            ui->tableWidget->insertRow(0);
+            ShowFileItem(nf, 0);
+        } else {
+            QMessageBox::information(this, tr("提示"), ret);
+        }
+        return;
+    }
+
+    WaitOper oper(this);
+    oper.SetClient(cliCore_);
+    oper.SetType(STRMSG_AC_NEW_DIR, STRMSG_AC_ANSWER_NEW_DIR);
+    oper.SetPath(folder, "", "");
+
+    LoadingDialog checking(this);
+    checking.setTipsText("正在新建...");
+    connect(&oper, &WaitOper::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+    connect(cliCore_, &ClientCore::sigMsgAnswer, &oper, &WaitOper::recvFrame);
+
+    oper.start();
+    checking.exec();
+
+    std::shared_ptr<void> recv(nullptr, [&oper](void*) { oper.wait(); });
+
+    if (checking.isUserCancel()) {
+        oper.interrupCheck();
+        return;
+    }
+
+    // 检查结果
+    auto msg = oper.GetMsg();
+    if (msg.msg == STR_NONE || !msg.msg.isEmpty()) {
+        QMessageBox::information(this, tr("提示"), QString(tr("新建失败=>%1")).arg(msg.msg));
+    } else {
+        QMessageBox::information(this, tr("提示"), QString(tr("新建%1成功。")).arg(folder));
+        DirFileInfo nf;
+        nf.size = 0;
+        nf.type = Dir;
+        nf.fullPath = folder;
+        nf.name = text;
+        nf.lastModified = QDateTime::currentDateTime().toMSecsSinceEpoch();
+        ui->tableWidget->insertRow(0);
+        ShowFileItem(nf, 0);
+    }
 }
 
 void FileManager::OperDelete()
@@ -640,8 +714,7 @@ void FileManager::OperRename()
         if (text.isEmpty()) {
             return;
         }
-    }
-    else {
+    } else {
         return;
     }
 
