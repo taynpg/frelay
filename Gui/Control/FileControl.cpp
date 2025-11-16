@@ -243,6 +243,8 @@ void FileManager::SortFileInfo(SortMethod method)
 
 void FileManager::ShowFileItem(const DirFileInfo& f, int i)
 {
+    static QIcon dirIcon = QApplication::style()->standardIcon(QStyle::SP_DirIcon);
+    static QIcon fileIcon = QApplication::style()->standardIcon(QStyle::SP_FileIcon);
     // ***********************************************************************************
     auto* iconItem = new QTableWidgetItem("");
     iconItem->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
@@ -266,11 +268,11 @@ void FileManager::ShowFileItem(const DirFileInfo& f, int i)
     switch (f.type) {
     case File:
         typeStr = "File";
-        iconItem->setIcon(QApplication::style()->standardIcon(QStyle::SP_FileIcon));
+        iconItem->setIcon(fileIcon);
         break;
     case Dir:
         typeStr = "Dir";
-        iconItem->setIcon(QApplication::style()->standardIcon(QStyle::SP_DirIcon));
+        iconItem->setIcon(dirIcon);
         break;
     case Link:
         typeStr = "Link";
@@ -318,7 +320,7 @@ void FileManager::RefreshTab()
         ui->tableWidget->insertRow(ui->tableWidget->rowCount());
         const DirFileInfo& fileInfo = currentShowInfo_.vec[i];
         ShowFileItem(fileInfo, i);
-        if (i % 50 == 0) {
+        if (i != 0 && i % 30 == 0) {
             QGuiApplication::processEvents();
         }
     }
@@ -549,7 +551,9 @@ void FileManager::OperNewFolder()
     dialog.setLabelText("要新建的文件夹名称:");
     dialog.setOkButtonText("确定");
     dialog.setCancelButtonText("取消");
-    dialog.setFixedSize(dialog.minimumSizeHint());
+    auto size = dialog.minimumSizeHint();
+    size.setWidth(size.width() + 200);
+    dialog.setFixedSize(size);
 
     QString text;
     if (dialog.exec() == QDialog::Accepted) {
@@ -706,7 +710,10 @@ void FileManager::OperRename()
     dialog.setLabelText("请输入新名称:");
     dialog.setOkButtonText("确定");
     dialog.setCancelButtonText("取消");
-    dialog.setFixedSize(dialog.minimumSizeHint());
+    auto size = dialog.minimumSizeHint();
+    size.setWidth(size.width() + 200);
+    dialog.setFixedSize(size);
+    dialog.setTextValue(curName);
 
     QString text;
     if (dialog.exec() == QDialog::Accepted) {
