@@ -5,6 +5,7 @@
 #include <FileTrans.h>
 #include <InfoDirFile.h>
 #include <QDialogButtonBox>
+#include <QTableWidgetItem>
 #include <QMenu>
 #include <QMutex>
 #include <QWidget>
@@ -86,7 +87,8 @@ private:
     void OperNewFolder();
     void OperDelete();
     void OperRename();
-    
+    bool CheckSelect(QList<QTableWidgetItem*>& ret);
+
 public slots:
     void evtHome();
     void evtFile();

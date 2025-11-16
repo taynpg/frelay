@@ -158,7 +158,7 @@ QString Util::Rename(const QString& from, const QString& to, bool isDir)
         if (dir.rename(from, to)) {
             return "";
         }
-        return tr("请确认是否有权限或者被占用。");
+        return tr("请确认是否无权限操作或者被占用。");
     } else {
         QFile f(from);
         if (f.rename(to)) {
@@ -252,4 +252,31 @@ std::string GlobalData::GetConfigPath() const
 void GlobalData::SetConfigPath(const std::string& path)
 {
     ConfigPath_ = path;
+}
+
+QString Util::Delete(const QString& path)
+{
+    QFileInfo fileInfo(path);
+
+    if (!fileInfo.exists()) {
+        return tr("文件或目录不存在: %1").arg(path);
+    }
+
+    if (fileInfo.isFile()) {
+        QFile file(path);
+        if (file.remove()) {
+            return "";
+        } else {
+            return tr("删除文件失败: %1").arg(file.errorString());
+        }
+    } else if (fileInfo.isDir()) {
+        QDir dir(path);
+        if (dir.removeRecursively()) {
+            return "";
+        } else {
+            return tr("删除目录失败，确认是否占用或者无权限操作。");
+        }
+    } else {
+        return tr("不支持的文件类型: %1").arg(path);
+    }
 }

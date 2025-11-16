@@ -545,18 +545,85 @@ void FileManager::OperNewFolder()
 
 void FileManager::OperDelete()
 {
+    QList<QTableWidgetItem*> datas;
+    if (!CheckSelect(datas)) {
+        return;
+    }
+
+    // 确认是否删除
+    int ret = QMessageBox::question(this, tr("确认删除"), tr("确定要删除%1吗？").arg(datas[1]->text()),
+                                    QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+    if (ret != QMessageBox::Yes) {
+        return;
+    }
+
+    auto name = Util::Join(GetRoot(), datas[1]->text());
+    auto type = datas[3]->text();
+
+    if (!isRemote_) {
+        QString ret = Util::Delete(name);
+        if (ret.isEmpty()) {
+            QMessageBox::information(this, tr("提示"), tr("删除成功"));
+            int row = datas[0]->row();
+            ui->tableWidget->removeRow(row);
+        } else {
+            QMessageBox::information(this, tr("提示"), ret);
+        }
+        return;
+    }
+
+    WaitOper oper(this);
+    oper.SetClient(cliCore_);
+    oper.SetType(STRMSG_AC_DEL_FILEDIR, STRMSG_AC_ANSWER_DEL_FILEDIR);
+    oper.SetPath(name, "", "");
+
+    LoadingDialog checking(this);
+    checking.setTipsText("正在删除...");
+    connect(&oper, &WaitOper::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+    connect(cliCore_, &ClientCore::sigMsgAnswer, &oper, &WaitOper::recvFrame);
+
+    oper.start();
+    checking.exec();
+
+    std::shared_ptr<void> recv(nullptr, [&oper](void*) { oper.wait(); });
+
+    if (checking.isUserCancel()) {
+        oper.interrupCheck();
+        return;
+    }
+
+    // 检查结果
+    auto msg = oper.GetMsg();
+    if (msg.msg == STR_NONE || !msg.msg.isEmpty()) {
+        QMessageBox::information(this, tr("提示"), QString(tr("删除失败=>%1")).arg(msg.msg));
+    } else {
+        QMessageBox::information(this, tr("提示"), QString(tr("删除成功。")));
+        ui->tableWidget->removeRow(datas[0]->row());
+    }
+}
+
+bool FileManager::CheckSelect(QList<QTableWidgetItem*>& ret)
+{
+    ret = ui->tableWidget->selectedItems();
+    if (ret.isEmpty()) {
+        QMessageBox::information(this, tr("提示"), tr("请选择一项。"));
+        return false;
+    }
+    if (ret.size() % 5 != 0) {
+        QMessageBox::information(this, tr("提示"), tr("请选择单行。"));
+        return false;
+    }
+    return true;
 }
 
 void FileManager::OperRename()
 {
-    auto datas = ui->tableWidget->selectedItems();
-    if (datas.isEmpty()) {
+    QList<QTableWidgetItem*> datas;
+    if (!CheckSelect(datas)) {
         return;
     }
-    if (datas.size() % 5 != 0) {
-        QMessageBox::information(this, tr("提示"), tr("请选择单行进行重命名。"));
-        return;
-    }
+
     auto curName = datas[1]->text();
     auto curType = datas[3]->text();
 
@@ -573,6 +640,9 @@ void FileManager::OperRename()
         if (text.isEmpty()) {
             return;
         }
+    }
+    else {
+        return;
     }
 
     QString oldName = Util::Join(GetRoot(), curName);
@@ -612,13 +682,8 @@ void FileManager::OperRename()
     auto msg = oper.GetMsg();
     if (msg.msg == STR_NONE || !msg.msg.isEmpty()) {
         QMessageBox::information(this, tr("提示"), QString(tr("重命名失败=>%1")).arg(msg.msg));
-        return;
-    }
-    if (msg.msg.isEmpty()) {
-        datas[1]->setText(text);
-        return;
     } else {
-        QMessageBox::information(this, tr("提示"), QString(tr("重命名失败=>%1")).arg(msg.msg));
+        datas[1]->setText(text);
     }
 }
 

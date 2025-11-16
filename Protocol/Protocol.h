@@ -91,10 +91,8 @@ enum FileCheckState {
 // 字符串标识
 #define STRMSG_AC_CHECK_FILE_EXIST "requestCheckFileExist"
 #define STRMSG_AC_ANSWER_FILE_EXIST "answerCheckFileExist"
-#define STRMSG_AC_DEL_FILE "requestDelFile"
-#define STRMSG_AC_ANSWER_DEL_FILE "answerDelFile"
-#define STRMSG_AC_DEL_DIR "requestDelDir"
-#define STRMSG_AC_ANSWER_DEL_DIR "answerDelDir"
+#define STRMSG_AC_DEL_FILEDIR "requestDelFileDir"
+#define STRMSG_AC_ANSWER_DEL_FILEDIR "answerDelFileDir"
 #define STRMSG_AC_RENAME_FILEDIR "requestRenameFileDir"
 #define STRMSG_AC_ANSWER_RENAME_FILEDIR "answerRenameFileDir"
 #define STRMSG_AC_NEW_DIR "requestNewDir"

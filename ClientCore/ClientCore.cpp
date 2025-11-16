@@ -122,6 +122,16 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
         }
         return;
     }
+    if (msg.command == STRMSG_AC_DEL_FILEDIR) {
+        msg.command = STRMSG_AC_ANSWER_DEL_FILEDIR;
+        msg.msg = Util::Delete(msg.fromPath);
+        if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
+            auto logMsg = tr("给") + frame->fid + tr("返回删除结果消息失败。");
+            qCritical() << logMsg;
+            return;
+        }
+        return;
+    }
     // 未知信息
     qWarning() << QString(tr("未知询问信息类型：%1")).arg(msg.command);
 }
