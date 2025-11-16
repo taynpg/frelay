@@ -24,6 +24,7 @@ struct InfoMsg {
     QString msg;
     QString fromPath;
     QString toPath;
+    QString type;
     quint64 size{};
     quint32 permissions{};
     QVector<QString> list;
@@ -31,7 +32,7 @@ struct InfoMsg {
 
     void serialize(QDataStream& data) const
     {
-        data << mark << command << msg << fromPath << toPath << size << permissions;
+        data << mark << command << msg << fromPath << toPath << type << size << permissions;
         data << static_cast<qint32>(list.size());
         for (const auto& item : list) {
             data << item;
@@ -46,7 +47,7 @@ struct InfoMsg {
 
     void deserialize(QDataStream& data)
     {
-        data >> mark >> command >> msg >> fromPath >> toPath >> size >> permissions;
+        data >> mark >> command >> msg >> fromPath >> toPath >> type >> size >> permissions;
 
         qint32 listSize;
         data >> listSize;

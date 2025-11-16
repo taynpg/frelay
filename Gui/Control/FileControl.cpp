@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFile>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMessageBox>
@@ -15,6 +16,7 @@
 #include <RemoteFile.h>
 
 #include "Form/FileInfoForm.h"
+#include "Form/Loading.h"
 #include "GuiUtil/Public.h"
 #include "ui_FileControl.h"
 
@@ -313,7 +315,7 @@ void FileManager::RefreshTab()
         item->setFlags(item->flags() & ~Qt::ItemIsEditable);
         ui->tableWidget->setItem(i, 4, item);
 
-        if (i % 10 == 0) {
+        if (i % 50 == 0) {
             QGuiApplication::processEvents();
         }
     }
@@ -547,10 +549,77 @@ void FileManager::OperDelete()
 
 void FileManager::OperRename()
 {
-}
+    auto datas = ui->tableWidget->selectedItems();
+    if (datas.isEmpty()) {
+        return;
+    }
+    if (datas.size() % 5 != 0) {
+        QMessageBox::information(this, tr("提示"), tr("请选择单行进行重命名。"));
+        return;
+    }
+    auto curName = datas[1]->text();
+    auto curType = datas[3]->text();
 
-void FileManager::WaitMsg()
-{
+    QInputDialog dialog(this);
+    dialog.setWindowTitle("输入");
+    dialog.setLabelText("请输入新名称:");
+    dialog.setOkButtonText("确定");
+    dialog.setCancelButtonText("取消");
+    dialog.setFixedSize(dialog.minimumSizeHint());
+
+    QString text;
+    if (dialog.exec() == QDialog::Accepted) {
+        text = dialog.textValue().trimmed();
+        if (text.isEmpty()) {
+            return;
+        }
+    }
+
+    QString oldName = Util::Join(GetRoot(), curName);
+    QString newName = Util::Join(GetRoot(), text);
+
+    if (!isRemote_) {
+        QString ret = Util::Rename(oldName, newName, curType == STR_DIR);
+        if (!ret.isEmpty()) {
+            QMessageBox::information(this, tr("提示"), ret);
+        } else {
+            datas[1]->setText(text);
+        }
+        return;
+    }
+
+    WaitOper oper(this);
+    oper.SetClient(cliCore_);
+    oper.SetType(STRMSG_AC_RENAME_FILEDIR, STRMSG_AC_ANSWER_RENAME_FILEDIR);
+    oper.SetPath(oldName, newName, curType);
+
+    LoadingDialog checking(this);
+    checking.setTipsText("正在重命名...");
+    connect(&oper, &WaitOper::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+    connect(cliCore_, &ClientCore::sigMsgAnswer, &oper, &WaitOper::recvFrame);
+
+    oper.start();
+    checking.exec();
+
+    std::shared_ptr<void> recv(nullptr, [&oper](void*) { oper.wait(); });
+
+    if (checking.isUserCancel()) {
+        oper.interrupCheck();
+        return;
+    }
+
+    // 检查结果
+    auto msg = oper.GetMsg();
+    if (msg.msg == STR_NONE || !msg.msg.isEmpty()) {
+        QMessageBox::information(this, tr("提示"), QString(tr("重命名失败=>%1")).arg(msg.msg));
+        return;
+    }
+    if (msg.msg.isEmpty()) {
+        datas[1]->setText(text);
+        return;
+    } else {
+        QMessageBox::information(this, tr("提示"), QString(tr("重命名失败=>%1")).arg(msg.msg));
+    }
 }
 
 QString FileManager::GetRoot()
@@ -603,11 +672,88 @@ void FileManager::doubleClick(int row, int column)
     }
 
     auto type = ui->tableWidget->item(row, 3)->text();
-    if (type != "Dir") {
+    if (type != STR_DIR) {
         return;
     }
 
     QDir dir(GetRoot());
     QString np = dir.filePath(item->text());
     fileHelper_->GetDirFile(np);
+}
+
+WaitOper::WaitOper(QObject* parent) : WaitThread(parent)
+{
+}
+
+void WaitOper::run()
+{
+    isAlreadyInter_ = false;
+    infoMsg_.msg = STR_NONE;
+    isRun_ = true;
+    recvMsg_ = false;
+
+    InfoMsg msg;
+    msg.command = sendStrType_;
+    msg.fromPath = stra_;
+    msg.toPath = strb_;
+    msg.type = type_;
+
+    auto f = cli_->GetBuffer<InfoMsg>(msg, FBT_MSGINFO_ASK, cli_->GetRemoteID());
+    if (!ClientCore::syncInvoke(cli_, f)) {
+        auto errMsg = QString(tr("向%1发送%2请求失败。")).arg(cli_->GetRemoteID()).arg(sendStrType_);
+        emit sigCheckOver();
+        qCritical() << errMsg;
+        return;
+    }
+    while (isRun_) {
+        QThread::msleep(1);
+        if (isAlreadyInter_) {
+            qInfo() << tr("线程中断文件操作等待......");
+            return;
+        }
+        if (!recvMsg_) {
+            continue;
+        }
+        break;
+    }
+    isAlreadyInter_ = true;
+    emit sigCheckOver();
+    auto n = QString(tr("向%1的请求%2处理结束。")).arg(cli_->GetRemoteID()).arg(sendStrType_);
+    qInfo() << n;
+}
+
+void WaitOper::SetType(const QString& sendType, const QString& ansType)
+{
+    sendStrType_ = sendType;
+    ansStrType_ = ansType;
+}
+
+void WaitOper::SetPath(const QString& stra, const QString& strb, const QString& type)
+{
+    stra_ = stra;
+    strb_ = strb;
+    type_ = type;
+}
+
+InfoMsg WaitOper::GetMsg() const
+{
+    return infoMsg_;
+}
+
+void WaitOper::interrupCheck()
+{
+    qWarning() << QString(tr("中断请求处理%1......")).arg(sendStrType_);
+    WaitThread::interrupCheck();
+}
+
+void WaitOper::recvFrame(QSharedPointer<FrameBuffer> frame)
+{
+    InfoMsg info = infoUnpack<InfoMsg>(frame->data);
+    if (info.command == ansStrType_) {
+        infoMsg_ = info;
+        recvMsg_ = true;
+        return;
+    }
+    auto n = tr("收到未知Oper的回复信息：") + info.command;
+    qInfo() << n;
 }

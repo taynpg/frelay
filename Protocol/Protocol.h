@@ -96,20 +96,21 @@ enum FileCheckState {
 #define STRMSG_AC_DEL_DIR "requestDelDir"
 #define STRMSG_AC_ANSWER_DEL_DIR "answerDelDir"
 #define STRMSG_AC_RENAME_FILEDIR "requestRenameFileDir"
-#define STRMSG_AC_ANSWER_FILEDIR "answerRenameFileDir"
+#define STRMSG_AC_ANSWER_RENAME_FILEDIR "answerRenameFileDir"
 #define STRMSG_AC_NEW_DIR "requestNewDir"
 #define STRMSG_AC_ANSWER_NEW_DIR "answerNewDir"
 #define STRMSG_AC_ASK_FILEINFO "requestFileInfo"
 #define STRMSG_AC_ANSWER_FILEINFO "answerFileInfo"
 #define STRMSG_AC_UP "upAction"
 #define STRMSG_AC_DOWN "downAction"
-#define STRMSG_AC_ACCEPT "acceptAction"
-#define STRMSG_AC_REJECT "rejectAction"
-#define STRMSG_AC_CANCEL "cancelAction"
 
 #define STRMSG_ST_FILEEXIT "fileExist"
 #define STRMSG_ST_FILENOEXIT "fileNotExist"
 #define STRMSG_ST_DIREXIT "dirExist"
 #define STRMSG_ST_DIRNOEXIT "dirNotExist"
+
+#define STR_FILE "File"
+#define STR_DIR "Dir"
+#define STR_NONE "None"
 
 #endif   // PROTOCOL_H

@@ -27,6 +27,29 @@ enum class SortMethod {
     SMD_BY_SIZE_ASC,
 };
 
+class WaitOper : public WaitThread
+{
+public:
+    WaitOper(QObject* parent = nullptr);
+
+public:
+    void run() override;
+    void SetType(const QString& sendType, const QString& ansType);
+    void SetPath(const QString& stra, const QString& strb, const QString& type);
+    InfoMsg GetMsg() const;
+    virtual void interrupCheck();
+    virtual void recvFrame(QSharedPointer<FrameBuffer> frame);
+
+private:
+    bool recvMsg_{};
+    InfoMsg infoMsg_{};
+    QString sendStrType_{};
+    QString ansStrType_{};
+    QString stra_;
+    QString strb_;
+    QString type_;
+};
+
 class FileManager : public QWidget
 {
     Q_OBJECT
@@ -58,13 +81,12 @@ private:
     void CopyFullPath();
     void ShowProperties();
     void UpDown();
-    
+
 private:
     void OperNewFolder();
     void OperDelete();
     void OperRename();
-    void WaitMsg();
-
+    
 public slots:
     void evtHome();
     void evtFile();

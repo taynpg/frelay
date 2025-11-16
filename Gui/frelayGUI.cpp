@@ -165,10 +165,11 @@ void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
         return;
     }
 
+    std::shared_ptr<void> recv(nullptr, [&cond](void*) { cond.wait(); });
+
     // 检查结果
     auto reTasks = cond.GetTasks();
     if (!CheckTaskResult(reTasks)) {
-        cond.wait();
         return;
     }
     if (reTasks.empty()) {

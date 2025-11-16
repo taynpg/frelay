@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
+#include <QFileDevice>
 #include <QFileInfo>
 #include <QMutex>
 #include <QStandardPaths>
@@ -150,6 +151,23 @@ bool Util::DirExist(const QString& path, bool isFilePath)
     return dir.exists();
 }
 
+QString Util::Rename(const QString& from, const QString& to, bool isDir)
+{
+    if (isDir) {
+        QDir dir;
+        if (dir.rename(from, to)) {
+            return "";
+        }
+        return tr("请确认是否有权限或者被占用。");
+    } else {
+        QFile f(from);
+        if (f.rename(to)) {
+            return "";
+        }
+        return f.errorString();
+    }
+}
+
 QString Util::UUID()
 {
     return QUuid::createUuid().toString().remove("{").remove("}");
@@ -235,4 +253,3 @@ void GlobalData::SetConfigPath(const std::string& path)
 {
     ConfigPath_ = path;
 }
-

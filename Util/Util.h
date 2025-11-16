@@ -51,6 +51,7 @@ public:
     static QString GetVersion();
     static bool FileExist(const QString& path);
     static bool DirExist(const QString& path, bool isFilePath);
+    static QString Rename(const QString& from, const QString& to, bool isDir);
     static QString UUID();
     static QVector<QString> GetLocalDrivers();
 };
