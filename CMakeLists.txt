@@ -61,8 +61,10 @@ set(QT_DEP_FILES
 "${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Widgets.dll"
 "${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Network.dll"
 )
-set(QT_DEP_DIRS
-"${CMAKE_PREFIX_PATH}/plugins/platforms/qwindows.dll"
+set(QT_DEP_PLATFORM "${CMAKE_PREFIX_PATH}/plugins/platforms/qwindows.dll")
+set(QT_DEP_STYLES 
+"${CMAKE_PREFIX_PATH}/plugins/styles/qmodernwindowsstyle.dll"
+"${CMAKE_PREFIX_PATH}/plugins/styles/qwindowsvistastyle.dll"
 )
 endif()
 
@@ -91,6 +93,20 @@ add_subdirectory(Console)
 add_subdirectory(Struct)
 add_subdirectory(Test)
 
+function(safe_install_files files_list destination)
+    set(existing_files)
+    foreach(file ${files_list})
+        if(EXISTS ${file})
+            list(APPEND existing_files ${file})
+        else()
+            message(STATUS "跳过: ${file}")
+        endif()
+    endforeach()
+    if(existing_files)
+        install(FILES ${existing_files} DESTINATION ${destination})
+    endif()
+endfunction()
+
 install(TARGETS frelayConsole DESTINATION bin)
 install(TARGETS frelayServer DESTINATION bin)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -98,7 +114,8 @@ install(FILES ${MINGW_DLLS} DESTINATION bin)
 endif()
 if (WIN32)
 install(FILES ${QT_DEP_FILES} DESTINATION bin)
-install(FILES ${QT_DEP_DIRS} DESTINATION bin/platforms)
+safe_install_files("${QT_DEP_PLATFORM}" "bin/platforms")
+safe_install_files("${QT_DEP_STYLES}" "bin/styles")
 endif()
 
 execute_process(
