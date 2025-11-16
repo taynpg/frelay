@@ -78,6 +78,7 @@ private:
     ClientCore* cliCore_;
     QMutex cbMut_;
     QMutex tbMut_;
+    bool userScrol_{};
     QVector<QString> drivers_;
     QSet<QString> fileTypes_;
     QSet<QString> curSelectTypes_;

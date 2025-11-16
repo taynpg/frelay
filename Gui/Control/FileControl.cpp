@@ -10,6 +10,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMessageBox>
+#include <QScrollBar>
 #include <QTableWidgetItem>
 #include <RemoteFile.h>
 
@@ -107,6 +108,7 @@ void FileManager::InitControl()
 
     auto* line = ui->comboBox->lineEdit();
     connect(line, &QLineEdit::returnPressed, this, [this]() { ui->btnVisit->click(); });
+    connect(ui->tableWidget->verticalScrollBar(), &QScrollBar::actionTriggered, this, [this]() { userScrol_ = true; });
 }
 
 void FileManager::InitMenu()
@@ -239,9 +241,13 @@ void FileManager::SortFileInfo(SortMethod method)
 
 void FileManager::RefreshTab()
 {
+    userScrol_ = false;
+    ui->tableWidget->clearContents();
     ui->tableWidget->setRowCount(0);
-    ui->tableWidget->setRowCount(currentShowInfo_.vec.size());
+
     for (int i = 0; i < currentShowInfo_.vec.size(); ++i) {
+
+        ui->tableWidget->insertRow(ui->tableWidget->rowCount());
         const DirFileInfo& fileInfo = currentShowInfo_.vec[i];
 
         // ***********************************************************************************
@@ -306,8 +312,15 @@ void FileManager::RefreshTab()
         }
         item->setFlags(item->flags() & ~Qt::ItemIsEditable);
         ui->tableWidget->setItem(i, 4, item);
+
+        if (i % 10 == 0) {
+            QGuiApplication::processEvents();
+        }
     }
-    ui->tableWidget->scrollToTop();
+
+    if (!userScrol_) {
+        ui->tableWidget->scrollToTop();
+    }
 }
 
 void FileManager::HeaderClicked(int column)
