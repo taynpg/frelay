@@ -362,3 +362,25 @@ void HeatBeat::run()
         }
     }
 }
+
+WaitThread::WaitThread(QObject* parent) : QThread(parent)
+{
+}
+
+void WaitThread::SetClient(ClientCore* cli)
+{
+    cli_ = cli;
+}
+
+bool WaitThread::IsQuit() const
+{
+    return isAlreadyInter_;
+}
+
+void WaitThread::interrupCheck()
+{
+    if (!isAlreadyInter_) {
+        isAlreadyInter_ = true;
+        emit sigCheckOver();
+    }
+}

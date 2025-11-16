@@ -142,7 +142,6 @@ void TransForm::showEvent(QShowEvent* event)
 {
     QDialog::showEvent(event);
     workTh_ = new TranFromTh(this, this);
-    // fileTrans_->moveToThread(workTh_);
     connect(workTh_, &QThread::finished, workTh_, &QObject::deleteLater);
     workTh_->start();
 }
@@ -153,63 +152,21 @@ void TransForm::closeEvent(QCloseEvent* event)
     QDialog::closeEvent(event);
 }
 
-CheckCondition::CheckCondition(QObject* parent) : QThread(parent)
+WaitCheck::WaitCheck(QObject* parent) : WaitThread(parent)
 {
 }
 
-void CheckCondition::SetClientCore(ClientCore* clientCore)
-{
-    clientCore_ = clientCore;
-}
-
-void CheckCondition::SetTasks(const QVector<TransTask>& tasks)
+void WaitCheck::SetTasks(const QVector<TransTask>& tasks)
 {
     tasks_ = tasks;
 }
 
-QVector<TransTask> CheckCondition::GetTasks() const
+QVector<TransTask> WaitCheck::GetTasks() const
 {
     return tasks_;
 }
 
-bool CheckCondition::IsQuit() const
-{
-    return isAlreadyInter_;
-}
-
-void CheckCondition::recvFrame(QSharedPointer<FrameBuffer> frame)
-{
-    InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    if (info.command == STRMSG_AC_ANSWER_FILE_EXIST) {
-
-        for (auto& item : info.mapData) {
-            auto it =
-                std::find_if(tasks_.begin(), tasks_.end(), [&item](const TransTask& task) { return task.taskUUID == item.uuid; });
-            if (it == tasks_.end()) {
-                continue;
-            }
-            it->remoteCheckState = static_cast<FileCheckState>(item.state);
-        }
-
-        qInfo() << tr("检查结束......");
-        msg_ = info.command;
-        return;
-    }
-    msg_ = tr("收到未知信息，认为判断失败：") + info.command;
-    qInfo() << msg_;
-}
-
-void CheckCondition::interrupCheck()
-{
-    if (!isAlreadyInter_) {
-        isAlreadyInter_ = true;
-        qWarning() << tr("中断文件校验......");
-        tasks_.clear();
-        emit sigCheckOver();
-    }
-}
-
-void CheckCondition::run()
+void WaitCheck::run()
 {
     if (tasks_.empty()) {
         qInfo() << tr("没有需要校验的文件或者被中断......");
@@ -246,8 +203,8 @@ void CheckCondition::run()
         msg.mapData[task.taskUUID].remotePath = task.remotePath;
     }
 
-    auto f = clientCore_->GetBuffer(msg, FBT_MSGINFO_ASK, clientCore_->GetRemoteID());
-    if (!ClientCore::syncInvoke(clientCore_, f)) {
+    auto f = cli_->GetBuffer(msg, FBT_MSGINFO_ASK, cli_->GetRemoteID());
+    if (!ClientCore::syncInvoke(cli_, f)) {
         auto errMsg = tr("检查远程文件存在性数据发送失败。");
         emit sigCheckOver();
         qCritical() << errMsg;
@@ -267,4 +224,32 @@ void CheckCondition::run()
     isAlreadyInter_ = true;
     emit sigCheckOver();
     qInfo() << tr("文件校验结束......");
+}
+
+void WaitCheck::interrupCheck()
+{
+    qWarning() << tr("中断文件校验......");
+    WaitThread::interrupCheck();
+}
+
+void WaitCheck::recvFrame(QSharedPointer<FrameBuffer> frame)
+{
+    InfoMsg info = infoUnpack<InfoMsg>(frame->data);
+    if (info.command == STRMSG_AC_ANSWER_FILE_EXIST) {
+
+        for (auto& item : info.mapData) {
+            auto it =
+                std::find_if(tasks_.begin(), tasks_.end(), [&item](const TransTask& task) { return task.taskUUID == item.uuid; });
+            if (it == tasks_.end()) {
+                continue;
+            }
+            it->remoteCheckState = static_cast<FileCheckState>(item.state);
+        }
+
+        qInfo() << tr("检查结束......");
+        msg_ = info.command;
+        return;
+    }
+    msg_ = tr("收到未知信息，认为判断失败：") + info.command;
+    qInfo() << msg_;
 }

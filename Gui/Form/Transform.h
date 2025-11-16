@@ -75,35 +75,23 @@ private:
     TransForm* tf_;
 };
 
-class CheckCondition : public QThread
+class WaitCheck : public WaitThread
 {
-    Q_OBJECT
+public:
+    WaitCheck(QObject* parent = nullptr);
 
 public:
-    CheckCondition(QObject* parent = nullptr);
-
-public:
-    void SetClientCore(ClientCore* clientCore);
     void SetTasks(const QVector<TransTask>& tasks);
     QVector<TransTask> GetTasks() const;
-    bool IsQuit() const;
 
-Q_SIGNALS:
-    void sigCheckOver();
-
-public Q_SLOTS:
-    void interrupCheck();
-    void recvFrame(QSharedPointer<FrameBuffer> frame);
-
-protected:
+public:
     void run() override;
+    void interrupCheck() override;
+    void recvFrame(QSharedPointer<FrameBuffer> frame) override;
 
 private:
     QString msg_;
-    bool isRun_;
-    bool isAlreadyInter_;
     QVector<TransTask> tasks_;
-    ClientCore* clientCore_{};
 };
 
 #endif   // TRANSFORM_H

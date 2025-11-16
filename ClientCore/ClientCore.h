@@ -12,10 +12,10 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QQueue>
+#include <QReadWriteLock>
 #include <QTcpSocket>
 #include <QThread>
 #include <array>
-#include <QReadWriteLock>
 
 class ClientCore : public QObject
 {
@@ -157,6 +157,30 @@ protected:
 private:
     bool isRun_{false};
     ClientCore* core_{};
+};
+
+class WaitThread : public QThread
+{
+    Q_OBJECT
+
+public:
+    WaitThread(QObject* parent = nullptr);
+
+public:
+    void SetClient(ClientCore* cli);
+    bool IsQuit() const;
+
+Q_SIGNALS:
+    void sigCheckOver();
+
+public Q_SLOTS:
+    virtual void interrupCheck();
+    virtual void recvFrame(QSharedPointer<FrameBuffer> frame) = 0;
+
+protected:
+    bool isRun_;
+    bool isAlreadyInter_;
+    ClientCore* cli_{};
 };
 
 #endif   // CLIENTCORE_H

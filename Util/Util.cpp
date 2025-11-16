@@ -235,3 +235,4 @@ void GlobalData::SetConfigPath(const std::string& path)
 {
     ConfigPath_ = path;
 }
+

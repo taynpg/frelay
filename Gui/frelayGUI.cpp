@@ -146,15 +146,15 @@ void frelayGUI::HandleTask(const QVector<TransTask>& tasks)
     }
 
     // 检查文件
-    CheckCondition cond(this);
+    WaitCheck cond(this);
     cond.SetTasks(tasks);
-    cond.SetClientCore(clientCore_);
+    cond.SetClient(clientCore_);
 
     LoadingDialog checking(this);
     checking.setTipsText("正在检查文件...");
 
-    connect(&cond, &CheckCondition::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
-    connect(clientCore_, &ClientCore::sigMsgAnswer, &cond, &CheckCondition::recvFrame);
+    connect(&cond, &WaitCheck::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+    connect(clientCore_, &ClientCore::sigMsgAnswer, &cond, &WaitCheck::recvFrame);
 
     cond.start();
     checking.exec();
