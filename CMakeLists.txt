@@ -47,6 +47,15 @@ set(MINGW_DLLS
 endif()
 endif()
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
+message(STATUS "frelay use Clang compiler.")
+get_filename_component(CXX_COMPILER_PATH ${CMAKE_CXX_COMPILER} DIRECTORY)
+set(LLVM_MINGW_DLL
+    "${CXX_COMPILER_PATH}/libc++.dll"
+    "${CXX_COMPILER_PATH}/libunwind.dll"
+)
+endif()
+
 if(WIN32)
 if(DEFINED XP_PLATFORM_SUPPORT)
 message(STATUS "Support Windows XP platform => ${XP_PLATFORM_SUPPORT}.")
@@ -111,6 +120,9 @@ install(TARGETS frelayConsole DESTINATION bin)
 install(TARGETS frelayServer DESTINATION bin)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
 install(FILES ${MINGW_DLLS} DESTINATION bin)
+endif()
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
+install(FILES ${LLVM_MINGW_DLL} DESTINATION bin)
 endif()
 if (WIN32)
 install(FILES ${QT_DEP_FILES} DESTINATION bin)
