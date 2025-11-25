@@ -22,7 +22,7 @@ public:
 
 protected:
     void dropEvent(QDropEvent* event) override;
-    void dragEnterEvent(QDragEnterEvent* event);
+    void dragEnterEvent(QDragEnterEvent* event) override;
 
 protected:
     bool isRemote_{false};

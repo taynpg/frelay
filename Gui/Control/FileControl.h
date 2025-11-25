@@ -38,8 +38,8 @@ public:
     void SetType(const QString& sendType, const QString& ansType);
     void SetPath(const QString& stra, const QString& strb, const QString& type);
     InfoMsg GetMsg() const;
-    virtual void interrupCheck();
-    virtual void recvFrame(QSharedPointer<FrameBuffer> frame);
+    void interrupCheck() override;
+    void recvFrame(QSharedPointer<FrameBuffer> frame) override;
 
 private:
     bool recvMsg_{};

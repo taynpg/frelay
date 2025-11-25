@@ -38,6 +38,11 @@ int main(int argc, char* argv[])
     auto core = std::make_shared<ClientCore>();
     auto helper = std::make_shared<ConsoleHelper>();
 
+    QObject::connect(core.get(), &ClientCore::conFailed, [&app](){
+        qWarning() << "Abnormal state, quit...";
+        app.exit();
+    });
+
     helper->SetIpPort(argv[1], QString("%1").arg(argv[2]).toInt());
     helper->RunWorker(core.get());
     helper->Connect();

@@ -18,7 +18,7 @@ public:
 
 protected:
     void dropEvent(QDropEvent* event) override;
-    void dragEnterEvent(QDragEnterEvent* event);
+    void dragEnterEvent(QDragEnterEvent* event) override;
 
 private:
     bool isResource_{};
