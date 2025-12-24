@@ -4,6 +4,7 @@ project(frelay VERSION 0.2.4 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PROJECT_URL "https://github.com/taynpg/frelay")
 
 if(DEFINED RELEASE_MARK)
@@ -71,7 +72,7 @@ set(QT_DEP_FILES
 "${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Network.dll"
 )
 set(QT_DEP_PLATFORM "${CMAKE_PREFIX_PATH}/plugins/platforms/qwindows.dll")
-set(QT_DEP_STYLES 
+set(QT_DEP_STYLES
 "${CMAKE_PREFIX_PATH}/plugins/styles/qmodernwindowsstyle.dll"
 "${CMAKE_PREFIX_PATH}/plugins/styles/qwindowsvistastyle.dll"
 )
@@ -80,7 +81,7 @@ endif()
 set(CMAKE_DEBUG_POSTFIX "d")
 include_directories(${CMAKE_SOURCE_DIR}/Gui/Control)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/) 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/)
 include_directories(${PROJECT_BINARY_DIR})
 
 add_definitions(-DFMT_HEADER_ONLY)
