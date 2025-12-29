@@ -1,16 +1,3 @@
-// Zed settings
-//
-// For information on how to configure Zed, see the Zed
-// documentation: https://zed.dev/docs/configuring-zed
-//
-// To see all of Zed's default settings without changing your
-// custom settings, run `zed: open default settings` from the
-// command palette (cmd-shift-p / ctrl-shift-p)
-//
-// 需要安装的依赖有
-// 1.Nodejs
-// 2.jsonnet-language-server
-// 3.clangd
 {
     "tab_size": 4,
     "vim_mode": false,
@@ -21,9 +8,6 @@
         "mode": "system",
         "light": "One Light",
         "dark": "One Dark",
-    },
-    "file_types": {
-        "Jsonnet": ["cfg"],
     },
     "lsp": {
         "clangd": {
@@ -40,13 +24,6 @@
                     "--ranking-model=heuristics",
                     "--function-arg-placeholders=false",
                 ],
-            },
-        },
-        "jsonnet-language-server": {
-            "settings": {
-                "formatting": {
-                    "indent": 4,
-                },
             },
         },
     },

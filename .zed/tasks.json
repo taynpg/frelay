@@ -1,13 +1,13 @@
 [
     {
-        "label": "CmakeConfig",
+        "label": "Config",
         "command": "cmd",
         "env": {
-            "VS2026ENV": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\"",
+            "BUILDTOOL": "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat\"",
         },
         "args": [
             "/c",
-            "$VS2026ENV && cmake -Bbuild -G Ninja -S . -DCOMPILE_GUI=ON -DCMAKE_BUILD_TYPE=Debug",
+            "\"%BUILDTOOL% && cmake -Bbuild -G Ninja -S . -DCMAKE_PREFIX_PATH=C:\\Kit\\Qt6 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON\"",
         ],
         "cwd": "$ZED_WORKTREE_ROOT",
         "use_new_terminal": false,
@@ -15,12 +15,12 @@
         "show_summary": true,
     },
     {
-        "label": "CmakeBuild",
+        "label": "Build",
         "command": "cmd",
         "env": {
-            "VS2026ENV": "\"C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\"",
+            "BUILDTOOL": "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat\"",
         },
-        "args": ["/c", "$VS2026ENV  && cmake --build build --config Debug"],
+        "args": ["/c", "\"%BUILDTOOL% && cmake --build build --config Debug\""],
         "cwd": "$ZED_WORKTREE_ROOT",
         "use_new_terminal": false,
         "show_command": true,
