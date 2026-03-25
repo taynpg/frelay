@@ -532,12 +532,13 @@ void FileManager::UpDown()
         for (int i = 0; i < (datas.size() / 5); ++i) {
             FileStruct fst;
             fst.root = GlobalData::Ins()->GetRemoteRoot();
-            fst.mid = datas[i * 5 + 1]->text();
             const auto& curType = datas[i * 5 + 3]->text();
             if (curType == "File") {
+                fst.mid = "";
                 fst.relative = datas[i * 5 + 1]->text();
                 resultFiles << fst;
             } else {
+                fst.mid = datas[i * 5 + 1]->text();
                 infoMsg.infos[datas[i * 5 + 1]->text()] = QVector<FileStruct>{};
             }
         }
@@ -567,13 +568,15 @@ void FileManager::UpDown()
 
                 const auto& curType = datas[i * 5 + 3]->text();
                 if (curType == "File") {
-                    fst.mid = datas[i * 5 + 1]->text();
+                    fst.mid = "";
+                    fst.relative = datas[i * 5 + 1]->text();
                     resultFiles.push_back(fst);
                 } else {
-                    QVector<FileStruct> fst;
-                    DirFileHelper::GetAllFiles(GlobalData::Ins()->GetLocalRoot(), datas[i * 5 + 1]->text(), fst);
-                    if (!fst.isEmpty()) {
-                        resultFiles << fst;
+                    QVector<FileStruct> fstVec;
+                    fst.mid = datas[i * 5 + 1]->text();
+                    DirFileHelper::GetAllFiles(GlobalData::Ins()->GetLocalRoot(), fst.mid, fstVec);
+                    if (!fstVec.isEmpty()) {
+                        resultFiles << fstVec;
                     }
                 }
             }
@@ -646,7 +649,7 @@ void FileManager::OperNewFolder()
             nf.type = Dir;
             nf.fullPath = folder;
             nf.name = text;
-            //nf.lastModified = QDateTime::currentDateTime().toMSecsSinceEpoch();
+            // nf.lastModified = QDateTime::currentDateTime().toMSecsSinceEpoch();
             nf.lastModified = QDateTime::currentMSecsSinceEpoch();
             ui->tableWidget->insertRow(0);
             ShowFileItem(nf, 0);
