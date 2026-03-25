@@ -2,6 +2,7 @@
 
 #include <QDateTime>
 #include <QListWidgetItem>
+#include <QMessageBox>
 #include <QStandardItem>
 #include <chrono>
 #include <ctime>
@@ -25,6 +26,15 @@ void LogPrint::InitControl()
     connect(styleHints_, &QStyleHints::colorSchemeChanged, this, &LogPrint::ColorChange);
 #endif
     ui->pedText->setReadOnly(true);
+
+    connect(ui->btnClear, &QPushButton::clicked, [this]() {
+        QMessageBox::StandardButton reply = QMessageBox::question(this, tr("确认清空"), tr("确定要清空所有内容吗？"),
+                                                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+        if (reply == QMessageBox::Yes) {
+            ui->pedText->clear();
+        }
+    });
 }
 
 std::string LogPrint::now_str()

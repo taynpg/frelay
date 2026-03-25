@@ -21,4 +21,4 @@ add_executable(frelayTest ${MSOURCES})
 target_link_libraries(frelayTest PRIVATE Protocol Util)
 
 add_executable(frelayBaseTest BaseTest.cpp)
-target_link_libraries(frelayBaseTest Qt${QT_VERSION_MAJOR}::Core)
+target_link_libraries(frelayBaseTest Qt${QT_VERSION_MAJOR}::Core Util Protocol)

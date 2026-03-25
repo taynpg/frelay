@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
+#include <QDirIterator>
 #include <QFileDevice>
 #include <QFileInfo>
 #include <QMutex>
@@ -70,6 +71,11 @@ QString Util::Join(const QString& path, const QString& name)
     return QDir::cleanPath(path + QDir::separator() + name);
 }
 
+QString Util::Join(const QString& path, const QString& mid, const QString& name)
+{
+    return QDir::cleanPath(path + QDir::separator() + mid + QDir::separator() + name);
+}
+
 void Util::InitLogger(const QString& logPath, const QString& mark)
 {
     auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logPath.toStdString(), 1024 * 1024 * 50, 3);
@@ -80,6 +86,12 @@ void Util::InitLogger(const QString& logPath, const QString& mark)
     logger = std::make_shared<spdlog::logger>(mark.toStdString(), sinks.begin(), sinks.end());
     logger->set_level(spdlog::level::debug);
     spdlog::register_logger(logger);
+}
+
+QString Util::GetFileDir(const QString& path)
+{
+    QFileInfo fileInfo(path);
+    return fileInfo.absolutePath();
 }
 
 // do not check exit
@@ -177,7 +189,7 @@ QVector<QString> Util::GetLocalDrivers()
 {
     QVector<QString> result;
     auto drivers = QStorageInfo::mountedVolumes();
-    for (const auto& driver : drivers) {
+    for (const auto& driver : std::as_const(drivers)) {
         if (driver.isValid() && driver.isReady()) {
             result.push_back(driver.rootPath());
         }
@@ -188,6 +200,65 @@ QVector<QString> Util::GetLocalDrivers()
 QString DirFileHelper::GetErr() const
 {
     return QString();
+}
+
+bool DirFileHelper::GetAllFiles(const QString& rootPath, QVector<QString>& files)
+{
+    QDir rootDir(rootPath);
+
+    if (!rootDir.exists()) {
+        qWarning() << "目录不存在：" << rootPath;
+        return false;
+    }
+
+    QString absoluteRootPath = rootDir.absolutePath();
+    QDirIterator it(absoluteRootPath, QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+
+    while (it.hasNext()) {
+        it.next();
+        QFileInfo fileInfo = it.fileInfo();
+        if (fileInfo.isFile()) {
+            QString absoluteFilePath = fileInfo.absoluteFilePath();
+            QString relativePath = absoluteFilePath.mid(absoluteRootPath.length());
+            if (relativePath.startsWith('/') || relativePath.startsWith('\\')) {
+                relativePath = relativePath.mid(1);
+            }
+            files.append(relativePath);
+        }
+    }
+    return true;
+}
+
+bool DirFileHelper::GetAllFiles(const QString& rootPath, const QString& mid, QVector<FileStruct>& files)
+{
+    auto fileRoot = Util::Join(rootPath, mid);
+    QDir rootDir(fileRoot);
+
+    if (!rootDir.exists()) {
+        qWarning() << "目录不存在：" << fileRoot;
+        return false;
+    }
+
+    QString absoluteRootPath = rootDir.absolutePath();
+    QDirIterator it(absoluteRootPath, QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+
+    while (it.hasNext()) {
+        it.next();
+        QFileInfo fileInfo = it.fileInfo();
+        if (fileInfo.isFile()) {
+            QString absoluteFilePath = fileInfo.absoluteFilePath();
+            QString relativePath = absoluteFilePath.mid(absoluteRootPath.length());
+            if (relativePath.startsWith('/') || relativePath.startsWith('\\')) {
+                relativePath = relativePath.mid(1);
+            }
+            FileStruct fst;
+            fst.root = rootPath;
+            fst.mid = mid;
+            fst.relative = relativePath;
+            files.append(fst);
+        }
+    }
+    return true;
 }
 
 DirFileHelper::DirFileHelper(QObject* parent) : QObject(parent)

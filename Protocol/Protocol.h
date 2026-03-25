@@ -102,10 +102,14 @@ enum FileCheckState {
 #define STRMSG_AC_UP "upAction"
 #define STRMSG_AC_DOWN "downAction"
 
+#define STRMSG_AC_ALL_DIRFILES "askAllDirFiles"
+#define STRMSG_AC_ANSWER_ALL_DIRFILES "answerAllDirFiles"
+
 #define STRMSG_ST_FILEEXIT "fileExist"
 #define STRMSG_ST_FILENOEXIT "fileNotExist"
 #define STRMSG_ST_DIREXIT "dirExist"
 #define STRMSG_ST_DIRNOEXIT "dirNotExist"
+#define STRMSG_ST_COMMAND_ALREADY_RUNNING "commandAlreadyRunning"
 
 #define STR_FILE "File"
 #define STR_DIR "Dir"

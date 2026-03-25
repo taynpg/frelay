@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <InfoDirFile.h>
+#include <InfoMsg.h>
 #include <QMutex>
 #include <QObject>
 
@@ -45,7 +46,9 @@ public:
     static QString GetUserHome();
     static void InitLogger(const QString& logPath, const QString& mark);
     static QString Get2FilePath(const QString& file, const QString& directory);
+    static QString GetFileDir(const QString& path);
     static QString Join(const QString& path, const QString& name);
+    static QString Join(const QString& path, const QString& mid, const QString& name);
     static QString GetCurConfigPath(const QString& sub);
     static void ConsoleMsgHander(QtMsgType type, const QMessageLogContext& context, const QString& msg);
     static QString GetVersion();
@@ -67,6 +70,8 @@ public:
 
 public:
     QString GetErr() const;
+    static bool GetAllFiles(const QString& rootPath, QVector<QString>& files);
+    static bool GetAllFiles(const QString& rootPath, const QString& mid, QVector<FileStruct>& files);
 
 signals:
     void sigHome(const QString& path, const QVector<QString>& drivers);

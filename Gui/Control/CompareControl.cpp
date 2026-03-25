@@ -1,8 +1,10 @@
 ﻿#include "CompareControl.h"
 
 #include <QDesktopServices>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
+#include <QListWidget>
 #include <QMessageBox>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
@@ -44,17 +46,6 @@ void Compare::InitMenu()
         auto path = item->text();
         emit sigTryVisit(false, path);
     });
-    menu_->addAction(tr("添加新行"), this, [this]() {
-        int cnt = ui->tableWidget->rowCount();
-        ui->tableWidget->insertRow(cnt);
-        auto item1 = new QTableWidgetItem("");
-        auto item2 = new QTableWidgetItem("");
-        auto item3 = new QTableWidgetItem("");
-        ui->tableWidget->setItem(cnt, 0, item1);
-        ui->tableWidget->setItem(cnt, 1, item2);
-        ui->tableWidget->setItem(cnt, 2, item3);
-    });
-    menu_->addAction(tr("删除"), this, [this]() { deleteSelectedRows(); });
     menu_->addAction(tr("尝试打开本地路径"), this, [this]() {
         auto selected = ui->tableWidget->selectedItems();
         if (selected.size() != 3) {
@@ -69,6 +60,19 @@ void Compare::InitMenu()
         }
         QDesktopServices::openUrl(QUrl::fromLocalFile(path));
     });
+    menu_->addAction(tr("添加新行"), this, [this]() {
+        int cnt = ui->tableWidget->rowCount();
+        ui->tableWidget->insertRow(cnt);
+        auto item1 = new QTableWidgetItem("");
+        auto item2 = new QTableWidgetItem("");
+        auto item3 = new QTableWidgetItem("");
+        ui->tableWidget->setItem(cnt, 0, item1);
+        ui->tableWidget->setItem(cnt, 1, item2);
+        ui->tableWidget->setItem(cnt, 2, item3);
+    });
+    menu_->addAction(tr("删除"), this, [this]() { deleteSelectedRows(); });
+    menu_->addAction(tr("上传"), this, [this]() { TransToRight(false); });
+    menu_->addAction(tr("下载"), this, [this]() { TransToLeft(false); });
     menu_->addSeparator();
     connect(ui->tableWidget, &QTableWidget::customContextMenuRequested, this,
             [this](const QPoint& pos) { menu_->exec(QCursor::pos()); });
@@ -80,8 +84,10 @@ void Compare::InitControl()
 
     connect(ui->btnSave, &QPushButton::clicked, this, &Compare::Save);
     connect(ui->btnLoad, &QPushButton::clicked, this, &Compare::Load);
-    connect(ui->btnLeft, &QPushButton::clicked, this, &Compare::TransToLeft);
-    connect(ui->btnRight, &QPushButton::clicked, this, &Compare::TransToRight);
+    // connect(ui->btnLeft, &QPushButton::clicked, this, &Compare::TransToLeft);
+    // connect(ui->btnRight, &QPushButton::clicked, this, &Compare::TransToRight);
+    connect(ui->btnTypeDown, &QPushButton::clicked, this, [this]() { FilterFiles(false); });
+    connect(ui->btnTypeUpload, &QPushButton::clicked, this, [this]() { FilterFiles(true); });
     connect(ui->btnSearch, &QPushButton::clicked, this, &Compare::Search);
     connect(ui->btnReset, &QPushButton::clicked, this, &Compare::Reset);
 
@@ -185,7 +191,7 @@ void Compare::Save()
         auto baseName = (fileName ? fileName->text() : "");
         auto localDir = (localItem ? localItem->text() : "");
         auto remoteDir = (remoteItem ? remoteItem->text() : "");
-        
+
         CompareItem item;
         item.baseName = baseName;
         item.localDir = localDir;
@@ -376,56 +382,148 @@ void Compare::SetResult(const QVector<CompareItem>& items)
     }
 }
 
-void Compare::TransToLeft()
+void Compare::FilterFiles(bool isUpload)
 {
-    QVector<TransTask> tasks;
-    QModelIndexList indexList = ui->tableWidget->selectionModel()->selectedRows();
+    QDialog dialog(this);
+    QString title = QString("筛选文件类型(%1)").arg(isUpload ? tr("上传") : tr("下载"));
+    dialog.setWindowTitle(title);
+    dialog.resize(400, 300);
+    QListWidget listWidget(&dialog);
 
-    if (indexList.size() < 1) {
-        QMessageBox::information(this, tr("提示"), tr("请选择要下载的文件。"));
-        return;
+    listWidget.setSelectionMode(QAbstractItemView::NoSelection);
+    QListWidgetItem* allItem = new QListWidgetItem("*(ALL)");
+    allItem->setData(Qt::UserRole, "*ALL");
+    allItem->setCheckState(curSelectTypes_.contains("*") ? Qt::Checked : Qt::Unchecked);
+    listWidget.addItem(allItem);
+
+    std::map<QString, int> typeCounts;
+    int rows = ui->tableWidget->rowCount();
+    for (int i = 0; i < rows; ++i) {
+        QString ext = ui->tableWidget->item(i, 0)->text().split(".").last().toLower();
+        if (typeCounts.count(ext) < 1) {
+            QListWidgetItem* item = new QListWidgetItem(ext);
+            item->setData(Qt::UserRole, ext);
+            item->setCheckState(curSelectTypes_.contains(ext) ? Qt::Checked : Qt::Unchecked);
+            listWidget.addItem(item);
+            typeCounts[ext] = 1;
+        }
     }
 
-    for (int i = 0; i < indexList.size(); ++i) {
-        const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 2);
-        const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 1);
+    QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    connect(&buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(&buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    QVBoxLayout layout(&dialog);
+    layout.addWidget(&listWidget);
+    layout.addWidget(&buttons);
+    dialog.setLayout(&layout);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        QVector<QString> selectedTypes;
+        for (int i = 0; i < listWidget.count(); ++i) {
+            QListWidgetItem* item = listWidget.item(i);
+            if (item->checkState() == Qt::Checked) {
+                selectedTypes << item->data(Qt::UserRole).toString();
+            }
+        }
+        curSelectTypes_.clear();
+        for (int i = 0; i < selectedTypes.count(); ++i) {
+            curSelectTypes_.insert(selectedTypes[i]);
+        }
+        if (isUpload) {
+            TransToRight(true);
+        } else {
+            TransToLeft(true);
+        }
+    }
+}
+
+void Compare::TransToLeft(bool useSelectTypes)
+{
+    QVector<TransTask> tasks;
+
+    auto pushTask = [&](const QString& localPath, const QString& remotePath) {
         TransTask task;
         task.taskUUID = Util::UUID();
         task.isUpload = false;
         task.localId = GlobalData::Ins()->GetLocalID();
-        task.localPath = itemT->text();
+        task.localPath = localPath;
         task.remoteId = GlobalData::Ins()->GetRemoteID();
-        task.remotePath = Util::Join(itemF->text(), ui->tableWidget->item(indexList[i].row(), 0)->text());
+        task.remotePath = remotePath;
         tasks.push_back(task);
-    }
+    };
 
-    emit sigTasks(tasks);
+    if (useSelectTypes) {
+        for (int i = 0; i < ui->tableWidget->rowCount(); ++i) {
+            QString ext = ui->tableWidget->item(i, 0)->text().split(".").last().toLower();
+            if (curSelectTypes_.contains(ext) || curSelectTypes_.contains("*ALL")) {
+                const QTableWidgetItem* itemF = ui->tableWidget->item(i, 1);
+                const QTableWidgetItem* itemT = ui->tableWidget->item(i, 2);
+                pushTask(itemT->text(), Util::Join(itemF->text(), ui->tableWidget->item(i, 0)->text()));
+            }
+        }
+        if (tasks.size() > 0) {
+            emit sigTasks(tasks);
+        }
+    } else {
+        QModelIndexList indexList = ui->tableWidget->selectionModel()->selectedRows();
+        if (indexList.size() < 1) {
+            QMessageBox::information(this, tr("提示"), tr("请选择要下载的文件。"));
+            return;
+        }
+        for (int i = 0; i < indexList.size(); ++i) {
+            const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 2);
+            const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 1);
+            pushTask(itemT->text(), Util::Join(itemF->text(), ui->tableWidget->item(indexList[i].row(), 0)->text()));
+        }
+        if (tasks.size() > 0) {
+            emit sigTasks(tasks);
+        }
+    }
 }
 
-void Compare::TransToRight()
+void Compare::TransToRight(bool useSelectTypes)
 {
     QVector<TransTask> tasks;
-    QModelIndexList indexList = ui->tableWidget->selectionModel()->selectedRows();
 
-    if (indexList.size() < 1) {
-        QMessageBox::information(this, tr("提示"), tr("请选择要上传的文件。"));
-        return;
-    }
-
-    for (int i = 0; i < indexList.size(); ++i) {
-        const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 1);
-        const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 2);
+    auto pushTask = [&](const QString& localPath, const QString& remotePath) {
         TransTask task;
         task.taskUUID = Util::UUID();
         task.isUpload = true;
         task.localId = GlobalData::Ins()->GetLocalID();
-        task.localPath = Util::Join(itemF->text(), ui->tableWidget->item(indexList[i].row(), 0)->text());
+        task.localPath = localPath;
         task.remoteId = GlobalData::Ins()->GetRemoteID();
-        task.remotePath = itemT->text();
+        task.remotePath = remotePath;
         tasks.push_back(task);
-    }
+    };
 
-    emit sigTasks(tasks);
+    if (useSelectTypes) {
+        for (int i = 0; i < ui->tableWidget->rowCount(); ++i) {
+            QString ext = ui->tableWidget->item(i, 0)->text().split(".").last().toLower();
+            if (curSelectTypes_.contains(ext) || curSelectTypes_.contains("*ALL")) {
+                const QTableWidgetItem* itemF = ui->tableWidget->item(i, 1);
+                const QTableWidgetItem* itemT = ui->tableWidget->item(i, 2);
+                pushTask(Util::Join(itemF->text(), ui->tableWidget->item(i, 0)->text()), itemT->text());
+            }
+        }
+        if (tasks.size() > 0) {
+            emit sigTasks(tasks);
+        }
+    } else {
+        QModelIndexList indexList = ui->tableWidget->selectionModel()->selectedRows();
+        if (indexList.size() < 1) {
+            QMessageBox::information(this, tr("提示"), tr("请选择要上传的文件。"));
+            return;
+        }
+        for (int i = 0; i < indexList.size(); ++i) {
+            const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 1);
+            const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 2);
+            pushTask(Util::Join(itemF->text(), ui->tableWidget->item(indexList[i].row(), 0)->text()), itemT->text());
+        }
+        if (tasks.size() > 0) {
+            emit sigTasks(tasks);
+        }
+    }
 }
 
 void Compare::deleteSelectedRows()

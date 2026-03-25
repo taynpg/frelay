@@ -40,9 +40,10 @@ private:
     void Search();
     void Reset();
     void SetResult(const QVector<CompareItem>& items);
+    void FilterFiles(bool isUpload);
 
-    void TransToLeft();
-    void TransToRight();
+    void TransToLeft(bool useSelectTypes);
+    void TransToRight(bool useSelectTypes);
 
 private slots:
     void deleteSelectedRows();
@@ -52,6 +53,7 @@ private:
     Ui::Compare* ui;
 
     // 现要求，保存、删除、拖入必须重置。
+    QSet<QString> curSelectTypes_;
     bool isResource_{};
     QVector<CompareItem> items_;
 };

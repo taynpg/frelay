@@ -12,6 +12,9 @@ void ClientCore::Instance()
     socket_ = new QTcpSocket(this);
     connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);
+    clearWaitTimer_ = new QTimer(this);
+    clearWaitTimer_->setInterval(10000);
+    connect(clearWaitTimer_, &QTimer::timeout, this, [this]() { clearWaitTask(); });
 }
 
 ClientCore::~ClientCore()
@@ -142,8 +145,80 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
         }
         return;
     }
+    // 这个请求的处理可能是耗时的，需要开线程处理。
+    if (msg.command == STRMSG_AC_ALL_DIRFILES) {
+        msg.command = STRMSG_AC_ANSWER_ALL_DIRFILES;
+        QMutexLocker locker(&waitTaskMut_);
+        if (waitTask_.contains(frame->fid)) {
+            msg.msg = STRMSG_ST_COMMAND_ALREADY_RUNNING;
+            if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
+                auto logMsg = tr("给") + frame->fid + tr("返回获取文件列表结果消息失败。");
+                qCritical() << logMsg;
+                return;
+            }
+        } else {
+            waitTask_[frame->fid] = WaitTask();
+            auto& wt = waitTask_[frame->fid];
+            QString fid = frame->fid;
+            wt.wo = new WaitOperOwn(this);
+            wt.wo->SetClient(this);
+            wt.wo->fid = fid;
+            wt.wo->infoMsg_ = msg;
+            wt.wo->func_ = [this, &wt, fid]() {
+                auto& infoMsg = wt.wo->infoMsg_;
+                infoMsg.command = STRMSG_AC_ANSWER_ALL_DIRFILES;
+                bool success = false;
+                //infoMsg.infos.clear();
+                for (auto& item : infoMsg.infos.keys()) {
+                    auto fullDir = Util::Join(infoMsg.fst.root, item);
+                    if (!DirFileHelper::GetAllFiles(fullDir, infoMsg.list)) {
+                        success = false;
+                        break;
+                    }
+                    auto& vec = infoMsg.infos[item];
+                    for (const auto& dd : std::as_const(infoMsg.list)) {
+                        FileStruct fst;
+                        fst.root = infoMsg.fst.root;
+                        fst.mid = item;
+                        fst.relative = dd;
+                        vec.push_back(fst);
+                    }
+                }
+                return success;
+            };
+            wt.wo->start();
+        }
+        return;
+    }
     // 未知信息
     qWarning() << QString(tr("未知询问信息类型：%1")).arg(msg.command);
+}
+
+void ClientCore::clearWaitTask()
+{
+    QMutexLocker locker(&waitTaskMut_);
+    QList<QString> completedTasks;
+
+    for (auto it = waitTask_.begin(); it != waitTask_.end(); ++it) {
+        WaitTask& task = it.value();
+        if (task.wo && task.wo->isFinished()) {
+            completedTasks.append(it.key());
+        }
+    }
+
+    for (const QString& taskId : completedTasks) {
+        auto it = waitTask_.find(taskId);
+        if (it != waitTask_.end()) {
+            WaitTask& task = it.value();
+            if (task.wo) {
+                task.wo->wait();
+                delete task.wo;
+                task.wo = nullptr;
+            }
+            waitTask_.erase(it);
+            qDebug() << "清理完成的任务:" << taskId;
+        }
+    }
 }
 
 void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
@@ -413,4 +488,108 @@ void WaitThread::interrupCheck()
         isAlreadyInter_ = true;
         emit sigCheckOver();
     }
+}
+
+WaitOper::WaitOper(QObject* parent) : WaitThread(parent)
+{
+}
+
+void WaitOper::run()
+{
+    isAlreadyInter_ = false;
+    infoMsg_.msg = STR_NONE;
+    isRun_ = true;
+    recvMsg_ = false;
+
+    infoMsg_.command = sendStrType_;
+    infoMsg_.fromPath = stra_;
+    infoMsg_.toPath = strb_;
+    infoMsg_.type = type_;
+
+    auto f = cli_->GetBuffer<InfoMsg>(infoMsg_, FBT_MSGINFO_ASK, cli_->GetRemoteID());
+    if (!ClientCore::syncInvoke(cli_, f)) {
+        auto errMsg = QString(tr("向%1发送%2请求失败。")).arg(cli_->GetRemoteID()).arg(sendStrType_);
+        emit sigCheckOver();
+        qCritical() << errMsg;
+        return;
+    }
+    while (isRun_) {
+        QThread::msleep(1);
+        if (isAlreadyInter_) {
+            qInfo() << tr("线程中断文件操作等待......");
+            return;
+        }
+        if (!recvMsg_) {
+            continue;
+        }
+        break;
+    }
+    isAlreadyInter_ = true;
+    emit sigCheckOver();
+    auto n = QString(tr("向%1的请求%2处理结束。")).arg(cli_->GetRemoteID()).arg(sendStrType_);
+    qInfo() << n;
+}
+
+void WaitOper::SetType(const QString& sendType, const QString& ansType)
+{
+    sendStrType_ = sendType;
+    ansStrType_ = ansType;
+}
+
+void WaitOper::SetPath(const QString& stra, const QString& strb, const QString& type)
+{
+    stra_ = stra;
+    strb_ = strb;
+    type_ = type;
+}
+
+InfoMsg WaitOper::GetMsgConst() const
+{
+    return infoMsg_;
+}
+
+InfoMsg& WaitOper::GetMsgRef()
+{
+    return infoMsg_;
+}
+
+void WaitOper::interrupCheck()
+{
+    qWarning() << QString(tr("中断请求处理%1......")).arg(sendStrType_);
+    WaitThread::interrupCheck();
+}
+
+void WaitOper::recvFrame(QSharedPointer<FrameBuffer> frame)
+{
+    InfoMsg info = infoUnpack<InfoMsg>(frame->data);
+    if (info.command == ansStrType_) {
+        infoMsg_ = info;
+        recvMsg_ = true;
+        return;
+    }
+    auto n = tr("收到未知Oper的回复信息：") + info.command;
+    qInfo() << n;
+}
+
+WaitOperOwn::WaitOperOwn(QObject* parent) : WaitThread(parent)
+{
+}
+
+void WaitOperOwn::run()
+{
+    auto execRet = false;
+    if (func_) {
+        execRet = func_();
+    }
+    if (!fid.isEmpty()) {
+        if (!cli_->syncInvoke(cli_, cli_->GetBuffer<InfoMsg>(infoMsg_, FBT_MSGINFO_ANSWER, fid))) {
+            qCritical() << QString(tr("向%1发送%2请求失败。")).arg(fid).arg(infoMsg_.command);
+        }
+    }
+    emit sigOver();
+}
+
+void WaitOperOwn::recvFrame(QSharedPointer<FrameBuffer> frame)
+{
+    qDebug() << "不应该被调用的地方：" << __FUNCTION__;
 }

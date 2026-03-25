@@ -398,7 +398,25 @@ void FileTrans::SendFile(const QSharedPointer<DoTransTask>& task)
 
     QMutexLocker locker(&sthMut_);
     upTasks_[task->task.localId] = sendThread;
-    sendThread->run();
+
+    // 2026-03-24 找了一个可能卡顿的原因。
+    /*
+    在 Qt 的 QThread类中，start()和 run()有本质区别：
+
+    start()- 创建新线程 sendThread->start();  // ✅ 正确
+
+    启动一个新线程，在新线程中执行 run()方法，线程有自己的事件循环（如果调用 exec()）
+
+    自动处理线程同步和资源管理信号/槽可以跨线程工作
+
+    run()- 只是普通方法调用 sendThread->run();  // ❌ 错误用法
+
+    在当前线程中直接调用这个方法，没有创建新线程阻塞当前线程直到 run()返回
+
+    对象的信号/槽仍然在原始线程上下文中
+    */
+    // sendThread->run();
+    sendThread->start();
 }
 
 SendThread::SendThread(ClientCore* clientCore) : cliCore_(clientCore)
@@ -442,7 +460,7 @@ void SendThread::run()
         }
         task_->tranSize += frame->data.size();
         // 关键点：这里不调用，无法中途收到别人发的数据。
-        QCoreApplication::processEvents();
+        // QCoreApplication::processEvents();
     }
     qInfo() << QString(tr("结束发送文件：%1")).arg(task_->file.fileName());
 

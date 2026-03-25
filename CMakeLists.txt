@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required(VERSION 3.16)
 
-project(frelay VERSION 0.2.4 LANGUAGES CXX)
+project(frelay VERSION 0.2.7 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -76,6 +76,11 @@ set(QT_DEP_STYLES
 "${CMAKE_PREFIX_PATH}/plugins/styles/qmodernwindowsstyle.dll"
 "${CMAKE_PREFIX_PATH}/plugins/styles/qwindowsvistastyle.dll"
 )
+set(QT_IMG_DEP
+"${CMAKE_PREFIX_PATH}/plugins/imageformats/qgif.dll"
+"${CMAKE_PREFIX_PATH}/plugins/imageformats/qico.dll"
+"${CMAKE_PREFIX_PATH}/plugins/imageformats/qjpeg.dll"
+)
 endif()
 
 set(CMAKE_DEBUG_POSTFIX "d")
@@ -109,7 +114,7 @@ function(safe_install_files files_list destination)
         if(EXISTS ${file})
             list(APPEND existing_files ${file})
         else()
-            message(STATUS "跳过: ${file}")
+            message(STATUS "Jump: ${file}")
         endif()
     endforeach()
     if(existing_files)
@@ -129,6 +134,7 @@ if (WIN32)
 install(FILES ${QT_DEP_FILES} DESTINATION bin)
 safe_install_files("${QT_DEP_PLATFORM}" "bin/platforms")
 safe_install_files("${QT_DEP_STYLES}" "bin/styles")
+safe_install_files("${QT_IMG_DEP}" "bin/imageformats")
 endif()
 
 execute_process(
@@ -169,5 +175,12 @@ set(CPACK_NSIS_DELETE_ICONS_EXTRA "
 else()
 set(CPACK_GENERATOR "TGZ")
 endif()
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${DEVELOP_MARK}-v${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_CXX_COMPILER_ID}")
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(ARCH_BIT "x64")
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    set(ARCH_BIT "x86")
+else()
+    message(FATAL_ERROR "Unknown target architecture")
+endif()
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${DEVELOP_MARK}-v${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_CXX_COMPILER_ID}-${ARCH_BIT}")
 include(CPack)

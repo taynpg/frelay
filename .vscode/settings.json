@@ -13,10 +13,11 @@
                 "ignoreFailures": true
             }
         ],
+        "visualizerFile": "${workspaceRoot}/.vscode/qt6.natvis",
         "args": []
     },
     "cmake.configureSettings": {
-        "CMAKE_PREFIX_PATH": "C:/dev/qt6",
+        "CMAKE_PREFIX_PATH": "C:/local/qt6",
     },
     "cmake.configureArgs": [
         "-Wno-dev",

@@ -1,6 +1,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDebug>
+#include <Util.h>
 
 void DateTimeTest()
 {
@@ -13,6 +14,9 @@ int main(int argc, char** argv)
 
     qDebug() << "Running...";
     DateTimeTest();
+
+    QVector<QString> files;
+    DirFileHelper::GetAllFiles("D:/备份软件", files);
 
     return app.exec();
 }

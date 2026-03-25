@@ -15,8 +15,14 @@
 #include <QReadWriteLock>
 #include <QTcpSocket>
 #include <QThread>
+#include <QTimer>
 #include <array>
 
+class WaitOperOwn;
+struct WaitTask {
+    QString id;
+    WaitOperOwn* wo;
+};
 class ClientCore : public QObject
 {
     Q_OBJECT
@@ -93,6 +99,7 @@ private:
     void onReadyRead();
     void onDisconnected();
     void handleAsk(QSharedPointer<FrameBuffer> frame);
+    void clearWaitTask();
 
 private:
     void UseFrame(QSharedPointer<FrameBuffer> frame);
@@ -121,9 +128,13 @@ public:
 
     bool connected_{false};
     LocalFile localFile_;
+
+    QTimer* clearWaitTimer_{};
+    QMutex waitTaskMut_;
+    QMap<QString, WaitTask> waitTask_;
 };
 
-// Socket Worker Thread
+// 工作线程。
 class SocketWorker : public QThread
 {
     Q_OBJECT
@@ -139,7 +150,7 @@ private:
     ClientCore* core_{};
 };
 
-// HeatBeat to Server
+// 心跳包线程。
 class HeatBeat : public QThread
 {
     Q_OBJECT
@@ -159,6 +170,7 @@ private:
     ClientCore* core_{};
 };
 
+// 耗时操作线程基本框架。
 class WaitThread : public QThread
 {
     Q_OBJECT
@@ -181,6 +193,52 @@ protected:
     bool isRun_;
     bool isAlreadyInter_;
     ClientCore* cli_{};
+};
+
+// 等待对方应答的等待线程。
+class WaitOper : public WaitThread
+{
+public:
+    WaitOper(QObject* parent = nullptr);
+
+public:
+    void run() override;
+    void SetType(const QString& sendType, const QString& ansType);
+    void SetPath(const QString& stra, const QString& strb, const QString& type);
+    InfoMsg GetMsgConst() const;
+    InfoMsg& GetMsgRef();
+    void interrupCheck() override;
+    void recvFrame(QSharedPointer<FrameBuffer> frame) override;
+
+private:
+    bool recvMsg_{};
+    InfoMsg infoMsg_{};
+    QString sendStrType_{};
+    QString ansStrType_{};
+    QString stra_;
+    QString strb_;
+    QString type_;
+};
+
+// 等待自己耗时操作的线程。
+class WaitOperOwn : public WaitThread
+{
+    Q_OBJECT
+
+public:
+    WaitOperOwn(QObject* parent = nullptr);
+
+signals:
+    void sigOver();
+
+public:
+    void run() override;
+    void recvFrame(QSharedPointer<FrameBuffer> frame) override;
+
+public:
+    QString fid;
+    InfoMsg infoMsg_{};
+    std::function<bool()> func_;
 };
 
 #endif   // CLIENTCORE_H

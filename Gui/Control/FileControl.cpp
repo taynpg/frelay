@@ -511,32 +511,103 @@ void FileManager::UpDown()
         QMessageBox::information(this, tr("提示"), tr("请选择完整的行。"));
         return;
     }
-    QVector<TransTask> tasks;
-    for (int i = 0; i < (datas.size() / 5); ++i) {
-        if (datas[i * 5 + 3]->text() != "File") {
-            qDebug() << QString(tr("暂不支持传输文件夹：%1")).arg(datas[i * 5 + 3]->text());
-            continue;
-        }
-        /*
-            要注意这一块的逻辑，本软件的所讲的【上传】【下载】都是针对本地。
-            这里的任务拼接和 DropEvent 有所不同，
-            DropEvent 是接收方负责拼接任务，但是这里是发送方拼接任务。
+    /*
+        要注意这一块的逻辑，本软件的所讲的【上传】【下载】都是针对本地。
+        这里的任务拼接和 DropEvent 有所不同，
+        DropEvent 是接收方负责拼接任务，但是这里是发送方拼接任务。
 
-            所以这里的拼接逻辑需要注意。
-        */
+        所以这里的拼接逻辑需要注意。
+    */
+    QVector<FileStruct> resultFiles;
+
+    if (isRemote_) {
+        // 远程等待别人。
+        WaitOper wi(this);
+        wi.SetClient(cliCore_);
+        wi.SetType(STRMSG_AC_ALL_DIRFILES, STRMSG_AC_ANSWER_ALL_DIRFILES);
+        auto& infoMsg = wi.GetMsgRef();
+        infoMsg.infos.clear();
+        infoMsg.fst.root = GlobalData::Ins()->GetRemoteRoot();
+
+        for (int i = 0; i < (datas.size() / 5); ++i) {
+            FileStruct fst;
+            fst.root = GlobalData::Ins()->GetRemoteRoot();
+            fst.mid = datas[i * 5 + 1]->text();
+            const auto& curType = datas[i * 5 + 3]->text();
+            if (curType == "File") {
+                fst.relative = datas[i * 5 + 1]->text();
+                resultFiles << fst;
+            } else {
+                infoMsg.infos[datas[i * 5 + 1]->text()] = QVector<FileStruct>{};
+            }
+        }
+
+        LoadingDialog checking(this);
+        checking.setTipsText("正在等待对方获取文件列表...");
+        connect(&wi, &WaitOper::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+        connect(cliCore_, &ClientCore::sigMsgAnswer, &wi, &WaitOper::recvFrame);
+
+        wi.start();
+        checking.exec();
+
+        if (!infoMsg.list.isEmpty()) {
+            for (const auto& item : infoMsg.infos.keys()) {
+                resultFiles << infoMsg.infos[item];
+            }
+        }
+
+    } else {
+        // 本地自己等待。
+        WaitOperOwn wo(this);
+        wo.func_ = [this, &datas, &resultFiles]() {
+            resultFiles.clear();
+            for (int i = 0; i < (datas.size() / 5); ++i) {
+                FileStruct fst;
+                fst.root = GlobalData::Ins()->GetLocalRoot();
+
+                const auto& curType = datas[i * 5 + 3]->text();
+                if (curType == "File") {
+                    fst.mid = datas[i * 5 + 1]->text();
+                    resultFiles.push_back(fst);
+                } else {
+                    QVector<FileStruct> fst;
+                    DirFileHelper::GetAllFiles(GlobalData::Ins()->GetLocalRoot(), datas[i * 5 + 1]->text(), fst);
+                    if (!fst.isEmpty()) {
+                        resultFiles << fst;
+                    }
+                }
+            }
+            return true;
+        };
+
+        LoadingDialog checking(this);
+        checking.setTipsText("正在获取文件列表...");
+        checking.setCanCancel(false);
+        connect(&wo, &WaitOperOwn::sigOver, &checking, &LoadingDialog::cancelBtnClicked);
+
+        wo.start();
+        checking.exec();
+    }
+
+    QVector<TransTask> tasks;
+
+    // 这里的 file 是相对路径，不再是特定的文件名称。
+    for (const auto& file : std::as_const(resultFiles)) {
         TransTask task;
         task.taskUUID = Util::UUID();
         task.isUpload = !isRemote_;
         task.localId = cliCore_->GetOwnID();
         task.remoteId = cliCore_->GetRemoteID();
         if (isRemote_) {
-            task.remotePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), datas[i * 5 + 1]->text());
-            task.localPath = GlobalData::Ins()->GetLocalRoot();
+            task.remotePath = Util::Join(file.root, file.mid, file.relative);
+            auto filePath = Util::Join(GlobalData::Ins()->GetLocalRoot(), file.mid, file.relative);
+            task.localPath = Util::GetFileDir(filePath);
         } else {
-            task.remotePath = GlobalData::Ins()->GetRemoteRoot();
-            task.localPath = Util::Join(GlobalData::Ins()->GetLocalRoot(), datas[i * 5 + 1]->text());
+            auto filePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), file.mid, file.relative);
+            task.remotePath = Util::GetFileDir(filePath);
+            task.localPath = Util::Join(file.root, file.mid, file.relative);
         }
-        tasks.push_back(task);
+        tasks.append(task);
     }
     if (tasks.isEmpty()) {
         return;
@@ -569,7 +640,7 @@ void FileManager::OperNewFolder()
     if (!isRemote_) {
         QString ret = Util::NewDir(folder);
         if (ret.isEmpty()) {
-            QMessageBox::information(this, tr("提示"), tr("创建%1成功").arg(folder));
+            // QMessageBox::information(this, tr("提示"), tr("创建%1成功").arg(folder));
             DirFileInfo nf;
             nf.size = 0;
             nf.type = Dir;
@@ -605,17 +676,18 @@ void FileManager::OperNewFolder()
     }
 
     // 检查结果
-    auto msg = oper.GetMsg();
+    auto msg = oper.GetMsgConst();
     if (msg.msg == STR_NONE || !msg.msg.isEmpty()) {
         QMessageBox::information(this, tr("提示"), QString(tr("新建失败=>%1")).arg(msg.msg));
     } else {
-        QMessageBox::information(this, tr("提示"), QString(tr("新建%1成功。")).arg(folder));
+        // QMessageBox::information(this, tr("提示"), QString(tr("新建%1成功。")).arg(folder));
         DirFileInfo nf;
         nf.size = 0;
         nf.type = Dir;
         nf.fullPath = folder;
         nf.name = text;
-        nf.lastModified = QDateTime::currentDateTime().toMSecsSinceEpoch();
+        // nf.lastModified = QDateTime::currentDateTime().toMSecsSinceEpoch();
+        nf.lastModified = QDateTime::currentMSecsSinceEpoch();
         ui->tableWidget->insertRow(0);
         ShowFileItem(nf, 0);
     }
@@ -642,7 +714,7 @@ void FileManager::OperDelete()
     if (!isRemote_) {
         QString ret = Util::Delete(name);
         if (ret.isEmpty()) {
-            QMessageBox::information(this, tr("提示"), tr("删除成功"));
+            // QMessageBox::information(this, tr("提示"), tr("删除成功"));
             int row = datas[0]->row();
             ui->tableWidget->removeRow(row);
         } else {
@@ -672,11 +744,11 @@ void FileManager::OperDelete()
     }
 
     // 检查结果
-    auto msg = oper.GetMsg();
+    auto msg = oper.GetMsgConst();
     if (msg.msg == STR_NONE || !msg.msg.isEmpty()) {
         QMessageBox::information(this, tr("提示"), QString(tr("删除失败=>%1")).arg(msg.msg));
     } else {
-        QMessageBox::information(this, tr("提示"), QString(tr("删除成功。")));
+        // QMessageBox::information(this, tr("提示"), QString(tr("删除成功。")));
         ui->tableWidget->removeRow(datas[0]->row());
     }
 }
@@ -759,7 +831,7 @@ void FileManager::OperRename()
     }
 
     // 检查结果
-    auto msg = oper.GetMsg();
+    auto msg = oper.GetMsgConst();
     if (msg.msg == STR_NONE || !msg.msg.isEmpty()) {
         QMessageBox::information(this, tr("提示"), QString(tr("重命名失败=>%1")).arg(msg.msg));
     } else {
@@ -824,81 +896,4 @@ void FileManager::doubleClick(int row, int column)
     QDir dir(GetRoot());
     QString np = dir.filePath(item->text());
     fileHelper_->GetDirFile(np);
-}
-
-WaitOper::WaitOper(QObject* parent) : WaitThread(parent)
-{
-}
-
-void WaitOper::run()
-{
-    isAlreadyInter_ = false;
-    infoMsg_.msg = STR_NONE;
-    isRun_ = true;
-    recvMsg_ = false;
-
-    InfoMsg msg;
-    msg.command = sendStrType_;
-    msg.fromPath = stra_;
-    msg.toPath = strb_;
-    msg.type = type_;
-
-    auto f = cli_->GetBuffer<InfoMsg>(msg, FBT_MSGINFO_ASK, cli_->GetRemoteID());
-    if (!ClientCore::syncInvoke(cli_, f)) {
-        auto errMsg = QString(tr("向%1发送%2请求失败。")).arg(cli_->GetRemoteID()).arg(sendStrType_);
-        emit sigCheckOver();
-        qCritical() << errMsg;
-        return;
-    }
-    while (isRun_) {
-        QThread::msleep(1);
-        if (isAlreadyInter_) {
-            qInfo() << tr("线程中断文件操作等待......");
-            return;
-        }
-        if (!recvMsg_) {
-            continue;
-        }
-        break;
-    }
-    isAlreadyInter_ = true;
-    emit sigCheckOver();
-    auto n = QString(tr("向%1的请求%2处理结束。")).arg(cli_->GetRemoteID()).arg(sendStrType_);
-    qInfo() << n;
-}
-
-void WaitOper::SetType(const QString& sendType, const QString& ansType)
-{
-    sendStrType_ = sendType;
-    ansStrType_ = ansType;
-}
-
-void WaitOper::SetPath(const QString& stra, const QString& strb, const QString& type)
-{
-    stra_ = stra;
-    strb_ = strb;
-    type_ = type;
-}
-
-InfoMsg WaitOper::GetMsg() const
-{
-    return infoMsg_;
-}
-
-void WaitOper::interrupCheck()
-{
-    qWarning() << QString(tr("中断请求处理%1......")).arg(sendStrType_);
-    WaitThread::interrupCheck();
-}
-
-void WaitOper::recvFrame(QSharedPointer<FrameBuffer> frame)
-{
-    InfoMsg info = infoUnpack<InfoMsg>(frame->data);
-    if (info.command == ansStrType_) {
-        infoMsg_ = info;
-        recvMsg_ = true;
-        return;
-    }
-    auto n = tr("收到未知Oper的回复信息：") + info.command;
-    qInfo() << n;
 }

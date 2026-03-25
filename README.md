@@ -19,9 +19,9 @@
 
 ## 示例图
 
-![示例图片](https://github.com/taynpg/frelay/raw/main/img/10.png)
+![示例图片](img/10.png)
 
-![示例图片](https://github.com/taynpg/frelay/raw/main/img/xp.png)
+![示例图片](img/xp.png)
 
 ## 注意事项
 

@@ -1,0 +1,120 @@
+stages:
+  - build
+  - release
+
+variables:
+  VS_DIR: "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools"
+  VS_ENV: "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/Tools/Microsoft.VisualStudio.DevShell.dll"
+  CMAKE_BUILD_TYPE: Release
+  PROJECT_VERSION: "0.2.6"
+  CMAKE_GENERATOR: "Ninja"
+  PROJECT_NAME: "frelay"
+  ARCH_TYPE: x64
+  QT_PATH: "C:/Dev/qt6"
+  QT_XP: "C:/Qt/Qt5.7.1"
+  RELEASENAME: "$PROJECT_NAME-v$PROJECT_VERSION"
+  DESCRIPTION: |
+
+    # 优化
+
+    - 按照类型传输时，类型重复的问题修正。
+
+    # 关于预构建包
+
+    Windows XP系统请使用Windows-GNU-x86版本。
+
+# Windows运行器配置
+.win-template: &win
+  tags:
+    - win
+  before_script:
+    - echo "Running on Windows runner"
+  artifacts:
+    expire_in: 1 hour
+
+# Windows构建 - 在win运行器上执行
+build-xp:
+  <<: *win
+  stage: build
+  rules:
+    - if: $CI_COMMIT_TAG
+  before_script:
+    - $env:QT_DIR = "$env:QT_XP/5.7/mingw53_32"
+    - $env:COMPILE_DIR = "$env:QT_XP/Tools/mingw530_32"
+    - $env:PATH = "$env:COMPILE_DIR/bin;$env:PATH"
+  script:
+    - Write-Host "开始Windows XP构建..."
+    - Write-Host "$env:QT_DIR"
+    - Write-Host "$env:COMPILE_DIR"
+    - cmake -Bbuild-xp -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" -DCMAKE_PREFIX_PATH="$env:QT_DIR" -DQT_DEFAULT_MAJOR_VERSION=5 -DCOMPILE_GUI=ON -DRELEASE_MARK=ON
+    - cmake --build build-xp --config "$CMAKE_BUILD_TYPE"
+    - Write-Host "package windows start..."
+    - cd build-xp
+    - cpack
+  artifacts:
+    paths:
+      - build-xp/frelay-release-v$PROJECT_VERSION-Windows-GNU-x86.exe
+      - build-xp/frelay-release-v$PROJECT_VERSION-Windows-GNU-x86.zip
+
+build-windows:
+  <<: *win
+  stage: build
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - Import-Module $VS_ENV
+    - Enter-VsDevShell -VsInstallPath $VS_DIR -DevCmdArguments "-arch=$ARCH_TYPE"
+    - cmake -Bbuild -G "$CMAKE_GENERATOR" -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" -DCMAKE_PREFIX_PATH="$QT_PATH" -DQT_DEFAULT_MAJOR_VERSION=6 -DCOMPILE_GUI=ON -DRELEASE_MARK=ON
+    - cmake --build build --config "$CMAKE_BUILD_TYPE"
+    - Write-Host "package windows start..."
+    - cd build
+    - cpack
+  artifacts:
+    paths:
+      - build/frelay-release-v$PROJECT_VERSION-Windows-MSVC-x64.exe
+      - build/frelay-release-v$PROJECT_VERSION-Windows-MSVC-x64.zip
+
+create-release:
+  stage: release
+  needs: ["build-windows", "build-xp"]
+  tags:
+    - pi
+  variables:
+    RELEASE_TAG: "v$PROJECT_VERSION"
+    RELEASE_NAME: "$RELEASENAME"
+    RELEASE_DESCRIPTION: "$DESCRIPTION"
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - echo "start release"
+    - >
+      curl --fail --show-error --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+        --upload-file "build/frelay-release-v$PROJECT_VERSION-Windows-MSVC-x64.exe" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/releases/v$PROJECT_VERSION/frelay-release-v$PROJECT_VERSION-Windows-MSVC-x64.exe"
+    - >
+      curl --fail --show-error --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+        --upload-file "build/frelay-release-v$PROJECT_VERSION-Windows-MSVC-x64.zip" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/releases/v$PROJECT_VERSION/frelay-release-v$PROJECT_VERSION-Windows-MSVC-x64.zip"
+    - >
+      curl --fail --show-error --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+        --upload-file "build-xp/frelay-release-v$PROJECT_VERSION-Windows-GNU-x86.exe" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/releases/v$PROJECT_VERSION/frelay-release-v$PROJECT_VERSION-Windows-GNU-x86.exe"
+    - >
+      curl --fail --show-error --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+        --upload-file "build-xp/frelay-release-v$PROJECT_VERSION-Windows-GNU-x86.zip" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/releases/v$PROJECT_VERSION/frelay-release-v$PROJECT_VERSION-Windows-GNU-x86.zip"
+
+  release:
+    tag_name: $RELEASE_TAG
+    name: $RELEASE_NAME
+    description: $RELEASE_DESCRIPTION
+    assets:
+      links:
+        - name: "frelay-release-v$PROJECT_VERSION-Windows-MSVC-x64.exe"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/releases/v$PROJECT_VERSION/frelay-release-v$PROJECT_VERSION-Windows-MSVC-x64.exe"
+        - name: "frelay-release-v$PROJECT_VERSION-Windows-MSVC-x64.zip"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/releases/v$PROJECT_VERSION/frelay-release-v$PROJECT_VERSION-Windows-MSVC-x64.zip"
+        - name: "frelay-release-v$PROJECT_VERSION-Windows-GNU-x86.exe"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/releases/v$PROJECT_VERSION/frelay-release-v$PROJECT_VERSION-Windows-GNU-x86.exe"
+        - name: "frelay-release-v$PROJECT_VERSION-Windows-GNU-x86.zip"
+          url: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/releases/v$PROJECT_VERSION/frelay-release-v$PROJECT_VERSION-Windows-GNU-x86.zip"
