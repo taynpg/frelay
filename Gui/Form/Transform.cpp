@@ -110,12 +110,16 @@ void TransForm::setProgress(double val)
 void TransForm::handleFailed()
 {
     ui->progressBar->setValue(0);
+    ui->lbResult->setText("Failed.");
+    ui->lbResult->setStyleSheet("color: red; font-weight: bold;");
     QMessageBox::information(this, tr("提示"), tr("传输失败"));
 }
 
 void TransForm::handleDone()
 {
     ui->progressBar->setValue(100);
+    ui->lbResult->setText("Success.");
+    ui->lbResult->setStyleSheet("color: green; font-weight: bold;");
 }
 
 void TransForm::handleUI(const TransTask& task)
