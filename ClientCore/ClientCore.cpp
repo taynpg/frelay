@@ -13,8 +13,9 @@ void ClientCore::Instance()
     connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);
     clearWaitTimer_ = new QTimer(this);
-    clearWaitTimer_->setInterval(10000);
+    clearWaitTimer_->setInterval(1000);
     connect(clearWaitTimer_, &QTimer::timeout, this, [this]() { clearWaitTask(); });
+    clearWaitTimer_->start();
 }
 
 ClientCore::~ClientCore()
@@ -105,6 +106,8 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
             } else {
                 if (!Util::FileExist(item.remotePath)) {
                     item.state = static_cast<qint32>(FCS_FILE_NOT_EXIST);
+                } else {
+                    item.state = static_cast<qint32>(FCS_FILE_EXIST);
                 }
             }
         }
@@ -168,7 +171,7 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
                 auto& infoMsg = wt.wo->infoMsg_;
                 infoMsg.command = STRMSG_AC_ANSWER_ALL_DIRFILES;
                 bool success = false;
-                //infoMsg.infos.clear();
+                // infoMsg.infos.clear();
                 for (auto& item : infoMsg.infos.keys()) {
                     auto fullDir = Util::Join(infoMsg.fst.root, item);
                     if (!DirFileHelper::GetAllFiles(fullDir, infoMsg.list)) {

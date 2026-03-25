@@ -389,7 +389,7 @@ void FileManager::FilterFile(const QVector<QString>& selectedTypes)
         return;
     }
     currentShowInfo_.vec.clear();
-    for (const auto& d : currentInfo_.vec) {
+    for (const auto& d : std::as_const(currentInfo_.vec)) {
         if (d.type == File) {
             auto ext = d.fullPath.lastIndexOf('.');
             if (ext != -1) {
@@ -406,7 +406,7 @@ void FileManager::FilterFile(const QVector<QString>& selectedTypes)
 void FileManager::GenFilter()
 {
     fileTypes_.clear();
-    for (const auto& fileInfo : currentInfo_.vec) {
+    for (const auto& fileInfo : std::as_const(currentInfo_.vec)) {
         if (fileInfo.type == File) {
             auto ext = fileInfo.fullPath.lastIndexOf('.');
             if (ext != -1) {
@@ -430,7 +430,7 @@ void FileManager::ShowFilterForm()
     allItem->setCheckState(curSelectTypes_.contains("*") ? Qt::Checked : Qt::Unchecked);
     listWidget.addItem(allItem);
 
-    for (const QString& ext : fileTypes_) {
+    for (const QString& ext : std::as_const(fileTypes_)) {
         QListWidgetItem* item = new QListWidgetItem(ext);
         item->setData(Qt::UserRole, ext);
         item->setCheckState(curSelectTypes_.contains(ext) ? Qt::Checked : Qt::Unchecked);
@@ -472,7 +472,7 @@ void FileManager::CopyFullPath()
 
     bool found = false;
     QString key = ui->tableWidget->item(row, 1)->text();
-    for (const auto& d : currentInfo_.vec) {
+    for (const auto& d : std::as_const(currentInfo_.vec)) {
         if (d.name == key) {
             clip->setText(d.fullPath);
             found = true;
@@ -646,7 +646,8 @@ void FileManager::OperNewFolder()
             nf.type = Dir;
             nf.fullPath = folder;
             nf.name = text;
-            nf.lastModified = QDateTime::currentDateTime().toMSecsSinceEpoch();
+            //nf.lastModified = QDateTime::currentDateTime().toMSecsSinceEpoch();
+            nf.lastModified = QDateTime::currentMSecsSinceEpoch();
             ui->tableWidget->insertRow(0);
             ShowFileItem(nf, 0);
         } else {

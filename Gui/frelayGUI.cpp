@@ -220,6 +220,10 @@ bool frelayGUI::CheckTaskResult(QVector<TransTask>& tasks)
                 }
             }
         } else {
+            if (task.remoteCheckState != FCS_FILE_EXIST) {
+                QMessageBox::information(this, tr("文件校验"), tr("远端文件校验失败，请检查文件是否存在：") + task.remotePath);
+                return false;
+            }
             if (task.localCheckState == FCS_DIR_NOT_EXIST && !isAutoCreateDirL) {
                 auto msg = tr("本地不存在文件夹") + task.localPath + "，需要自动创建吗？";
                 auto ret = Common::GetAcceptThree(this, "操作确认", msg);
@@ -243,10 +247,6 @@ bool frelayGUI::CheckTaskResult(QVector<TransTask>& tasks)
                 } else {
                     return false;
                 }
-            }
-            if (task.remoteCheckState != FCS_FILE_EXIST) {
-                QMessageBox::information(this, tr("文件校验"), tr("远端文件校验失败，请检查文件是否存在：") + task.remotePath);
-                return false;
             }
         }
     }
