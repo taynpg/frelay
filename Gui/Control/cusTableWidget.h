@@ -17,6 +17,7 @@ signals:
 
 public:
     void setIsRemote(bool isRemote);
+    void setClientCore(ClientCore* clientCore);
     void setOwnIDCall(const std::function<QString()>& call);
     void setRemoteIDCall(const std::function<QString()>& call);
 
@@ -27,6 +28,7 @@ protected:
 protected:
     bool isRemote_{false};
     QPoint startPos_;
+    ClientCore* clientCore_;
     std::function<QString()> oidCall_;
     std::function<QString()> ridCall_;
 };

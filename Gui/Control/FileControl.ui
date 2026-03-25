@@ -65,7 +65,7 @@
   <customwidget>
    <class>CustomTableWidget</class>
    <extends>QTableWidget</extends>
-   <header>cusTableWidget.h</header>
+   <header location="global">cusTableWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

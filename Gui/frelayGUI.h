@@ -43,13 +43,13 @@ protected:
 
 private:
     Ui::frelayGUI* ui;
-    QTabWidget* tabWidget_;
     Connecter* connecter_;
     FileManager* localFile_;
     FileManager* remoteFile_;
     ClientCore* clientCore_;
     TransForm* transform_;
     Compare* compare_;
+    QTabWidget* tabWidget_;
     std::shared_ptr<FrelayConfig> config_;
 };
 #endif   // FRELAYGUI_H

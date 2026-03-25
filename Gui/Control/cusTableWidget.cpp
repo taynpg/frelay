@@ -22,6 +22,11 @@ void CustomTableWidget::setIsRemote(bool isRemote)
     isRemote_ = isRemote;
 }
 
+void CustomTableWidget::setClientCore(ClientCore* clientCore)
+{
+    clientCore_ = clientCore;
+}
+
 void CustomTableWidget::setOwnIDCall(const std::function<QString()>& call)
 {
     oidCall_ = call;
@@ -50,25 +55,12 @@ void CustomTableWidget::dropEvent(QDropEvent* event)
         parseData.append(roleData[Qt::DisplayRole].toString());
     }
 
-    for (int i = 0; i < (parseData.size() / 5); ++i) {
-        if (parseData[i * 5 + 3] != "File") {
-            qDebug() << QString(tr("暂不支持传输文件夹：%1")).arg(parseData[i * 5 + 1]);
-            continue;
-        }
-        TransTask task;
-        task.taskUUID = Util::UUID();
-        task.isUpload = isRemote_;
-        task.localId = oidCall_();
-        task.remoteId = ridCall_();
-        if (isRemote_) {
-            task.remotePath = GlobalData::Ins()->GetRemoteRoot();
-            task.localPath = Util::Join(GlobalData::Ins()->GetLocalRoot(), parseData[i * 5 + 1]);
-        } else {
-            task.localPath = GlobalData::Ins()->GetLocalRoot();
-            task.remotePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), parseData[i * 5 + 1]);
-        }
-        tasks.push_back(task);
+    QVector<QString> datas;
+    for (int i = 0; i < parseData.size(); ++i) {
+        datas.append(parseData[i]);
     }
+
+    FileManager::UpDownCommon(datas, 5, tasks, true, clientCore_, isRemote_, this);
 
     if (tasks.empty()) {
         return;

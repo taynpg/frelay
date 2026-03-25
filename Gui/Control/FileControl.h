@@ -12,6 +12,7 @@
 #include <Util.h>
 #include <map>
 #include <memory>
+#include <Control/cusTableWidget.h>
 
 namespace Ui {
 class FileManager;
@@ -40,6 +41,9 @@ public:
     QString GetRoot();
     void SetUiCurrentPath(const QString& path);
     void SetModeStr(const QString& modeStr, int type = 0, ClientCore* clientCore = nullptr);
+
+public:
+    static void UpDownCommon(const QVector<QString>& vec, int grpSize, QVector<TransTask>& outTask, bool isDrop, ClientCore* cliCore, bool isRemote, QWidget* parent);
 
 signals:
     void sigSendTasks(const QVector<TransTask>& tasks);
@@ -86,6 +90,7 @@ private:
     QSet<QString> curSelectTypes_;
     DirFileInfoVec currentInfo_;
     DirFileInfoVec currentShowInfo_;
+    CustomTableWidget* tableWidget_{};
     std::map<int, SortMethod> sortMedRecord_;
     std::shared_ptr<DirFileHelper> fileHelper_;
 };

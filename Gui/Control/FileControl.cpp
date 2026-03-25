@@ -52,6 +52,7 @@ void FileManager::SetModeStr(const QString& modeStr, int type, ClientCore* clien
 
     ui->tableWidget->setOwnIDCall([this]() { return cliCore_->GetOwnID(); });
     ui->tableWidget->setRemoteIDCall([this]() { return cliCore_->GetRemoteID(); });
+    tableWidget_->setClientCore(clientCore);
 
     connect(fileHelper_.get(), &DirFileHelper::sigHome, this, &FileManager::ShowPath);
     connect(fileHelper_.get(), &DirFileHelper::sigDirFile, this, &FileManager::ShowFile);
@@ -111,6 +112,8 @@ void FileManager::InitControl()
     auto* line = ui->comboBox->lineEdit();
     connect(line, &QLineEdit::returnPressed, this, [this]() { ui->btnVisit->click(); });
     connect(ui->tableWidget->verticalScrollBar(), &QScrollBar::actionTriggered, this, [this]() { userScrol_ = true; });
+
+    tableWidget_ = static_cast<CustomTableWidget*>(ui->tableWidget);
 }
 
 void FileManager::InitMenu()
@@ -501,52 +504,48 @@ void FileManager::ShowProperties()
     info->exec();
 }
 
-void FileManager::UpDown()
+void FileManager::UpDownCommon(const QVector<QString>& vec, int grpSize, QVector<TransTask>& outTask, bool isDrop,
+                               ClientCore* cliCore, bool isRemote, QWidget* parent)
 {
-    auto datas = ui->tableWidget->selectedItems();
-    if (datas.isEmpty()) {
+    if (vec.isEmpty()) {
         return;
     }
-    if (datas.size() % 5 != 0) {
-        QMessageBox::information(this, tr("提示"), tr("请选择完整的行。"));
+    if (vec.size() % grpSize != 0) {
+        QMessageBox::information(parent, tr("提示"), tr("请选择完整的行。"));
         return;
     }
-    /*
-        要注意这一块的逻辑，本软件的所讲的【上传】【下载】都是针对本地。
-        这里的任务拼接和 DropEvent 有所不同，
-        DropEvent 是接收方负责拼接任务，但是这里是发送方拼接任务。
 
-        所以这里的拼接逻辑需要注意。
-    */
+    outTask.clear();
     QVector<FileStruct> resultFiles;
 
-    if (isRemote_) {
+    // 这里的判断是依据自己的类型来的，看怎么改。
+    if (isRemote ^ isDrop) {
         // 远程等待别人。
-        WaitOper wi(this);
-        wi.SetClient(cliCore_);
+        WaitOper wi(parent);
+        wi.SetClient(cliCore);
         wi.SetType(STRMSG_AC_ALL_DIRFILES, STRMSG_AC_ANSWER_ALL_DIRFILES);
         auto& infoMsg = wi.GetMsgRef();
         infoMsg.infos.clear();
         infoMsg.fst.root = GlobalData::Ins()->GetRemoteRoot();
 
-        for (int i = 0; i < (datas.size() / 5); ++i) {
+        for (int i = 0; i < (vec.size() / grpSize); ++i) {
             FileStruct fst;
             fst.root = GlobalData::Ins()->GetRemoteRoot();
-            const auto& curType = datas[i * 5 + 3]->text();
+            const auto& curType = vec[i * grpSize + 3];
             if (curType == "File") {
                 fst.mid = "";
-                fst.relative = datas[i * 5 + 1]->text();
+                fst.relative = vec[i * grpSize + 1];
                 resultFiles << fst;
             } else {
-                fst.mid = datas[i * 5 + 1]->text();
-                infoMsg.infos[datas[i * 5 + 1]->text()] = QVector<FileStruct>{};
+                fst.mid = vec[i * grpSize + 1];
+                infoMsg.infos[vec[i * grpSize + 1]] = QVector<FileStruct>{};
             }
         }
 
-        LoadingDialog checking(this);
+        LoadingDialog checking(parent);
         checking.setTipsText("正在等待对方获取文件列表...");
         connect(&wi, &WaitOper::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
-        connect(cliCore_, &ClientCore::sigMsgAnswer, &wi, &WaitOper::recvFrame);
+        connect(cliCore, &ClientCore::sigMsgAnswer, &wi, &WaitOper::recvFrame);
 
         wi.start();
         checking.exec();
@@ -559,21 +558,21 @@ void FileManager::UpDown()
 
     } else {
         // 本地自己等待。
-        WaitOperOwn wo(this);
-        wo.func_ = [this, &datas, &resultFiles]() {
+        WaitOperOwn wo(parent);
+        wo.func_ = [parent, &vec, &resultFiles]() {
             resultFiles.clear();
-            for (int i = 0; i < (datas.size() / 5); ++i) {
+            for (int i = 0; i < (vec.size() / 5); ++i) {
                 FileStruct fst;
                 fst.root = GlobalData::Ins()->GetLocalRoot();
 
-                const auto& curType = datas[i * 5 + 3]->text();
+                const auto& curType = vec[i * 5 + 3];
                 if (curType == "File") {
                     fst.mid = "";
-                    fst.relative = datas[i * 5 + 1]->text();
+                    fst.relative = vec[i * 5 + 1];
                     resultFiles.push_back(fst);
                 } else {
                     QVector<FileStruct> fstVec;
-                    fst.mid = datas[i * 5 + 1]->text();
+                    fst.mid = vec[i * 5 + 1];
                     DirFileHelper::GetAllFiles(GlobalData::Ins()->GetLocalRoot(), fst.mid, fstVec);
                     if (!fstVec.isEmpty()) {
                         resultFiles << fstVec;
@@ -583,7 +582,7 @@ void FileManager::UpDown()
             return true;
         };
 
-        LoadingDialog checking(this);
+        LoadingDialog checking(parent);
         checking.setTipsText("正在获取文件列表...");
         checking.setCanCancel(false);
         connect(&wo, &WaitOperOwn::sigOver, &checking, &LoadingDialog::cancelBtnClicked);
@@ -592,29 +591,72 @@ void FileManager::UpDown()
         checking.exec();
     }
 
-    QVector<TransTask> tasks;
+    /*
+        要注意这一块的逻辑，本软件的所讲的【上传】【下载】都是针对本地。
+        这里的任务拼接和 DropEvent 有所不同，
+        DropEvent 是接收方负责拼接任务，但是这里是发送方拼接任务。
 
+          所以这里的拼接逻辑需要注意。
+
+          isDrop 是否是拖拽接收到的。
+          isRemote 是待执行命令方是否是远端。
+       */
+
+    /*
+        -----------------------------------------------
+        |                     |  isDrop   |  isRemote |
+        -----------------------------------------------
+        | 上传，远端拼接任务。 |   true    |    true   |
+        -----------------------------------------------
+        | 下载，本地拼接任务。 |   true    |    false  |
+        -----------------------------------------------
+        | 上传，本地拼接任务。 |   false   |    false  |
+        -----------------------------------------------
+        | 下载，远端拼接任务。 |   false   |    true   |
+        -----------------------------------------------
+    */
     // 这里的 file 是相对路径，不再是特定的文件名称。
     for (const auto& file : std::as_const(resultFiles)) {
+
         TransTask task;
         task.taskUUID = Util::UUID();
-        task.isUpload = !isRemote_;
-        task.localId = cliCore_->GetOwnID();
-        task.remoteId = cliCore_->GetRemoteID();
-        if (isRemote_) {
-            task.remotePath = Util::Join(file.root, file.mid, file.relative);
+        task.isUpload = (isRemote == isDrop);
+        task.localId = cliCore->GetOwnID();
+        task.remoteId = cliCore->GetRemoteID();
+
+        if (isDrop && isRemote) {
+            auto filePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), file.mid, file.relative);
+            task.remotePath = Util::GetFileDir(filePath);
+            task.localPath = Util::Join(GlobalData::Ins()->GetLocalRoot(), file.mid, file.relative);
+        } else if (isDrop && !isRemote) {
+            task.remotePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), file.mid, file.relative);
+            auto filePath = Util::Join(GlobalData::Ins()->GetLocalRoot(), file.mid, file.relative);
+            task.localPath = Util::GetFileDir(filePath);
+        } else if (!isDrop && isRemote) {
+            task.remotePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), file.mid, file.relative);
             auto filePath = Util::Join(GlobalData::Ins()->GetLocalRoot(), file.mid, file.relative);
             task.localPath = Util::GetFileDir(filePath);
         } else {
             auto filePath = Util::Join(GlobalData::Ins()->GetRemoteRoot(), file.mid, file.relative);
             task.remotePath = Util::GetFileDir(filePath);
-            task.localPath = Util::Join(file.root, file.mid, file.relative);
+            task.localPath = Util::Join(GlobalData::Ins()->GetLocalRoot(), file.mid, file.relative);
         }
-        tasks.append(task);
+        outTask.append(task);
     }
-    if (tasks.isEmpty()) {
+}
+
+void FileManager::UpDown()
+{
+    auto datas = ui->tableWidget->selectedItems();
+    if (datas.isEmpty()) {
         return;
     }
+    QVector<QString> vec;
+    for (const auto& item : std::as_const(datas)) {
+        vec.append(item->text());
+    }
+    QVector<TransTask> tasks;
+    UpDownCommon(vec, 5, tasks, false, cliCore_, isRemote_, this);
     emit sigSendTasks(tasks);
 }
 
