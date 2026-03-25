@@ -9,6 +9,9 @@
 #include <QVector>
 
 struct FileStruct {
+    qint32 state{};
+    qint32 line{};
+    QString path;
     QString root;
     QString mid;
     QString relative;
@@ -59,13 +62,14 @@ struct InfoMsg {
             data << it.value().uuid << it.value().command << it.value().userAction << it.value().localPath
                  << it.value().remotePath << it.value().state << it.value().properE;
         }
-        data << fst.root << fst.mid << fst.relative;
+        data << fst.state << fst.line << fst.path << fst.root << fst.mid << fst.relative;
         data << static_cast<qint32>(infos.size());
         for (auto it = infos.constBegin(); it != infos.constEnd(); ++it) {
             data << it.key();
             data << static_cast<qint32>(it.value().size());
             for (const auto& fileStruct : it.value()) {
-                data << fileStruct.root << fileStruct.mid << fileStruct.relative;
+                data << fileStruct.state << fileStruct.line << fileStruct.path << fileStruct.root << fileStruct.mid
+                     << fileStruct.relative;
             }
         }
     }
@@ -99,7 +103,7 @@ struct InfoMsg {
             mapData.insert(key, prop);
         }
 
-        data >> fst.root >> fst.mid >> fst.relative;
+        data >> fst.state >> fst.line >> fst.path >> fst.root >> fst.mid >> fst.relative;
 
         data >> mapSize;
         infos.clear();
@@ -112,7 +116,8 @@ struct InfoMsg {
             QVector<FileStruct> fileVector;
             fileVector.resize(vectorSize);
             for (int j = 0; j < vectorSize; ++j) {
-                data >> fileVector[j].root >> fileVector[j].mid >> fileVector[j].relative;
+                data >> fileVector[j].state >> fileVector[j].line >> fileVector[j].path >> fileVector[j].root >>
+                    fileVector[j].mid >> fileVector[j].relative;
             }
             infos.insert(key, fileVector);
         }

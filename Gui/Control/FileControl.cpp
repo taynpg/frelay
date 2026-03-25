@@ -705,24 +705,48 @@ void FileManager::OperDelete()
     }
 
     // 确认是否删除
-    int ret = QMessageBox::question(this, tr("确认删除"), tr("确定要删除%1吗？").arg(datas[1]->text()),
+    int ret = QMessageBox::question(this, tr("确认删除"), tr("确定要删除%1等内容吗？").arg(datas[1]->text()),
                                     QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
     if (ret != QMessageBox::Yes) {
         return;
     }
 
-    auto name = Util::Join(GetRoot(), datas[1]->text());
-    auto type = datas[3]->text();
+    QVector<FileStruct> delItems;
+    for (int i = 0; i < (datas.size() / 5); ++i) {
+        FileStruct fst;
+        fst.line = datas[i * 5 + 1]->row();
+        fst.path = Util::Join(GetRoot(), datas[i * 5 + 1]->text());
+        delItems.push_back(fst);
+    }
 
     if (!isRemote_) {
-        QString ret = Util::Delete(name);
-        if (ret.isEmpty()) {
+        QString errMsg;
+        QVector<int> rowsToDelete;
+
+        for (const auto& item : std::as_const(delItems)) {
+            errMsg = Util::Delete(item.path);
+            if (!errMsg.isEmpty()) {
+                break;
+            } else {
+                rowsToDelete.append(item.line);
+            }
+        }
+
+        if (!rowsToDelete.isEmpty()) {
+            std::sort(rowsToDelete.begin(), rowsToDelete.end());
+            for (auto it = rowsToDelete.rbegin(); it != rowsToDelete.rend(); ++it) {
+                int row = *it;
+                if (row >= 0 && row < ui->tableWidget->rowCount()) {
+                    ui->tableWidget->removeRow(row);
+                }
+            }
+        }
+
+        if (errMsg.isEmpty()) {
             // QMessageBox::information(this, tr("提示"), tr("删除成功"));
-            int row = datas[0]->row();
-            ui->tableWidget->removeRow(row);
         } else {
-            QMessageBox::information(this, tr("提示"), ret);
+            QMessageBox::information(this, tr("提示"), errMsg);
         }
         return;
     }
@@ -730,7 +754,9 @@ void FileManager::OperDelete()
     WaitOper oper(this);
     oper.SetClient(cliCore_);
     oper.SetType(STRMSG_AC_DEL_FILEDIR, STRMSG_AC_ANSWER_DEL_FILEDIR);
-    oper.SetPath(name, "", "");
+    // oper.SetPath(name, "", "");
+    auto& infoMsg = oper.GetMsgRef();
+    infoMsg.infos["TASK"] = delItems;
 
     LoadingDialog checking(this);
     checking.setTipsText("正在删除...");
@@ -749,11 +775,33 @@ void FileManager::OperDelete()
 
     // 检查结果
     auto msg = oper.GetMsgConst();
+    if (!msg.infos.contains("TASK")) {
+        QMessageBox::information(this, tr("提示"), tr("出现错误，未收到对应结果。"));
+        return;
+    }
+
+    // UI必须从后往前删除。
+    const auto& r = msg.infos["TASK"];
+
+    QVector<int> rowsToDelete;
+    for (const auto& item : std::as_const(r)) {
+        if (item.state == 1) {
+            rowsToDelete.append(item.line);
+        }
+    }
+
+    std::sort(rowsToDelete.begin(), rowsToDelete.end(), std::greater<int>());
+    rowsToDelete.erase(std::unique(rowsToDelete.begin(), rowsToDelete.end()), rowsToDelete.end());
+
+    for (int row : rowsToDelete) {
+        if (row >= 0 && row < ui->tableWidget->rowCount()) {
+            ui->tableWidget->removeRow(row);
+        }
+    }
     if (msg.msg == STR_NONE || !msg.msg.isEmpty()) {
         QMessageBox::information(this, tr("提示"), QString(tr("删除失败=>%1")).arg(msg.msg));
     } else {
         // QMessageBox::information(this, tr("提示"), QString(tr("删除成功。")));
-        ui->tableWidget->removeRow(datas[0]->row());
     }
 }
 
@@ -761,13 +809,13 @@ bool FileManager::CheckSelect(QList<QTableWidgetItem*>& ret)
 {
     ret = ui->tableWidget->selectedItems();
     if (ret.isEmpty()) {
-        QMessageBox::information(this, tr("提示"), tr("请选择一项。"));
+        QMessageBox::information(this, tr("提示"), tr("请至少选择一项。"));
         return false;
     }
-    if (ret.size() % 5 != 0) {
-        QMessageBox::information(this, tr("提示"), tr("请选择单行。"));
-        return false;
-    }
+    // if (ret.size() % 5 != 0) {
+    //     QMessageBox::information(this, tr("提示"), tr("请选择单行。"));
+    //     return false;
+    // }
     return true;
 }
 

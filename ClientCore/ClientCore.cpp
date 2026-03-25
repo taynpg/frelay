@@ -130,7 +130,23 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
     }
     if (msg.command == STRMSG_AC_DEL_FILEDIR) {
         msg.command = STRMSG_AC_ANSWER_DEL_FILEDIR;
-        msg.msg = Util::Delete(msg.fromPath);
+        auto& delItemsMap = msg.infos;
+        msg.msg.clear();
+        for (auto& key : delItemsMap.keys()) {
+            for (auto& delItem : delItemsMap[key]) {
+                qWarning() << frame->fid << "正在删除：" << delItem.path;
+                msg.msg = Util::Delete(delItem.path);
+                if (!msg.msg.isEmpty()) {
+                    break;
+                } else {
+                    // 标记1表示删除成功。
+                    delItem.state = 1;
+                }
+            }
+            if (!msg.msg.isEmpty()) {
+                break;
+            }
+        }
         if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
             auto logMsg = tr("给") + frame->fid + tr("返回删除结果消息失败。");
             qCritical() << logMsg;
