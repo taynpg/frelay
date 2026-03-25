@@ -144,6 +144,8 @@ void TransForm::showNum(const QString& data)
 
 void TransForm::showEvent(QShowEvent* event)
 {
+    ui->lbResult->setText("传输中...");
+    ui->lbResult->setStyleSheet("");
     QDialog::showEvent(event);
     workTh_ = new TranFromTh(this, this);
     connect(workTh_, &QThread::finished, workTh_, &QObject::deleteLater);
