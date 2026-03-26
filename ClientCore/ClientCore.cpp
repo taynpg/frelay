@@ -12,7 +12,7 @@ void ClientCore::Instance()
     socket_ = new QTcpSocket(this);
     connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);
-    clearWaitTimer_ = new QTimer(this);
+    clearWaitTimer_ = new QTimer(this->parent());
     clearWaitTimer_->setInterval(1000);
     connect(clearWaitTimer_, &QTimer::timeout, this, [this]() { clearWaitTask(); });
     clearWaitTimer_->start();
