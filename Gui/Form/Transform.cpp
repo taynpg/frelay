@@ -21,6 +21,7 @@ TransForm::TransForm(QWidget* parent) : QDialog(parent), ui(new Ui::TransForm)
     connect(this, &TransForm::sigFailed, this, &TransForm::handleFailed);
     connect(this, &TransForm::sigSetUi, this, &TransForm::handleUI);
     connect(this, &TransForm::sigTaskNum, this, &TransForm::showNum);
+    connect(this, &TransForm::sigSetNotice, this, &TransForm::SetNotice);
 }
 
 TransForm::~TransForm()
@@ -52,6 +53,7 @@ void TransForm::startTask()
     curTaskNum_ = 0;
     for (auto& task : tasks_) {
 
+        emit sigSetNotice();
         QString str = QString(tr("%1/%2")).arg(curTaskNum_).arg(tasks_.size());
         emit sigTaskNum(str);
 
@@ -142,10 +144,14 @@ void TransForm::showNum(const QString& data)
     ui->edTask->setText(data);
 }
 
-void TransForm::showEvent(QShowEvent* event)
+void TransForm::SetNotice()
 {
     ui->lbResult->setText("传输中...");
     ui->lbResult->setStyleSheet("");
+}
+
+void TransForm::showEvent(QShowEvent* event)
+{
     QDialog::showEvent(event);
     workTh_ = new TranFromTh(this, this);
     connect(workTh_, &QThread::finished, workTh_, &QObject::deleteLater);

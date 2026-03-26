@@ -32,6 +32,7 @@ signals:
     void sigDone();
     void sigSetUi(const TransTask& task);
     void sigTaskNum(const QString& data);
+    void sigSetNotice();
 
 private:
     void setProgress(double val);
@@ -39,6 +40,7 @@ private:
     void handleDone();
     void handleUI(const TransTask& task);
     void showNum(const QString& data);
+    void SetNotice();
 
 protected:
     void showEvent(QShowEvent* event) override;
