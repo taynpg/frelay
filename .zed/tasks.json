@@ -1,29 +1,36 @@
 [
-    {
-        "label": "Config",
-        "command": "cmd",
-        "env": {
-            "BUILDTOOL": "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat\"",
-        },
-        "args": [
-            "/c",
-            "\"%BUILDTOOL% && cmake -Bbuild -G Ninja -S . -DCMAKE_PREFIX_PATH=C:\\Kit\\Qt6 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON\"",
-        ],
-        "cwd": "$ZED_WORKTREE_ROOT",
-        "use_new_terminal": false,
-        "show_command": true,
-        "show_summary": true,
+  {
+    "label": "Config",
+    "command": "cmd",
+    "env": {
+      "BUILDTOOL": "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Auxiliary\\Build\\vcvars64.bat\"",
+      "EXT_PARAM": "-DCOMPILE_GUI=ON -DQT_DEFAULT_MAJOR_VERSION=6",
     },
-    {
-        "label": "Build",
-        "command": "cmd",
-        "env": {
-            "BUILDTOOL": "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat\"",
-        },
-        "args": ["/c", "\"%BUILDTOOL% && cmake --build build --config Debug\""],
-        "cwd": "$ZED_WORKTREE_ROOT",
-        "use_new_terminal": false,
-        "show_command": true,
-        "show_summary": true,
+    "shell": {
+      "program": "C:\\Windows\\System32\\cmd.exe",
     },
+    "args": [
+      "/c",
+      "\"%BUILDTOOL% && cmake -Bbuild -G Ninja -S . -DCMAKE_PREFIX_PATH=C:\\local\\Qt6 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON %EXT_PARAM%\"",
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "show_command": true,
+    "show_summary": true,
+  },
+  {
+    "label": "Build",
+    "command": "cmd",
+    "env": {
+      "BUILDTOOL": "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Auxiliary\\Build\\vcvars64.bat\"",
+    },
+    "shell": {
+      "program": "C:\\Windows\\System32\\cmd.exe",
+    },
+    "args": ["/c", "\"%BUILDTOOL% && cmake --build build --config Debug\""],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "show_command": true,
+    "show_summary": true,
+  },
 ]
