@@ -91,7 +91,7 @@ void Util::InitLogger(const QString& logPath, const QString& mark)
 QString Util::GetFileDir(const QString& path)
 {
     QFileInfo fileInfo(path);
-    return fileInfo.absolutePath();
+    return fileInfo.dir().path();
 }
 
 // do not check exit
