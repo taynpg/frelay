@@ -14,6 +14,7 @@
 #include <QScrollBar>
 #include <QTableWidgetItem>
 #include <RemoteFile.h>
+#include "Form/Notice.h"
 
 #include "Form/FileInfoForm.h"
 #include "Form/Loading.h"
@@ -666,15 +667,15 @@ void FileManager::VerifySha256()
 {
     auto ret = ui->tableWidget->selectedItems();
     if (ret.isEmpty()) {
-        QMessageBox::information(this, tr("提示"), tr("请选择一项。"));
+        SHOW_NOTICE(this, tr("请选择一项。"));
         return;
     }
     if (ret.size() % 5 != 0) {
-        QMessageBox::information(this, tr("提示"), tr("请选择单行。"));
+        SHOW_NOTICE(this, tr("请选择单行。"));
         return;
     }
     if (ret[3]->text() != "File") {
-        QMessageBox::information(this, tr("提示"), tr("请选择文件操作。"));
+        SHOW_NOTICE(this, tr("请选择文件操作。"));
         return;
     }
 
@@ -704,7 +705,7 @@ void FileManager::VerifySha256()
         if (infoMsg.msg.isEmpty()) {
             qDebug() << GlobalData::Ins()->GetRemoteID() << infoMsg.fst.path << infoMsg.fst.mark;
         } else {
-            QMessageBox::information(this, tr("提示"), infoMsg.msg);
+            SHOW_NOTICE(this, infoMsg.msg);
         }
 
     } else {
