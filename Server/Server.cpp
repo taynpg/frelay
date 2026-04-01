@@ -77,7 +77,9 @@ void Server::onNewConnection()
     {
         QWriteLocker locker(&rwLock_);
         clients_.insert(clientId, client);
-        flowBackCount_[clientId] = 0;
+        auto fl = std::make_shared<FlowLimit>();
+        fl->oneBlockingBlock = CHUNK_BUF_SIZE;
+        flowBackCount_[clientId] = fl;
     }
 
     qInfo() << "Client connected:" << clientId;
@@ -136,9 +138,9 @@ void Server::processClientData(QSharedPointer<ClientInfo> client)
 
 bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointer<FrameBuffer> frame)
 {
-    auto flowLimit = [this](QTcpSocket* fsoc, BlockLevel aLevel) {
+    auto flowLimit = [this](QTcpSocket* fsoc, int delay) {
         InfoMsg msg;
-        msg.mark = static_cast<qint32>(aLevel);
+        msg.mark = delay;
         auto f = QSharedPointer<FrameBuffer>::create();
         f->type = FBT_SER_FLOW_LIMIT;
         f->data = infoPack<InfoMsg>(msg);
@@ -147,12 +149,50 @@ bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointe
         }
     };
 
-    if (flowBackCount_[fsoc->property("clientId").toString()] > FLOW_BACK_MULTIPLE) {
-        auto level = getBlockLevel(tsoc);
-        flowLimit(fsoc, level);
-        // qDebug() << "Flow back count exceeded, block level:" << level;
+    auto& fl = flowBackCount_[fsoc->property("clientId").toString()];
+    fl->count++;
+    if (fl->count % FLOW_BACK_MULTIPLE != 0) {
+        return sendData(tsoc, frame);
     }
-    flowBackCount_[fsoc->property("clientId").toString()]++;
+
+    auto blockBytes = tsoc->bytesToWrite();
+
+    // 增加死区控制，避免微小波动触发调整
+    const int DEAD_ZONE = 1024;   // 1KB死区
+
+    if (blockBytes > 0) {
+        int bytesChange = blockBytes - fl->preBlockBytes;
+
+        // 只有变化超过死区才处理
+        if (abs(bytesChange) > DEAD_ZONE) {
+            if (bytesChange > 0) {   // 阻塞显著增加
+                double increaseRatio = static_cast<double>(bytesChange) / fl->oneBlockingBlock;
+                // 增加惩罚力度
+                int delayIncrease = static_cast<int>(30.0 * (1.0 - exp(-increaseRatio)));
+                fl->curDelay = std::min(3000, fl->curDelay + delayIncrease);
+            } else {   // 阻塞显著减少
+                double decreaseRatio = static_cast<double>(-bytesChange) / fl->oneBlockingBlock;
+                // 更平缓的衰减
+                int delayDecrease = static_cast<int>(fl->curDelay * 0.5 * (1.0 - exp(-decreaseRatio * 0.5)));
+                fl->curDelay = std::max(0, fl->curDelay - delayDecrease);
+            }
+        }
+    } else {
+        // 无阻塞时更快速恢复
+        fl->curDelay = static_cast<int>(fl->curDelay * 0.3);
+    }
+
+    // 增加最小延迟阈值，避免过于频繁的微小调整
+    if (fl->curDelay < 2) {
+        fl->curDelay = 0;
+    }
+
+    fl->curDelay = std::clamp(fl->curDelay, 0, 3000);
+    fl->preBlockBytes = blockBytes;
+
+    qDebug() << "control:" << fl->curDelay << "blockBytes:" << blockBytes;
+
+    flowLimit(fsoc, fl->curDelay);
     return sendData(tsoc, frame);
 }
 
@@ -244,6 +284,7 @@ bool Server::sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame)
 BlockLevel Server::getBlockLevel(QTcpSocket* socket)
 {
     auto b = socket->bytesToWrite();
+    qDebug() << "..." << b;
     constexpr auto one = CHUNK_BUF_SIZE;
     if (b > one * 1000) {
         return BL_LEVEL_8;
