@@ -10,9 +10,9 @@
 // 一帧包大小
 constexpr quint32 CHUNK_BUF_SIZE = 1 * 1024 * 512;
 // 流量背压倍率
-constexpr quint32 FLOW_BACK_MULTIPLE = 10;
+constexpr quint32 FLOW_BACK_MULTIPLE = 5;
 // 阻塞等级放大倍率
-constexpr quint32 BLOCK_LEVEL_MULTIPLE = 5;
+constexpr quint32 BLOCK_LEVEL_MULTIPLE = 1;
 // 允许最大的无效数据包大小
 constexpr quint32 MAX_INVALID_PACKET_SIZE = CHUNK_BUF_SIZE * 5;
 

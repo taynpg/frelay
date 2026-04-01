@@ -156,21 +156,17 @@ bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointe
     }
 
     auto blockBytes = tsoc->bytesToWrite();
-
-    // 增加死区控制，避免微小波动触发调整
-    const int DEAD_ZONE = 1024;   // 1KB死区
+    const int DEAD_ZONE = 1024 * 200;
 
     if (blockBytes > 0) {
         int bytesChange = blockBytes - fl->preBlockBytes;
-
-        // 只有变化超过死区才处理
         if (abs(bytesChange) > DEAD_ZONE) {
             if (bytesChange > 0) {   // 阻塞显著增加
                 double increaseRatio = static_cast<double>(bytesChange) / fl->oneBlockingBlock;
                 // 增加惩罚力度
-                int delayIncrease = static_cast<int>(30.0 * (1.0 - exp(-increaseRatio)));
+                int delayIncrease = static_cast<int>(20.0 * (1.0 - exp(-increaseRatio)));
                 fl->curDelay = std::min(3000, fl->curDelay + delayIncrease);
-            } else {   // 阻塞显著减少
+            } else {
                 double decreaseRatio = static_cast<double>(-bytesChange) / fl->oneBlockingBlock;
                 // 更平缓的衰减
                 int delayDecrease = static_cast<int>(fl->curDelay * 0.5 * (1.0 - exp(-decreaseRatio * 0.5)));
@@ -178,19 +174,13 @@ bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointe
             }
         }
     } else {
-        // 无阻塞时更快速恢复
         fl->curDelay = static_cast<int>(fl->curDelay * 0.3);
-    }
-
-    // 增加最小延迟阈值，避免过于频繁的微小调整
-    if (fl->curDelay < 2) {
-        fl->curDelay = 0;
     }
 
     fl->curDelay = std::clamp(fl->curDelay, 0, 3000);
     fl->preBlockBytes = blockBytes;
 
-    qDebug() << "control:" << fl->curDelay << "blockBytes:" << blockBytes;
+    // qDebug() << "control:" << fl->curDelay << "blockBytes:" << blockBytes;
 
     flowLimit(fsoc, fl->curDelay);
     return sendData(tsoc, frame);

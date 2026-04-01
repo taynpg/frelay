@@ -427,8 +427,9 @@ SendThread::SendThread(ClientCore* clientCore) : cliCore_(clientCore)
 void SendThread::fbtFlowBack(QSharedPointer<FrameBuffer> frame)
 {
     auto msg = infoUnpack<InfoMsg>(frame->data);
-    delay_ = msg.mark * BLOCK_LEVEL_MULTIPLE;
-    qDebug() << "拥塞流量调整：" << delay_;
+    //delay_ = msg.mark * BLOCK_LEVEL_MULTIPLE;
+    delay_ = msg.mark ;
+    //qDebug() << "拥塞流量调整：" << delay_;
 }
 
 void SendThread::run()
@@ -437,7 +438,7 @@ void SendThread::run()
     isSuccess_ = true;
     delay_ = 0;
     bool invokeSuccess = false;
-    while (!task_->file.atEnd()) {
+    while (!task_->file.atEnd()) { 
         auto frame = QSharedPointer<FrameBuffer>::create();
         frame->tid = task_->task.remoteId;
         frame->type = FBT_CLI_FILE_BUFFER;

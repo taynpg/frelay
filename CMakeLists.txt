@@ -20,6 +20,11 @@ endif()
 
 set(QAPPLICATION_CLASS QApplication)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")
+message(STATUS "Use clang-cl.")
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 if (MSVC)
 add_compile_options(/utf-8)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
