@@ -167,8 +167,9 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
     // 这个请求的处理可能是耗时的，需要开线程处理。
     if (msg.command == STRMSG_AC_ALL_DIRFILES) {
         msg.command = STRMSG_AC_ANSWER_ALL_DIRFILES;
+        auto taskKey = frame->fid + "=" + STRMSG_AC_ALL_DIRFILES;
         QMutexLocker locker(&waitTaskMut_);
-        if (waitTask_.contains(frame->fid)) {
+        if (waitTask_.contains(taskKey)) {
             msg.msg = STRMSG_ST_COMMAND_ALREADY_RUNNING;
             if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
                 auto logMsg = tr("给") + frame->fid + tr("返回获取文件列表结果消息失败。");
@@ -176,8 +177,8 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
                 return;
             }
         } else {
-            waitTask_[frame->fid] = WaitTask();
-            auto& wt = waitTask_[frame->fid];
+            waitTask_[taskKey] = WaitTask();
+            auto& wt = waitTask_[taskKey];
             QString fid = frame->fid;
             wt.wo = new WaitOperOwn(this);
             wt.wo->SetClient(this);
@@ -211,8 +212,9 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
     }
     if (msg.command == STRMSG_AC_ASK_SHA256) {
         msg.command = STRMSG_AC_ANSWER_SHA256;
+        auto taskKey = frame->fid + "=" + STRMSG_AC_ASK_SHA256;
         QMutexLocker locker(&waitTaskMut_);
-        if (waitTask_.contains(frame->fid)) {
+        if (waitTask_.contains(taskKey)) {
             msg.msg = STRMSG_ST_COMMAND_ALREADY_RUNNING;
             if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
                 auto logMsg = tr("给") + frame->fid + tr("返回获取SHA256结果消息失败。");
@@ -220,8 +222,8 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
                 return;
             }
         } else {
-            waitTask_[frame->fid] = WaitTask();
-            auto& wt = waitTask_[frame->fid];
+            waitTask_[taskKey] = WaitTask();
+            auto& wt = waitTask_[taskKey];
             QString fid = frame->fid;
             wt.wo = new WaitOperOwn(this);
             wt.wo->SetClient(this);
@@ -540,6 +542,7 @@ bool WaitThread::IsQuit() const
 
 void WaitThread::interrupCheck()
 {
+    isRun_ = false;
     if (!isAlreadyInter_) {
         isAlreadyInter_ = true;
         emit sigCheckOver();

@@ -68,7 +68,8 @@ void Server::onNewConnection()
     client->socket->setProperty("clientId", clientId);
     client->id = clientId;
     // client->connectTime = QDateTime::currentSecsSinceEpoch();
-    client->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
+    // client->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
+    client->connectTime = QDateTime::currentMSecsSinceEpoch() / 1000;
 
     connect(clientSocket, &QTcpSocket::readyRead, this, &Server::onReadyRead);
     connect(clientSocket, &QTcpSocket::disconnected, this, &Server::onClientDisconnected);
@@ -201,7 +202,8 @@ void Server::replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<Fram
         }
         if (cl) {
             // qDebug() << "Client" << cl->id << "heartbeat received";
-            cl->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
+            // cl->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
+            cl->connectTime = QDateTime::currentMSecsSinceEpoch() / 1000;
         }
         break;
     }
@@ -297,7 +299,8 @@ void Server::onClientDisconnected()
 
 void Server::monitorClients()
 {
-    qint64 now = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
+    // qint64 now = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
+    qint64 now = QDateTime::currentMSecsSinceEpoch() / 1000;
     std::vector<QTcpSocket*> prepareRemove;
 
     {

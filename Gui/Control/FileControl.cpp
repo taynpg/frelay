@@ -546,6 +546,7 @@ void FileManager::UpDownCommon(const QVector<QString>& vec, int grpSize, QVector
         LoadingDialog checking(parent);
         checking.setTipsText("正在等待对方获取文件列表...");
         connect(&wi, &WaitOper::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+        connect(&checking, &LoadingDialog::cancelWaiting, &wi, &WaitOper::interrupCheck);
         connect(cliCore, &ClientCore::sigMsgAnswer, &wi, &WaitOper::recvFrame);
 
         wi.start();
@@ -694,6 +695,7 @@ void FileManager::VerifySha256()
         LoadingDialog checking(this);
         checking.setTipsText("正在等待对方计算SHA256...");
         connect(&wi, &WaitOper::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+        connect(&checking, &LoadingDialog::cancelWaiting, &wi, &WaitOper::interrupCheck);
         connect(cliCore_, &ClientCore::sigMsgAnswer, &wi, &WaitOper::recvFrame);
 
         wi.start();
