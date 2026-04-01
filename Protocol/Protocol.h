@@ -62,13 +62,13 @@ struct FrameBuffer {
 enum BlockLevel {
     BL_LEVEL_NORMAL = 0,
     BL_LEVEL_1 = 1,
-    BL_LEVEL_2 = 3,
-    BL_LEVEL_3 = 5,
-    BL_LEVEL_4 = 10,
-    BL_LEVEL_5 = 20,
-    BL_LEVEL_6 = 50,
-    BL_LEVEL_7 = 100,
-    BL_LEVEL_8 = 1000
+    BL_LEVEL_2 = 10,
+    BL_LEVEL_3 = 80,
+    BL_LEVEL_4 = 160,
+    BL_LEVEL_5 = 300,
+    BL_LEVEL_6 = 500,
+    BL_LEVEL_7 = 1000,
+    BL_LEVEL_8 = 2000
 };
 
 class Protocol

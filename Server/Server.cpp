@@ -107,7 +107,7 @@ void Server::onReadyRead()
         if (client->buffer.size() > MAX_INVALID_PACKET_SIZE) {
             auto mg = QString("Client %1 buffer size exceeded, XXXXX...").arg(client->id);
             qWarning() << mg;
-            socket->disconnectFromHost();
+            socket->abort();
             return;
         }
         client->buffer.append(socket->readAll());
@@ -254,16 +254,16 @@ BlockLevel Server::getBlockLevel(QTcpSocket* socket)
     if (b > one * 100) {
         return BL_LEVEL_6;
     }
-    if (b > one * 50) {
+    if (b > one * 40) {
         return BL_LEVEL_5;
     }
     if (b > one * 30) {
         return BL_LEVEL_4;
     }
-    if (b > one * 10) {
+    if (b > one * 20) {
         return BL_LEVEL_3;
     }
-    if (b > one * 5) {
+    if (b > one * 10) {
         return BL_LEVEL_2;
     }
     if (b > one * 1) {
@@ -311,7 +311,7 @@ void Server::monitorClients()
     }
     for (const auto& s : prepareRemove) {
         qInfo() << "Removing inactive client:" << s->property("clientId").toString();
-        s->disconnectFromHost();
+        s->abort();
     }
 }
 
