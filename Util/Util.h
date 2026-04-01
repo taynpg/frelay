@@ -59,6 +59,7 @@ public:
     static QString NewDir(const QString& path);
     static QString UUID();
     static QVector<QString> GetLocalDrivers();
+    static QString GenSha256(const QString& str, bool isFilePath = true);
 };
 
 class DirFileHelper : public QObject

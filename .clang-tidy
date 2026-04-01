@@ -1,0 +1,4 @@
+Checks: >
+  -*,
+  clang-*,
+  -clang-analyzer-deadcode.DeadStores

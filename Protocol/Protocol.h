@@ -104,6 +104,8 @@ enum FileCheckState {
 
 #define STRMSG_AC_ALL_DIRFILES "askAllDirFiles"
 #define STRMSG_AC_ANSWER_ALL_DIRFILES "answerAllDirFiles"
+#define STRMSG_AC_ASK_SHA256 "askSha256"
+#define STRMSG_AC_ANSWER_SHA256 "answerSha256"
 
 #define STRMSG_ST_FILEEXIT "fileExist"
 #define STRMSG_ST_FILENOEXIT "fileNotExist"

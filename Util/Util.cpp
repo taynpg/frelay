@@ -1,5 +1,6 @@
 ﻿#include "Util.h"
 
+#include <QCryptographicHash>
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -195,6 +196,27 @@ QVector<QString> Util::GetLocalDrivers()
         }
     }
     return result;
+}
+
+QString Util::GenSha256(const QString& str, bool isFilePath)
+{
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+
+    if (isFilePath) {
+        QFile file(str);
+        if (!file.open(QIODevice::ReadOnly)) {
+            qWarning() << __FUNCTION__ << " 无法打开文件:" << str;
+            return QString();
+        }
+
+        if (!hash.addData(&file)) {
+            qWarning() << __FUNCTION__ << " 读取文件数据失败:" << str;
+            return QString();
+        }
+    } else {
+        hash.addData(str.toUtf8());
+    }
+    return QString(hash.result().toHex());
 }
 
 QString DirFileHelper::GetErr() const

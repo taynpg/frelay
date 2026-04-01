@@ -64,6 +64,7 @@ private:
     void CopyFullPath();
     void ShowProperties();
     void UpDown();
+    void VerifySha256();
 
 private:
     void OperNewFolder();

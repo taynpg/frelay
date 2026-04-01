@@ -91,6 +91,7 @@ int infoTest3()
     msg1.infos[""] = QVector<FileStruct>();
 
     FileStruct fst;
+    fst.mark = "JJJ";
     fst.line = 22;
     msg1.infos[""].append(fst);
 

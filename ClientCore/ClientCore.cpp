@@ -209,6 +209,42 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
         }
         return;
     }
+    if (msg.command == STRMSG_AC_ASK_SHA256) {
+        msg.command = STRMSG_AC_ANSWER_SHA256;
+        QMutexLocker locker(&waitTaskMut_);
+        if (waitTask_.contains(frame->fid)) {
+            msg.msg = STRMSG_ST_COMMAND_ALREADY_RUNNING;
+            if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
+                auto logMsg = tr("给") + frame->fid + tr("返回获取SHA256结果消息失败。");
+                qCritical() << logMsg;
+                return;
+            }
+        } else {
+            waitTask_[frame->fid] = WaitTask();
+            auto& wt = waitTask_[frame->fid];
+            QString fid = frame->fid;
+            wt.wo = new WaitOperOwn(this);
+            wt.wo->SetClient(this);
+            wt.wo->fid = fid;
+            wt.wo->infoMsg_ = msg;
+            wt.wo->func_ = [this, &wt, fid]() {
+                auto& infoMsg = wt.wo->infoMsg_;
+                infoMsg.command = STRMSG_AC_ANSWER_SHA256;
+                bool success = false;
+                auto sha256 = Util::GenSha256(infoMsg.fst.path);
+                if (sha256.isEmpty()) {
+                    infoMsg.msg = QString("获取%1的sha256失败。").arg(infoMsg.fst.path);
+                } else {
+                    infoMsg.msg.clear();
+                    infoMsg.fst.mark = sha256;
+                }
+                return success;
+            };
+            wt.wo->start();
+        }
+        return;
+    }
+
     // 未知信息
     qWarning() << QString(tr("未知询问信息类型：%1")).arg(msg.command);
 }
@@ -387,8 +423,9 @@ bool ClientCore::Send(const char* data, qint64 len)
         QMutexLocker locker(&sockMut_);
         bytesWritten = socket_->write(data, len);
     }
-    if (bytesWritten == -1 || !socket_->waitForBytesWritten(5000)) {
-        qCritical() << QString("向服务器发送数据失败： %1").arg(socket_->errorString());
+    // 这里 1000 * 300 应对网络非常慢的情况。
+    if (bytesWritten == -1 || !socket_->waitForBytesWritten(1000 * 300)) {
+        qCritical() << QString("向服务器发送数据失败： %1, written:%2.").arg(socket_->errorString(), bytesWritten);
         return false;
     }
     return true;

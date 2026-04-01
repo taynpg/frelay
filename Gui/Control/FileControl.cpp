@@ -125,6 +125,7 @@ void FileManager::InitMenu()
     menu_->addAction(tr("重命名"), this, &FileManager::OperRename);
     menu_->addAction(tr("删除"), this, &FileManager::OperDelete);
     menu_->addAction(tr("新建文件夹"), this, &FileManager::OperNewFolder);
+    menu_->addAction(tr("SHA256"), this, &FileManager::VerifySha256);
     menu_->addSeparator();
 }
 
@@ -658,6 +659,70 @@ void FileManager::UpDown()
     QVector<TransTask> tasks;
     UpDownCommon(vec, 5, tasks, false, cliCore_, isRemote_, this);
     emit sigSendTasks(tasks);
+}
+
+void FileManager::VerifySha256()
+{
+    auto ret = ui->tableWidget->selectedItems();
+    if (ret.isEmpty()) {
+        QMessageBox::information(this, tr("提示"), tr("请选择一项。"));
+        return;
+    }
+    if (ret.size() % 5 != 0) {
+        QMessageBox::information(this, tr("提示"), tr("请选择单行。"));
+        return;
+    }
+    if (ret[3]->text() != "File") {
+        QMessageBox::information(this, tr("提示"), tr("请选择文件操作。"));
+        return;
+    }
+
+    QVector<QString> vec;
+    for (const auto& item : std::as_const(ret)) {
+        vec.push_back(item->text());
+    }
+
+    if (isRemote_) {
+        // 远程等待别人。
+        WaitOper wi(this);
+        wi.SetClient(cliCore_);
+        wi.SetType(STRMSG_AC_ASK_SHA256, STRMSG_AC_ANSWER_SHA256);
+        auto& infoMsg = wi.GetMsgRef();
+        infoMsg.infos.clear();
+        infoMsg.fst.path = Util::Join(GlobalData::Ins()->GetRemoteRoot(), vec[1]);
+
+        LoadingDialog checking(this);
+        checking.setTipsText("正在等待对方计算SHA256...");
+        connect(&wi, &WaitOper::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+        connect(cliCore_, &ClientCore::sigMsgAnswer, &wi, &WaitOper::recvFrame);
+
+        wi.start();
+        checking.exec();
+
+        if (infoMsg.msg.isEmpty()) {
+            qDebug() << GlobalData::Ins()->GetRemoteID() << infoMsg.fst.path << infoMsg.fst.mark;
+        } else {
+            QMessageBox::information(this, tr("提示"), infoMsg.msg);
+        }
+
+    } else {
+        // 本地自己等待。
+        WaitOperOwn wo(this);
+        wo.func_ = [vec]() {
+            auto localFile = Util::Join(GlobalData::Ins()->GetLocalRoot(), vec[1]);
+            auto sha256Local = Util::GenSha256(localFile);
+            qDebug() << localFile << "=>" << sha256Local;
+            return true;
+        };
+
+        LoadingDialog checking(this);
+        checking.setTipsText("正在计算...");
+        checking.setCanCancel(false);
+        connect(&wo, &WaitOperOwn::sigOver, &checking, &LoadingDialog::cancelBtnClicked);
+
+        wo.start();
+        checking.exec();
+    }
 }
 
 void FileManager::OperNewFolder()
