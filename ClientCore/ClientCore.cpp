@@ -299,6 +299,8 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         break;
     }
     case FrameBufferType::FBT_CLI_ASK_DIRFILE: {
+        // 临时
+        qDebug() << "来自" << frame->fid << "的文件夹请求。。。";
         DirFileInfoVec vec;
         InfoMsg info = infoUnpack<InfoMsg>(frame->data);
         if (!localFile_.GetDirFile(info.msg, vec)) {
@@ -312,6 +314,8 @@ void ClientCore::UseFrame(QSharedPointer<FrameBuffer> frame)
         break;
     }
     case FrameBufferType::FBT_CLI_ASK_HOME: {
+        // 临时
+        qDebug() << "来自" << frame->fid << "的HOME请求。。。";
         InfoMsg info;
         info.msg = Util::GetUserHome();
         info.list = Util::GetLocalDrivers();
@@ -614,7 +618,7 @@ InfoMsg& WaitOper::GetMsgRef()
 
 void WaitOper::interrupCheck()
 {
-    qWarning() << QString(tr("中断请求处理%1......")).arg(sendStrType_);
+    //qWarning() << QString(tr("中断请求处理%1......")).arg(sendStrType_);
     WaitThread::interrupCheck();
 }
 

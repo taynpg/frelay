@@ -159,16 +159,14 @@ bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointe
 bool Server::forwardData(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame)
 {
     QSharedPointer<ClientInfo> targetClient;
-    QSharedPointer<ClientInfo> fromClient;
 
     {
         QReadLocker locker(&rwLock_);
         targetClient = clients_.value(frame->tid);
-        fromClient = clients_.value(frame->fid);
     }
 
-    if (targetClient && fromClient) {
-        return sendWithFlowCheck(fromClient->socket, targetClient->socket, frame);
+    if (targetClient) {
+        return sendWithFlowCheck(client->socket, targetClient->socket, frame);
     } else {
         auto errorFrame = QSharedPointer<FrameBuffer>::create();
         errorFrame->type = FBT_SER_MSG_FORWARD_FAILED;

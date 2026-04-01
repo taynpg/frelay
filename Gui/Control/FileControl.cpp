@@ -670,7 +670,7 @@ void FileManager::VerifySha256()
         SHOW_NOTICE(this, tr("请选择一项。"));
         return;
     }
-    if (ret.size() % 5 != 0) {
+    if (ret.size() != 5) {
         SHOW_NOTICE(this, tr("请选择单行。"));
         return;
     }
