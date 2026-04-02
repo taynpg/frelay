@@ -113,6 +113,8 @@ endif()
 add_subdirectory(Console)
 add_subdirectory(Struct)
 add_subdirectory(Test)
+add_subdirectory(qcustomplot)
+add_subdirectory(FlowLimitTest)
 
 function(safe_install_files files_list destination)
     set(existing_files)
