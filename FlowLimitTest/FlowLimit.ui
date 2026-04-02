@@ -20,7 +20,7 @@
    <string>FlowLimit</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_3">
+   <layout class="QHBoxLayout" name="horizontalLayout_4">
     <item>
      <widget class="QGroupBox" name="groupBox">
       <property name="sizePolicy">
@@ -115,17 +115,35 @@
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <property name="sizeConstraint">
-          <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>A端控制：</string>
          </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <widget class="QLabel" name="label_4">
+          <widget class="QLabel" name="label_7">
            <property name="text">
-            <string>A端控制：</string>
+            <string>发送量大小控制：</string>
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QLineEdit" name="readySize"/>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>MB</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
           <widget class="QPushButton" name="btnSendStart">
            <property name="text">

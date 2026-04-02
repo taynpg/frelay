@@ -77,9 +77,10 @@ void Server::onNewConnection()
     {
         QWriteLocker locker(&rwLock_);
         clients_.insert(clientId, client);
-        auto fl = std::make_shared<FlowLimit>();
-        fl->oneBlockingBlock = CHUNK_BUF_SIZE;
-        flowBackCount_[clientId] = fl;
+        auto fl = std::make_shared<FlowController>();
+        FlowController::Config config;
+        fl->setConfig(config);
+        fl_[clientId] = fl;
     }
 
     qInfo() << "Client connected:" << clientId;
@@ -149,40 +150,10 @@ bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointe
         }
     };
 
-    auto& fl = flowBackCount_[fsoc->property("clientId").toString()];
-    fl->count++;
-    if (fl->count % FLOW_BACK_MULTIPLE != 0) {
-        return sendData(tsoc, frame);
-    }
-
-    auto blockBytes = tsoc->bytesToWrite();
-    const int DEAD_ZONE = 1024 * 200;
-
-    if (blockBytes > 0) {
-        int bytesChange = blockBytes - fl->preBlockBytes;
-        if (abs(bytesChange) > DEAD_ZONE) {
-            if (bytesChange > 0) {   // 阻塞显著增加
-                double increaseRatio = static_cast<double>(bytesChange) / fl->oneBlockingBlock;
-                // 增加惩罚力度
-                int delayIncrease = static_cast<int>(20.0 * (1.0 - exp(-increaseRatio)));
-                fl->curDelay = std::min(3000, fl->curDelay + delayIncrease);
-            } else {
-                double decreaseRatio = static_cast<double>(-bytesChange) / fl->oneBlockingBlock;
-                // 更平缓的衰减
-                int delayDecrease = static_cast<int>(fl->curDelay * 0.5 * (1.0 - exp(-decreaseRatio * 0.5)));
-                fl->curDelay = std::max(0, fl->curDelay - delayDecrease);
-            }
-        }
-    } else {
-        fl->curDelay = static_cast<int>(fl->curDelay * 0.3);
-    }
-
-    fl->curDelay = std::clamp(fl->curDelay, 0, 3000);
-    fl->preBlockBytes = blockBytes;
-
-    // qDebug() << "control:" << fl->curDelay << "blockBytes:" << blockBytes;
-
-    flowLimit(fsoc, fl->curDelay);
+    auto& flowControler = fl_[fsoc->property("clientId").toString()];
+    auto byteToWrite = tsoc->bytesToWrite();
+    double delay = flowControler->calculateDelay(byteToWrite);
+    //
     return sendData(tsoc, frame);
 }
 
@@ -317,8 +288,8 @@ void Server::onClientDisconnected()
         if (clients_.count(clientId)) {
             clients_.remove(clientId);
         }
-        if (flowBackCount_.count(clientId)) {
-            flowBackCount_.remove(clientId);
+        if (fl_.count(clientId)) {
+            fl_.remove(clientId);
         }
     }
 

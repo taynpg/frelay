@@ -8,16 +8,9 @@
 #include <QTcpSocket>
 #include <QTimer>
 #include <memory>
+#include <FlowController.h>
 
 #include "Protocol.h"
-
-struct FlowLimit {
-    unsigned int count{};
-    int curDelay{};
-    int lastDelay{};
-    int preBlockBytes{};
-    int oneBlockingBlock{};
-};
 
 class Server : public QTcpServer
 {
@@ -56,8 +49,8 @@ private:
     BlockLevel getBlockLevel(QTcpSocket* socket);
 
     QString id_;
+    QMap<QString, std::shared_ptr<FlowController>> fl_;
     QMap<QString, QSharedPointer<ClientInfo>> clients_;
-    QMap<QString, std::shared_ptr<FlowLimit>> flowBackCount_;
     QReadWriteLock rwLock_;
     QTimer* monitorTimer_;
 };
