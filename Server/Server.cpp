@@ -77,10 +77,11 @@ void Server::onNewConnection()
     {
         QWriteLocker locker(&rwLock_);
         clients_.insert(clientId, client);
-        auto fl = std::make_shared<FlowController>();
+        auto sd = std::make_shared<ShowData>();
         FlowController::Config config;
-        fl->setConfig(config);
-        fl_[clientId] = fl;
+        sd->fl = std::make_shared<FlowController>();
+        sd->fl->setConfig(config);
+        curShow_[clientId] = sd;
     }
 
     qInfo() << "Client connected:" << clientId;
@@ -150,9 +151,10 @@ bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointe
         }
     };
 
-    auto& flowControler = fl_[fsoc->property("clientId").toString()];
-    auto byteToWrite = tsoc->bytesToWrite();
-    double delay = flowControler->calculateDelay(byteToWrite);
+    auto& cs = curShow_[fsoc->property("clientId").toString()];
+    cs->bytesToWrite = tsoc->bytesToWrite();
+    double delay = cs->fl->calculateDelay(cs->bytesToWrite);
+
     //
     return sendData(tsoc, frame);
 }
@@ -288,8 +290,8 @@ void Server::onClientDisconnected()
         if (clients_.count(clientId)) {
             clients_.remove(clientId);
         }
-        if (fl_.count(clientId)) {
-            fl_.remove(clientId);
+        if (curShow_.count(clientId)) {
+            curShow_.remove(clientId);
         }
     }
 

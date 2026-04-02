@@ -1,6 +1,8 @@
 #include "FlowLimit.h"
-#include <Util.h>
+
 #include <QMessageBox>
+#include <Util.h>
+#include <random>
 
 #include "./ui_FlowLimit.h"
 
@@ -29,11 +31,19 @@ void FlowLimit::BaseInit()
     lay->setContentsMargins(0, 0, 0, 0);
     lay->setSpacing(0);
     lay->addWidget(plot_);
+
+    auto* gp = plot_->addGraph();
+    gp->setPen(QPen(Qt::blue));
+    gp->setBrush(QBrush(QColor(255, 255, 0)));
+
+    plot_->xAxis->setRange(0, 60);
+    plot_->yAxis->setRange(0, 200);
 }
 
 void FlowLimit::UiSingnalInit()
 {
-
+    connect(ui->btnStartServer, &QPushButton::clicked, this, &FlowLimit::startMonitor);
+    connect(ui->btnTest, &QPushButton::clicked, this, &FlowLimit::testPlot);
 }
 
 void FlowLimit::startMonitor()
@@ -41,8 +51,29 @@ void FlowLimit::startMonitor()
     if (!server_->startServer(9009)) {
         QMessageBox::information(this, "提示", "=====> 启动失败。");
         isStarted_ = false;
-    }
-    else {
+    } else {
+        ui->btnStartServer->setEnabled(false);
         isStarted_ = true;
     }
+}
+
+void FlowLimit::testPlot()
+{
+    // 创建随机数引擎
+    std::random_device rd;    // 真随机数种子
+    std::mt19937 gen(rd());   // Mersenne Twister 引擎
+
+    // 生成 [0, 100] 之间的整数
+    std::uniform_int_distribution<> distrib(0, 100);
+    int randomInt = distrib(gen);
+
+    // 生成 [0.0, 1.0) 之间的浮点数
+    std::uniform_real_distribution<> distribReal(0.0, 200.0);
+    double randomDouble = distribReal(gen);
+
+    dx_.append(dx_.count());
+    dy_.append(randomDouble);
+
+    plot_->graph(0)->setData(dx_, dy_);
+    plot_->replot();
 }

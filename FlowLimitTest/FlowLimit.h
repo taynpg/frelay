@@ -26,11 +26,15 @@ private:
 
 public slots:
     void startMonitor();
+    void testPlot();
 
 private:
     bool isStarted_{false};
     Server* server_{};
     Ui::FlowLimit* ui;
+
+    QVector<double> dx_;
+    QVector<double> dy_;
     QCustomPlot* plot_{};
 };
 #endif   // FLOWLIMIT_H
