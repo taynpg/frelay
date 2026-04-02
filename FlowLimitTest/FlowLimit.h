@@ -3,11 +3,8 @@
 
 #include <QMainWindow>
 #include <QMutex>
-#include <QQueue>
+#include <Server.h>
 #include <qcustomplot.h>
-
-#include "Consumer.h"
-#include "Producer.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -27,29 +24,13 @@ private:
     void BaseInit();
     void UiSingnalInit();
 
-signals:
-    void StartTest(int size);
-    void StopTest();
-    void uiSigCurByteToWrite(double val);
-    void uiSigCurDelay(double val);
-
 public slots:
-    void onReadyData(QByteArray data);
-    
-private:
-    void SenderTask();
+    void startMonitor();
 
 private:
+    bool isStarted_{false};
+    Server* server_{};
     Ui::FlowLimit* ui;
     QCustomPlot* plot_{};
-    Producer* producer_{};
-    Consumer* consumer_{};
-    bool isRun_{};
-    unsigned int recvCount_{};
-    int byteToWrite_{};
-    QMutex dataMutex_{};
-    QThread* pTh_{};
-    QThread* wTh_{};
-    QQueue<QByteArray> dataQueue_{};
 };
 #endif   // FLOWLIMIT_H
