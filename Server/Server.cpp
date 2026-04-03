@@ -150,7 +150,6 @@ void Server::onNewConnection()
     // 连接信号槽
     connect(cli.clientWorker.get(), &ClientThread::disconnected, this, &Server::onClientDisconnected, Qt::QueuedConnection);
     connect(cli.clientWorker.get(), &ClientThread::dataReceived, this, &Server::onClientDataReceived, Qt::QueuedConnection);
-    connect(cli.clientWorker.get(), &ClientThread::heartbeatReceived, this, &Server::onClientHeartbeat, Qt::QueuedConnection);
     connect(cli.clientWorker.get(), &ClientThread::heartbeatTimeout, this, &Server::onClientHeartbeatTimeout,
             Qt::QueuedConnection);
 
@@ -220,7 +219,7 @@ void Server::onClientDataReceived(const QString& clientId, const QSharedPointer<
         // 服务请求
         switch (frame->type) {
         case FBT_SER_MSG_HEARTBEAT:
-            onClientHeartbeat(clientId);
+            // 客户端自己已经更新了。
             break;
 
         case FBT_SER_MSG_ASKCLIENTS: {
@@ -258,16 +257,6 @@ void Server::onClientDataReceived(const QString& clientId, const QSharedPointer<
     } else {
         // 数据转发
         forwardDataToClient(frame->fid, frame);
-    }
-}
-
-void Server::onClientHeartbeat(const QString& clientId)
-{
-    QSharedPointer<ClientThread> client = findClientThread(clientId);
-
-    if (client) {
-        // 在客户端线程中更新心跳时间
-        QMetaObject::invokeMethod(client.data(), "updateHeartbeatTime", Qt::QueuedConnection);
     }
 }
 
@@ -329,44 +318,36 @@ void Server::onClientHeartbeatTimeout(const QString& clientId, qint64 lastTime)
 
 void Server::onClientDisconnected(const QString& clientId)
 {
-    qDebug() << "Processing disconnect for client:" << clientId;
+    qDebug() << "Client disconnected:" << clientId;
 
-    QSharedPointer<ClientThread> clientWorker;
-    QThread* workerThread = nullptr;
+    // 停止客户端线程
+    QSharedPointer<ClientThread> clientThread = findClientThread(clientId);
+    if (clientThread) {
+        QMetaObject::invokeMethod(clientThread.data(), "stop", Qt::QueuedConnection);
+    }
 
+    // 从主列表中移除
     {
         QWriteLocker locker(&rwLock_);
-        if (clients_.contains(clientId)) {
-            auto& cli = clients_[clientId];
-            clientWorker = cli.clientWorker;
-            workerThread = cli.workerTh;
-            clients_.remove(clientId);
-            qDebug() << "Removed client from map:" << clientId;
-        } else {
-            qDebug() << "Client not found in map:" << clientId;
-            return;
-        }
-    }
-
-    // 在客户端线程中停止
-    if (clientWorker) {
-        QMetaObject::invokeMethod(clientWorker.data(), "stop", Qt::BlockingQueuedConnection);
-    }
-
-    // 停止线程
-    if (workerThread) {
-        if (workerThread->isRunning()) {
-            workerThread->quit();
-            if (!workerThread->wait(2000)) {
-                qWarning() << "Failed to stop thread for client:" << clientId;
-                workerThread->terminate();
-                workerThread->wait();
+        auto it = clients_.find(clientId);
+        if (it != clients_.end()) {
+            // 清理线程资源
+            if (it.value().workerTh) {
+                it.value().workerTh->quit();
+                it.value().workerTh->wait(1000);
+                it.value().workerTh->deleteLater();
             }
+            // 从map中移除
+            clients_.erase(it);
+            qInfo() << "Client" << clientId << "removed. Total clients:" << clients_.size();
         }
-        workerThread->deleteLater();
     }
 
-    qInfo() << "Client disconnected:" << clientId;
+    // 清理待移除列表
+    {
+        QMutexLocker locker(&removeMutex_);
+        clientsToRemove_.removeAll(clientId);
+    }
 }
 
 QByteArray Server::getClients()

@@ -23,31 +23,14 @@ public:
 
     bool start(QTcpSocket* socket);
 
-    // 线程安全的队列操作
+             // 线程安全的队列操作
     bool queueDataForSending(const QSharedPointer<FrameBuffer>& frame);
 
-    QString getId() const
-    {
-        return id_;
-    }
+    QString getId() const;
+    qint64 getLastHeartbeatTime() const;
 
-    qint64 getLastHeartbeatTime() const
-    {
-        QMutexLocker locker(&heartbeatMutex_);
-        return lastHeartbeatTime_;
-    }
-
-    bool isActive() const
-    {
-        QMutexLocker locker(&stateMutex_);
-        return active_ && !stopReceiveThread_ && !stopSendThread_;
-    }
-
-    bool isConnected() const
-    {
-        QMutexLocker locker(&socketMutex_);
-        return socket_ && socket_->state() == QAbstractSocket::ConnectedState;
-    }
+    bool isActive() const;
+    bool isConnected() const;
 
 signals:
     void disconnected(const QString& clientId);
@@ -62,7 +45,6 @@ public slots:
     bool syncSendFrame(const QSharedPointer<FrameBuffer>& frame);
     bool directSend(QSharedPointer<FrameBuffer> frame);
     void stop();
-    void safeStop();
     void updateHeartbeatTime();
 
 private slots:
@@ -77,20 +59,16 @@ private:
     QString id_;
     Server* server_;
 
-    // 状态变量，需要互斥保护
-    mutable QMutex stateMutex_;
+             // 状态变量，需要互斥保护
     bool active_;
-
-    mutable QMutex heartbeatMutex_;
     qint64 lastHeartbeatTime_;
-
     mutable QMutex socketMutex_;
 
-    // 接收缓冲区
+             // 接收缓冲区
     QByteArray receiveByteBuffer_;
     QMutex bufferMutex_;
 
-    // 接收帧队列
+             // 接收帧队列
     QQueue<QSharedPointer<FrameBuffer>> receiveFrameQueue_;
     QMutex frameQueueMutex_;
     QWaitCondition frameQueueNotEmpty_;
@@ -98,7 +76,7 @@ private:
     bool stopReceiveThread_;
     QThread* receiveThread_;
 
-    // 发送帧队列
+             // 发送帧队列
     QQueue<QSharedPointer<FrameBuffer>> sendFrameQueue_;
     QMutex sendQueueMutex_;
     QWaitCondition sendQueueNotEmpty_;

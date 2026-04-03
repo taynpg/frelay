@@ -28,14 +28,10 @@ public:
     bool startServer(quint16 port);
     void stopServer();
 
-signals:
-    void sigReqStop();
-
 private slots:
     void onNewConnection();
     void onClientDisconnected(const QString& clientId);
     void onClientDataReceived(const QString& clientId, const QSharedPointer<FrameBuffer>& frame);
-    void onClientHeartbeat(const QString& clientId);
     void monitorClients();
     void onClientHeartbeatTimeout(const QString& clientId, qint64 lastTime);
 
@@ -43,13 +39,13 @@ private:
     QByteArray getClients();
     bool forwardDataToClient(const QString& fromId, QSharedPointer<FrameBuffer> frame);
 
-    // 线程安全的客户端查找
+             // 线程安全的客户端查找
     QSharedPointer<ClientThread> findClientThread(const QString& clientId) const;
 
-    // 清理已断开连接的客户端
+             // 清理已断开连接的客户端
     void cleanupDisconnectedClients();
 
-    // 异步检查客户端活跃状态
+             // 异步检查客户端活跃状态
     void checkClientAliveAsync(const QString& clientId);
 
     QString id_;
@@ -57,7 +53,7 @@ private:
     mutable QReadWriteLock rwLock_;
     QTimer* monitorTimer_;
 
-    // 待清理的客户端列表
+             // 待清理的客户端列表
     QVector<QString> clientsToRemove_;
     QMutex removeMutex_;
 

@@ -7,6 +7,8 @@
 
 #include "Server.h"
 
+constexpr int CV_WAIT_TIME = 1;
+
 ClientThread::ClientThread(const QString& id, Server* server, QObject* parent)
     : QObject(parent), socket_(nullptr), id_(id), server_(server), active_(true),
       lastHeartbeatTime_(QDateTime::currentSecsSinceEpoch()), stopReceiveThread_(false), stopSendThread_(false),
@@ -27,31 +29,31 @@ bool ClientThread::start(QTcpSocket* socket)
         return false;
     }
 
-    // 设置socket
+             // 设置socket
     {
         QMutexLocker locker(&socketMutex_);
         socket_ = socket;
         socket_->setParent(this);
     }
 
-    // 初始化socket连接
+             // 初始化socket连接
     initSocketConnections();
 
-    // 初始化工作线程
+             // 初始化工作线程
     stopReceiveThread_ = false;
     stopSendThread_ = false;
 
     recvWorker_ = new QObject();
     sendWorker_ = new QObject();
 
-    // 创建接收线程
+             // 创建接收线程
     receiveThread_ = new QThread(this);
     recvWorker_->moveToThread(receiveThread_);
     connect(receiveThread_, &QThread::started, recvWorker_, [this]() { processReceiveData(); });
     connect(receiveThread_, &QThread::finished, recvWorker_, &QObject::deleteLater);
     receiveThread_->start();
 
-    // 创建发送线程
+             // 创建发送线程
     sendThread_ = new QThread(this);
     sendWorker_->moveToThread(sendThread_);
     connect(sendThread_, &QThread::started, sendWorker_, [this]() { processSendData(); });
@@ -69,7 +71,7 @@ void ClientThread::initSocketConnections()
         return;
     }
 
-    // 这些连接会自动在正确的线程中执行
+             // 这些连接会自动在正确的线程中执行
     connect(socket_, &QTcpSocket::readyRead, this, &ClientThread::onReadyRead, Qt::QueuedConnection);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientThread::onDisconnected, Qt::QueuedConnection);
     connect(socket_, &QTcpSocket::errorOccurred, this, &ClientThread::onSocketError, Qt::QueuedConnection);
@@ -77,10 +79,7 @@ void ClientThread::initSocketConnections()
 
 void ClientThread::stop()
 {
-    {
-        QMutexLocker locker1(&stateMutex_);
-        active_ = false;
-    }
+    active_ = false;
 
     {
         QMutexLocker locker(&frameQueueMutex_);
@@ -96,27 +95,10 @@ void ClientThread::stop()
         sendQueueNotFull_.wakeAll();
     }
 
-    // 异步执行清理
-    QMetaObject::invokeMethod(this, "safeStop", Qt::QueuedConnection);
-}
-
-void ClientThread::safeStop()
-{
-    cleanupThreads();
-
-    {
-        QMutexLocker locker(&socketMutex_);
-        if (socket_) {
-            if (socket_->state() != QAbstractSocket::UnconnectedState) {
-                socket_->abort();
-                socket_->waitForDisconnected(1000);
-            }
-            socket_->deleteLater();
-            socket_ = nullptr;
-        }
-    }
-
-    qDebug() << "ClientThread stopped for" << id_;
+             // 异步执行清理
+    QMetaObject::invokeMethod(this, [this]() {
+        cleanupThreads();
+    }, Qt::QueuedConnection);
 }
 
 void ClientThread::cleanupThreads()
@@ -125,7 +107,7 @@ void ClientThread::cleanupThreads()
     if (receiveThread_) {
         if (receiveThread_->isRunning()) {
             receiveThread_->quit();
-            if (!receiveThread_->wait(2000)) {
+            if (!receiveThread_->wait(1000)) {
                 qWarning() << "Failed to stop receive thread for client:" << id_;
                 receiveThread_->terminate();
                 receiveThread_->wait();
@@ -135,11 +117,11 @@ void ClientThread::cleanupThreads()
         receiveThread_ = nullptr;
     }
 
-    // 停止发送线程
+             // 停止发送线程
     if (sendThread_) {
         if (sendThread_->isRunning()) {
             sendThread_->quit();
-            if (!sendThread_->wait(2000)) {
+            if (!sendThread_->wait(1000)) {
                 qWarning() << "Failed to stop send thread for client:" << id_;
                 sendThread_->terminate();
                 sendThread_->wait();
@@ -149,17 +131,28 @@ void ClientThread::cleanupThreads()
         sendThread_ = nullptr;
     }
 
+             // 清理socket
+    {
+        QMutexLocker locker(&socketMutex_);
+        if (socket_) {
+            if (socket_->state() != QAbstractSocket::UnconnectedState) {
+                socket_->abort();
+            }
+            socket_->deleteLater();
+            socket_ = nullptr;
+        }
+    }
+
     recvWorker_ = nullptr;
     sendWorker_ = nullptr;
+
+    qDebug() << "ClientThread stopped for" << id_;
 }
 
 void ClientThread::onReadyRead()
 {
-    {
-        QMutexLocker locker(&stateMutex_);
-        if (!active_) {
-            return;
-        }
+    if (!active_) {
+        return;
     }
 
     {
@@ -184,7 +177,7 @@ void ClientThread::onReadyRead()
     {
         QMutexLocker locker(&bufferMutex_);
 
-        // 检查总缓冲区大小是否超限
+                 // 检查总缓冲区大小是否超限
         if (receiveByteBuffer_.size() + newData.size() > MAX_BUFFER_SIZE) {
             qWarning() << "Client" << id_ << "receive buffer full, dropping connection";
             {
@@ -202,23 +195,27 @@ void ClientThread::onReadyRead()
 
 void ClientThread::updateHeartbeatTime()
 {
-    QMutexLocker locker(&heartbeatMutex_);
     lastHeartbeatTime_ = QDateTime::currentSecsSinceEpoch();
 }
 
 void ClientThread::onDisconnected()
 {
-    {
-        QMutexLocker locker(&stateMutex_);
-        active_ = false;
+    if (!active_) {
+        return;
     }
 
+    active_ = false;
+    qDebug() << "Client" << id_ << "socket disconnected";
     emit disconnected(id_);
 }
 
 void ClientThread::onSocketError(QAbstractSocket::SocketError error)
 {
     Q_UNUSED(error);
+
+    if (!active_) {
+        return;
+    }
 
     {
         QMutexLocker locker(&socketMutex_);
@@ -227,11 +224,8 @@ void ClientThread::onSocketError(QAbstractSocket::SocketError error)
         }
     }
 
-    {
-        QMutexLocker locker(&stateMutex_);
-        active_ = false;
-    }
-
+    active_ = false;
+    qDebug() << "Client" << id_ << "socket error, disconnecting";
     emit disconnected(id_);
 }
 
@@ -253,12 +247,8 @@ bool ClientThread::directSend(QSharedPointer<FrameBuffer> frame)
     if (!frame) {
         return false;
     }
-
-    {
-        QMutexLocker locker(&stateMutex_);
-        if (!active_) {
-            return false;
-        }
+    if (!active_) {
+        return false;
     }
 
     QTcpSocket* socketCopy = nullptr;
@@ -304,7 +294,7 @@ bool ClientThread::directSend(QSharedPointer<FrameBuffer> frame)
         totalWritten += written;
         retryCount = 0;
 
-        // 等待数据写入
+                 // 等待数据写入
         {
             QMutexLocker locker(&socketMutex_);
             if (socketCopy && !socketCopy->waitForBytesWritten(10000)) {
@@ -323,11 +313,8 @@ bool ClientThread::directSend(QSharedPointer<FrameBuffer> frame)
 void ClientThread::processReceiveData()
 {
     while (true) {
-        {
-            QMutexLocker locker(&stateMutex_);
-            if (stopReceiveThread_ || !active_) {
-                break;
-            }
+        if (stopReceiveThread_ || !active_) {
+            break;
         }
 
         QSharedPointer<FrameBuffer> frame;
@@ -347,42 +334,28 @@ void ClientThread::processReceiveData()
 
         if (frame->type == FBT_SER_MSG_HEARTBEAT) {
             updateHeartbeatTime();
-            emit heartbeatReceived(id_);
-
-            // 发送心跳响应
-            auto heartbeatFrame = QSharedPointer<FrameBuffer>::create();
-            heartbeatFrame->type = FBT_SER_MSG_HEARTBEAT;
-            heartbeatFrame->fid = id_;
-            heartbeatFrame->tid = "server";
-            queueDataForSending(heartbeatFrame);
         } else {
             // 放入frame队列
             {
                 QMutexLocker locker(&frameQueueMutex_);
 
-                // 等待frame队列有空间
+                         // 等待frame队列有空间
                 while (receiveFrameQueue_.size() >= MAX_FRAME_QUEUE_SIZE) {
-                    {
-                        QMutexLocker stateLocker(&stateMutex_);
-                        if (stopReceiveThread_ || !active_) {
-                            return;
-                        }
-                    }
-                    frameQueueNotFull_.wait(&frameQueueMutex_, 100);
-                }
-
-                {
-                    QMutexLocker stateLocker(&stateMutex_);
                     if (stopReceiveThread_ || !active_) {
-                        break;
+                        return;
                     }
+                    frameQueueNotFull_.wait(&frameQueueMutex_, CV_WAIT_TIME);
                 }
 
+                if (stopReceiveThread_ || !active_) {
+                    break;
+                }
                 receiveFrameQueue_.enqueue(frame);
+                qDebug() << "当前receiveFrameQueue_.Size()" << receiveFrameQueue_.size();
                 frameQueueNotEmpty_.wakeOne();
             }
 
-            // 通知Server有新的frame到达
+                     // 通知Server有新的frame到达
             emit dataReceived(id_, frame);
         }
     }
@@ -394,11 +367,8 @@ bool ClientThread::queueDataForSending(const QSharedPointer<FrameBuffer>& frame)
         return false;
     }
 
-    {
-        QMutexLocker locker(&stateMutex_);
-        if (!active_ || stopSendThread_) {
-            return false;
-        }
+    if (!active_ || stopSendThread_) {
+        return false;
     }
 
     {
@@ -411,13 +381,10 @@ bool ClientThread::queueDataForSending(const QSharedPointer<FrameBuffer>& frame)
     {
         QMutexLocker locker(&sendQueueMutex_);
 
-        // 等待发送队列有空间
+                 // 等待发送队列有空间
         while (sendFrameQueue_.size() >= MAX_FRAME_QUEUE_SIZE) {
-            {
-                QMutexLocker stateLocker(&stateMutex_);
-                if (!active_ || stopSendThread_) {
-                    return false;
-                }
+            if (!active_ || stopSendThread_) {
+                return false;
             }
 
             {
@@ -427,14 +394,11 @@ bool ClientThread::queueDataForSending(const QSharedPointer<FrameBuffer>& frame)
                 }
             }
 
-            sendQueueNotFull_.wait(&sendQueueMutex_, 100);
+            sendQueueNotFull_.wait(&sendQueueMutex_, CV_WAIT_TIME);
         }
 
-        {
-            QMutexLocker stateLocker(&stateMutex_);
-            if (!active_ || stopSendThread_) {
-                return false;
-            }
+        if (!active_ || stopSendThread_) {
+            return false;
         }
 
         sendFrameQueue_.enqueue(frame);
@@ -444,14 +408,32 @@ bool ClientThread::queueDataForSending(const QSharedPointer<FrameBuffer>& frame)
     return true;
 }
 
+QString ClientThread::getId() const
+{
+    return id_;
+}
+
+qint64 ClientThread::getLastHeartbeatTime() const
+{
+    return lastHeartbeatTime_;
+}
+
+bool ClientThread::isActive() const
+{
+    return active_ && !stopReceiveThread_ && !stopSendThread_;
+}
+
+bool ClientThread::isConnected() const
+{
+    QMutexLocker locker(&socketMutex_);
+    return socket_ && socket_->state() == QAbstractSocket::ConnectedState;
+}
+
 void ClientThread::processSendData()
 {
     while (true) {
-        {
-            QMutexLocker locker(&stateMutex_);
-            if (stopSendThread_ || !active_) {
-                break;
-            }
+        if (stopSendThread_ || !active_) {
+            break;
         }
 
         QSharedPointer<FrameBuffer> frame;
@@ -459,21 +441,16 @@ void ClientThread::processSendData()
         {
             QMutexLocker locker(&sendQueueMutex_);
 
+                     // 等待发送队列有数据
             while (sendFrameQueue_.isEmpty()) {
-                {
-                    QMutexLocker stateLocker(&stateMutex_);
-                    if (stopSendThread_ || !active_) {
-                        return;
-                    }
+                if (stopSendThread_ || !active_) {
+                    return;
                 }
-                sendQueueNotEmpty_.wait(&sendQueueMutex_, 100);
+                sendQueueNotEmpty_.wait(&sendQueueMutex_, CV_WAIT_TIME);
             }
 
-            {
-                QMutexLocker stateLocker(&stateMutex_);
-                if (stopSendThread_ || !active_) {
-                    break;
-                }
+            if (stopSendThread_ || !active_) {
+                break;
             }
 
             frame = sendFrameQueue_.dequeue();
@@ -481,11 +458,11 @@ void ClientThread::processSendData()
         }
 
         if (frame) {
-            bool success = syncSendFrame(frame);
+            bool success = directSend(frame);
             if (!success) {
                 qWarning() << "Failed to send frame for client:" << frame->tid;
 
-                // 发送失败，尝试断开连接
+                         // 发送失败，尝试断开连接
                 {
                     QMutexLocker socketLocker(&socketMutex_);
                     if (socket_) {
@@ -493,11 +470,7 @@ void ClientThread::processSendData()
                     }
                 }
 
-                {
-                    QMutexLocker stateLocker(&stateMutex_);
-                    active_ = false;
-                }
-
+                active_ = false;
                 emit disconnected(id_);
                 break;
             }
