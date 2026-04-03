@@ -76,15 +76,7 @@ void Server::onNewConnection()
 
     {
         QWriteLocker locker(&rwLock_);
-        auto sd = std::make_shared<ShowData>();
-        if (clients_.empty()) {
-            sd->canSig = true;
-        }
         clients_.insert(clientId, client);
-        FlowController::Config config;
-        sd->fl = std::make_shared<FlowController>();
-        sd->fl->setConfig(config);
-        curShow_[clientId] = sd;
     }
 
     qInfo() << "Client connected:" << clientId;
@@ -141,36 +133,6 @@ void Server::processClientData(QSharedPointer<ClientInfo> client)
     }
 }
 
-bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointer<FrameBuffer> frame)
-{
-    auto flowLimit = [this](QTcpSocket* fsoc, int delay) {
-        InfoMsg msg;
-        msg.mark = delay;
-        auto f = QSharedPointer<FrameBuffer>::create();
-        f->type = FBT_SER_FLOW_LIMIT;
-        f->data = infoPack<InfoMsg>(msg);
-        if (!sendData(fsoc, f)) {
-            qWarning() << "Failed to send flow limit message to" << fsoc->property("clientId").toString();
-        }
-    };
-
-    // 暂时先不管。
-    // auto& cs = curShow_[fsoc->property("clientId").toString()];
-    // cs->count++;
-
-    // if (cs->count % FLOW_BACK_MULTIPLE == 0) {
-    //     if (cs->canSig) {
-    //         cs->bytesToWrite = tsoc->bytesToWrite();
-    //         cs->curDelay = cs->fl->calculateDelay(cs->bytesToWrite);
-    //         flowLimit(fsoc, static_cast<int>(cs->curDelay));
-    //         emit sigByteToWrite(*cs);
-    //     }
-    // }
-
-    //
-    return sendData(tsoc, frame);
-}
-
 bool Server::forwardData(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame)
 {
     QSharedPointer<ClientInfo> targetClient;
@@ -181,7 +143,7 @@ bool Server::forwardData(QSharedPointer<ClientInfo> client, QSharedPointer<Frame
     }
 
     if (targetClient) {
-        return sendWithFlowCheck(client->socket, targetClient->socket, frame);
+        return sendData(targetClient->socket, frame);
     } else {
         auto errorFrame = QSharedPointer<FrameBuffer>::create();
         errorFrame->type = FBT_SER_MSG_FORWARD_FAILED;
@@ -269,9 +231,6 @@ void Server::onClientDisconnected()
         QWriteLocker locker(&rwLock_);
         if (clients_.count(clientId)) {
             clients_.remove(clientId);
-        }
-        if (curShow_.count(clientId)) {
-            curShow_.remove(clientId);
         }
     }
 

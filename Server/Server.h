@@ -2,7 +2,6 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <FlowController.h>
 #include <QMap>
 #include <QReadWriteLock>
 #include <QTcpServer>
@@ -11,14 +10,6 @@
 #include <memory>
 
 #include "Protocol.h"
-
-struct ShowData {
-    unsigned int count{};
-    bool canSig{false};
-    qint64 bytesToWrite{};
-    double curDelay{};
-    std::shared_ptr<FlowController> fl;
-};
 
 class Server : public QTcpServer
 {
@@ -29,9 +20,6 @@ public:
 
     bool startServer(quint16 port);
     void stopServer();
-
-signals:
-    void sigByteToWrite(const ShowData& data);
 
 private slots:
     void onNewConnection();
@@ -55,11 +43,7 @@ private:
     void replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame);
     bool sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame);
 
-    // 流量控制
-    bool sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointer<FrameBuffer> frame);
-
     QString id_;
-    QMap<QString, std::shared_ptr<ShowData>> curShow_;
     QMap<QString, QSharedPointer<ClientInfo>> clients_;
     QReadWriteLock rwLock_;
     QTimer* monitorTimer_;
