@@ -76,8 +76,11 @@ void Server::onNewConnection()
 
     {
         QWriteLocker locker(&rwLock_);
-        clients_.insert(clientId, client);
         auto sd = std::make_shared<ShowData>();
+        if (clients_.empty()) {
+            sd->canSig = true;
+        }
+        clients_.insert(clientId, client);
         FlowController::Config config;
         sd->fl = std::make_shared<FlowController>();
         sd->fl->setConfig(config);
@@ -151,9 +154,18 @@ bool Server::sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointe
         }
     };
 
-    auto& cs = curShow_[fsoc->property("clientId").toString()];
-    cs->bytesToWrite = tsoc->bytesToWrite();
-    double delay = cs->fl->calculateDelay(cs->bytesToWrite);
+    // 暂时先不管。
+    // auto& cs = curShow_[fsoc->property("clientId").toString()];
+    // cs->count++;
+
+    // if (cs->count % FLOW_BACK_MULTIPLE == 0) {
+    //     if (cs->canSig) {
+    //         cs->bytesToWrite = tsoc->bytesToWrite();
+    //         cs->curDelay = cs->fl->calculateDelay(cs->bytesToWrite);
+    //         flowLimit(fsoc, static_cast<int>(cs->curDelay));
+    //         emit sigByteToWrite(*cs);
+    //     }
+    // }
 
     //
     return sendData(tsoc, frame);
@@ -242,38 +254,6 @@ bool Server::sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame)
         return false;
     }
     return socket->write(data) == data.size();
-}
-
-BlockLevel Server::getBlockLevel(QTcpSocket* socket)
-{
-    auto b = socket->bytesToWrite();
-    qDebug() << "..." << b;
-    constexpr auto one = CHUNK_BUF_SIZE;
-    if (b > one * 1000) {
-        return BL_LEVEL_8;
-    }
-    if (b > one * 200) {
-        return BL_LEVEL_7;
-    }
-    if (b > one * 100) {
-        return BL_LEVEL_6;
-    }
-    if (b > one * 40) {
-        return BL_LEVEL_5;
-    }
-    if (b > one * 30) {
-        return BL_LEVEL_4;
-    }
-    if (b > one * 20) {
-        return BL_LEVEL_3;
-    }
-    if (b > one * 10) {
-        return BL_LEVEL_2;
-    }
-    if (b > one * 1) {
-        return BL_LEVEL_1;
-    }
-    return BL_LEVEL_NORMAL;
 }
 
 void Server::onClientDisconnected()

@@ -429,7 +429,7 @@ void SendThread::fbtFlowBack(QSharedPointer<FrameBuffer> frame)
     auto msg = infoUnpack<InfoMsg>(frame->data);
     //delay_ = msg.mark * BLOCK_LEVEL_MULTIPLE;
     delay_ = msg.mark ;
-    //qDebug() << "拥塞流量调整：" << delay_;
+    qInfo() << "===============>  拥塞流量调整：" << delay_;
 }
 
 void SendThread::run()

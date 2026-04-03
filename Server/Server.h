@@ -13,8 +13,10 @@
 #include "Protocol.h"
 
 struct ShowData {
+    unsigned int count{};
+    bool canSig{false};
     qint64 bytesToWrite{};
-    int curDelay{};
+    double curDelay{};
     std::shared_ptr<FlowController> fl;
 };
 
@@ -29,7 +31,7 @@ public:
     void stopServer();
 
 signals:
-    void sigByteToWrite(ShowData val);
+    void sigByteToWrite(const ShowData& data);
 
 private slots:
     void onNewConnection();
@@ -55,7 +57,6 @@ private:
 
     // 流量控制
     bool sendWithFlowCheck(QTcpSocket* fsoc, QTcpSocket* tsoc, QSharedPointer<FrameBuffer> frame);
-    BlockLevel getBlockLevel(QTcpSocket* socket);
 
     QString id_;
     QMap<QString, std::shared_ptr<ShowData>> curShow_;

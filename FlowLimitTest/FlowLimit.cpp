@@ -6,6 +6,8 @@
 
 #include "./ui_FlowLimit.h"
 
+constexpr int CYCLE_BUFFER_CNT = 50;
+
 FlowLimit::FlowLimit(QWidget* parent) : QMainWindow(parent), ui(new Ui::FlowLimit)
 {
     ui->setupUi(this);
@@ -14,6 +16,7 @@ FlowLimit::FlowLimit(QWidget* parent) : QMainWindow(parent), ui(new Ui::FlowLimi
     qInstallMessageHandler(Util::ConsoleMsgHander);
 
     server_ = new Server(this);
+    circleBuf_ = std::make_shared<CircularBuffer>(CYCLE_BUFFER_CNT);
 
     BaseInit();
     UiSingnalInit();
@@ -36,14 +39,15 @@ void FlowLimit::BaseInit()
     gp->setPen(QPen(Qt::blue));
     gp->setBrush(QBrush(QColor(255, 255, 0)));
 
-    plot_->xAxis->setRange(0, 60);
-    plot_->yAxis->setRange(0, 200);
+    // plot_->xAxis->setRange(0, 60);
+    // plot_->yAxis->setRange(0, 200);
 }
 
 void FlowLimit::UiSingnalInit()
 {
     connect(ui->btnStartServer, &QPushButton::clicked, this, &FlowLimit::startMonitor);
     connect(ui->btnTest, &QPushButton::clicked, this, &FlowLimit::testPlot);
+    connect(server_, &Server::sigByteToWrite, this, &FlowLimit::handleShowData);
 }
 
 void FlowLimit::startMonitor()
@@ -55,6 +59,29 @@ void FlowLimit::startMonitor()
         ui->btnStartServer->setEnabled(false);
         isStarted_ = true;
     }
+}
+
+// struct ShowData {
+//     unsigned int count{};
+//     bool canSig{false};
+//     qint64 bytesToWrite{};
+//     double curDelay{};
+//     std::shared_ptr<FlowController> fl;
+// };
+
+void FlowLimit::handleShowData(const ShowData& data)
+{
+    curCount_++;
+    circleBuf_->addPoint(static_cast<double>(curCount_), data.curDelay);
+    plot_->graph(0)->setData(circleBuf_->getXData(), circleBuf_->getYData());
+
+    plot_->yAxis->setRange(circleBuf_->yMin, circleBuf_->yMax);
+
+    int startX = (curCount_ - CYCLE_BUFFER_CNT) > 0 ? (curCount_ - CYCLE_BUFFER_CNT) : 0;
+    int endX = startX + CYCLE_BUFFER_CNT;
+
+    plot_->xAxis->setRange(startX, endX);
+    plot_->replot();
 }
 
 void FlowLimit::testPlot()
