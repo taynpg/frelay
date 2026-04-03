@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <memory>
 
+#include "ClientThread.h"
 #include "Protocol.h"
 
 class Server : public QTcpServer
@@ -23,30 +24,22 @@ public:
 
 private slots:
     void onNewConnection();
-    void onClientDisconnected();
-    void onReadyRead();
+    void onClientDisconnected(const QString& clientId);
+    void onClientDataReceived(const QString& clientId, const QSharedPointer<FrameBuffer>& frame);
+    void onClientHeartbeat(const QString& clientId);
     void monitorClients();
 
 private:
     QByteArray getClients();
-
-private:
-    struct ClientInfo {
-        QTcpSocket* socket;
-        QString id;
-        qint64 connectTime;
-        QByteArray buffer;
-    };
-
-    void processClientData(QSharedPointer<ClientInfo> client);
-    bool forwardData(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame);
-    void replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame);
-    bool sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame);
+    bool forwardDataToClient(const QString& fromId, QSharedPointer<FrameBuffer> frame);
 
     QString id_;
-    QMap<QString, QSharedPointer<ClientInfo>> clients_;
+    QMap<QString, QSharedPointer<ClientThread>> clients_;
     QReadWriteLock rwLock_;
     QTimer* monitorTimer_;
+
+    static constexpr int NO_HEATBEAT_TIMEOUT = 10;
+    static constexpr int MONITOR_HEART_SPED = 10 * 2;
 };
 
 #endif   // SERVER_H
