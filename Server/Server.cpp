@@ -41,7 +41,7 @@ void Server::stopServer()
 
     QWriteLocker locker(&rwLock_);
     for (auto& client : clients_) {
-        client->stop();
+        client.clientWorker->stop();
     }
     clients_.clear();
 }
@@ -62,20 +62,27 @@ void Server::onNewConnection()
         return;
     }
 
-    auto d = clientSocket->write("Hello");
+    auto d = clientSocket->write("Hello1");
     qDebug() << d;
-    // 创建客户端线程，直接传递socket对象
-    auto clientThread = QSharedPointer<ClientThread>::create(clientSocket, clientId, this);
-    connect(clientThread.get(), &ClientThread::disconnected, this, &Server::onClientDisconnected);
-    connect(clientThread.get(), &ClientThread::dataReceived, this, &Server::onClientDataReceived);
-    connect(clientThread.get(), &ClientThread::heartbeatReceived, this, &Server::onClientHeartbeat);
+
+    ClientInfo cli;
+    cli.workerTh = new QThread();
+    cli.clientWorker = QSharedPointer<ClientThread>::create(clientSocket, clientId, nullptr);
+    cli.clientWorker->moveToThread(cli.workerTh);
+    clientSocket->moveToThread(cli.workerTh);
+
+    connect(cli.clientWorker.get(), &ClientThread::disconnected, this, &Server::onClientDisconnected);
+    connect(cli.clientWorker.get(), &ClientThread::dataReceived, this, &Server::onClientDataReceived);
+    connect(cli.clientWorker.get(), &ClientThread::heartbeatReceived, this, &Server::onClientHeartbeat);
+
+    cli.workerTh->start();
 
     {
         QWriteLocker locker(&rwLock_);
-        clients_.insert(clientId, clientThread);
+        clients_.insert(clientId, cli);
     }
 
-    if (!clientThread->start()) {
+    if (!cli.clientWorker->start()) {
         qWarning() << "Failed to start client thread:" << clientId;
         {
             QWriteLocker locker(&rwLock_);
@@ -86,12 +93,12 @@ void Server::onNewConnection()
     }
 
     // 发送客户端ID
-    auto frame = QSharedPointer<FrameBuffer>::create();
-    frame->type = FBT_SER_MSG_YOURID;
-    frame->fid = id_;
-    frame->tid = clientId;
-    frame->data = clientId.toUtf8();
-    clientThread->forwardData(frame);
+    // auto frame = QSharedPointer<FrameBuffer>::create();
+    // frame->type = FBT_SER_MSG_YOURID;
+    // frame->fid = id_;
+    // frame->tid = clientId;
+    // frame->data = clientId.toUtf8();
+    // cli.clientWorker->forwardData(frame);
 
     qInfo() << "Client connected:" << clientId;
 }
@@ -101,7 +108,7 @@ void Server::onClientDisconnected(const QString& clientId)
     {
         QWriteLocker locker(&rwLock_);
         if (clients_.contains(clientId)) {
-            clients_[clientId]->stop();
+            clients_[clientId].clientWorker->stop();
             clients_.remove(clientId);
         }
     }
@@ -162,7 +169,7 @@ void Server::onClientHeartbeat(const QString& clientId)
     {
         QReadLocker locker(&rwLock_);
         if (clients_.contains(clientId)) {
-            client = clients_.value(clientId);
+            client = clients_.value(clientId).clientWorker;
         }
     }
 
@@ -180,7 +187,7 @@ void Server::monitorClients()
         QReadLocker locker(&rwLock_);
         for (auto it = clients_.begin(); it != clients_.end(); ++it) {
             auto& client = it.value();
-            if (client->isActive() && (now - client->getLastHeartbeatTime()) > NO_HEATBEAT_TIMEOUT) {
+            if (client.clientWorker->isActive() && (now - client.clientWorker->getLastHeartbeatTime()) > NO_HEATBEAT_TIMEOUT) {
                 prepareRemove.push_back(it.key());
             }
         }
@@ -191,7 +198,7 @@ void Server::monitorClients()
         {
             QWriteLocker locker(&rwLock_);
             if (clients_.contains(clientId)) {
-                clients_[clientId]->stop();
+                clients_[clientId].clientWorker->stop();
                 clients_.remove(clientId);
             }
         }
@@ -206,7 +213,7 @@ QByteArray Server::getClients()
         QReadLocker locker(&rwLock_);
         for (auto& c : clients_) {
             InfoClient infoClient;
-            infoClient.id = c->getId();
+            infoClient.id = c.clientWorker->getId();
             infoClients.vec.append(infoClient);
         }
     }
@@ -221,7 +228,7 @@ bool Server::forwardDataToClient(const QString& fromId, QSharedPointer<FrameBuff
     {
         QReadLocker locker(&rwLock_);
         if (clients_.contains(frame->tid)) {
-            targetClient = clients_.value(frame->tid);
+            targetClient = clients_.value(frame->tid).clientWorker;
         }
     }
 
@@ -235,7 +242,7 @@ bool Server::forwardDataToClient(const QString& fromId, QSharedPointer<FrameBuff
             {
                 QReadLocker locker(&rwLock_);
                 if (clients_.contains(fromId)) {
-                    fromClient = clients_.value(fromId);
+                    fromClient = clients_.value(fromId).clientWorker;
                 }
             }
 
@@ -255,7 +262,7 @@ bool Server::forwardDataToClient(const QString& fromId, QSharedPointer<FrameBuff
         {
             QReadLocker locker(&rwLock_);
             if (clients_.contains(fromId)) {
-                fromClient = clients_.value(fromId);
+                fromClient = clients_.value(fromId).clientWorker;
             }
         }
 

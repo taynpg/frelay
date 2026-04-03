@@ -12,6 +12,12 @@
 #include "ClientThread.h"
 #include "Protocol.h"
 
+struct ClientInfo
+{
+    QSharedPointer<ClientThread> clientWorker{};
+    QThread* workerTh{};
+};
+
 class Server : public QTcpServer
 {
     Q_OBJECT
@@ -34,7 +40,7 @@ private:
     bool forwardDataToClient(const QString& fromId, QSharedPointer<FrameBuffer> frame);
 
     QString id_;
-    QMap<QString, QSharedPointer<ClientThread>> clients_;
+    QMap<QString, ClientInfo> clients_;
     QReadWriteLock rwLock_;
     QTimer* monitorTimer_;
 

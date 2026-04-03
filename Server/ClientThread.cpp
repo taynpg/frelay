@@ -12,7 +12,6 @@ ClientThread::ClientThread(QTcpSocket* socket, const QString& id, Server* server
       lastHeartbeatTime_(QDateTime::currentMSecsSinceEpoch() / 1000), stopReceiveThread_(false), stopSendThread_(false),
       receiveThread_(nullptr), sendThread_(nullptr)
 {
-    socket_->setParent(parent);
     connect(socket_, &QTcpSocket::readyRead, this, &ClientThread::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientThread::onDisconnected);
     connect(socket_, &QTcpSocket::errorOccurred, this, &ClientThread::onSocketError);
@@ -28,13 +27,18 @@ bool ClientThread::start()
     stopReceiveThread_ = false;
     stopSendThread_ = false;
 
-    receiveThread_ = new QThread(this);
-    connect(receiveThread_, &QThread::started, this, [this]() { processReceiveData(); });
-    receiveThread_->start();
+    // recvWorker_ = new QObject();
+    // sendWorker_ = new QObject();
 
-    sendThread_ = new QThread(this);
-    connect(sendThread_, &QThread::started, this, [this]() { processSendData(); });
-    sendThread_->start();
+    // receiveThread_ = new QThread(this);
+    // recvWorker_->moveToThread(receiveThread_);
+    // connect(receiveThread_, &QThread::started, recvWorker_, [this]() { processReceiveData(); });
+    // receiveThread_->start();
+
+    // sendThread_ = new QThread(this);
+    // sendWorker_->moveToThread(sendThread_);
+    // connect(sendThread_, &QThread::started, sendWorker_, [this]() { processSendData(); });
+    // sendThread_->start();
 
     return true;
 }
@@ -81,6 +85,9 @@ void ClientThread::onReadyRead()
     }
 
     QByteArray newData = socket_->readAll();
+
+    qDebug() << "收到数据" << newData.size();
+
     if (newData.isEmpty()) {
         return;
     }
