@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network)
 
-add_library(Server STATIC Server.cpp Server.h ClientThread.cpp ClientThread.h)
+add_library(Server STATIC Server.cpp Server.h ClientWorker.h ClientWorker.cpp)
 target_include_directories(Server PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(Server PUBLIC Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Network Protocol Util)
 
