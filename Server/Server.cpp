@@ -1,4 +1,4 @@
-#include "Server.h"
+﻿#include "Server.h"
 
 #include <InfoClient.h>
 #include <InfoPack.hpp>
@@ -26,7 +26,7 @@ bool Server::startServer(quint16 port)
 
 void Server::handleClientFrame(const QString& id, QSharedPointer<FrameBuffer> frame)
 {
-    qDebug() << "Received data from" << id << "type:" << frame->type;
+    // qDebug() << "Received data from" << id << "type:" << frame->type;
     if (frame->type <= 30) {
         switch (frame->type) {
         case FBT_SER_MSG_HEARTBEAT: {
@@ -67,9 +67,21 @@ void Server::handleClientFrame(const QString& id, QSharedPointer<FrameBuffer> fr
             qWarning() << "Unknown request type:" << frame->type << "from" << frame->fid;
             break;
         }
-    }
-    else {
-        dataDispatcher(frame->tid, frame);
+    } else {
+        auto dr = dataDispatcher(frame->tid, frame);
+        if (dr != DPT_SEND_SUCCESS) {
+            // 转发失败的话，回传消息。
+            auto errFrame = QSharedPointer<FrameBuffer>::create();
+            errFrame->type = FBT_SER_MSG_FORWARD_FAILED;
+            errFrame->fid = id_;
+            errFrame->tid = frame->fid;
+            if (dr == DPT_SEND_FAILED) {
+                errFrame->data = QString("Forwar to client %1 failed.").arg(frame->tid).toUtf8();
+            } else {
+                errFrame->data = QString("client %1 not found.").arg(frame->tid).toUtf8();
+            }
+            dataDispatcher(frame->fid, errFrame);
+        }
     }
 }
 
@@ -158,7 +170,7 @@ QByteArray Server::getClients()
     return ret;
 }
 
-bool Server::dataDispatcher(const QString& id, QSharedPointer<FrameBuffer> frame)
+DispatcherType Server::dataDispatcher(const QString& id, QSharedPointer<FrameBuffer> frame)
 {
     QSharedPointer<ClientInfo> cli;
 
@@ -170,9 +182,14 @@ bool Server::dataDispatcher(const QString& id, QSharedPointer<FrameBuffer> frame
     }
 
     if (!cli) {
-        return false;
+        return DPT_NOT_FOUND;
     }
 
-    return QMetaObject::invokeMethod(cli->worker.get(), "onDataReadyOutIn", Qt::BlockingQueuedConnection,
-                                     Q_ARG(QSharedPointer<FrameBuffer>, frame));
+    auto r = QMetaObject::invokeMethod(cli->worker.get(), "onDataReadyOutIn", Qt::BlockingQueuedConnection,
+                                       Q_ARG(QSharedPointer<FrameBuffer>, frame));
+    if (r) {
+        return DPT_SEND_SUCCESS;
+    } else {
+        return DPT_SEND_FAILED;
+    }
 }

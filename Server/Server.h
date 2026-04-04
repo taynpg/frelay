@@ -1,4 +1,4 @@
-#ifndef SERVER_H
+﻿#ifndef SERVER_H
 #define SERVER_H
 
 #include <QMap>
@@ -14,6 +14,12 @@ struct ClientInfo {
     QSharedPointer<ClientWorker> worker;
     QThread* workerTh;
     qint64 lastHeart;
+};
+
+enum DispatcherType {
+    DPT_SEND_SUCCESS = 0,
+    DPT_SEND_FAILED,
+    DPT_NOT_FOUND
 };
 
 class Server : public QTcpServer
@@ -34,7 +40,7 @@ private slots:
 
 private:
     QByteArray getClients();
-    bool dataDispatcher(const QString& id, QSharedPointer<FrameBuffer> frame);
+    DispatcherType dataDispatcher(const QString& id, QSharedPointer<FrameBuffer> frame);
 
 private:
     QString id_;
