@@ -1,4 +1,5 @@
-﻿#ifndef SERVER_H
+﻿// Server.h
+#ifndef SERVER_H
 #define SERVER_H
 
 #include <QMap>
@@ -7,20 +8,7 @@
 #include <QTcpSocket>
 #include <QTimer>
 
-#include "ClientWorker.h"
 #include "Protocol.h"
-
-struct ClientInfo {
-    QSharedPointer<ClientWorker> worker;
-    QThread* workerTh;
-    qint64 lastHeart;
-};
-
-enum DispatcherType {
-    DPT_SEND_SUCCESS = 0,
-    DPT_SEND_FAILED,
-    DPT_NOT_FOUND
-};
 
 class Server : public QTcpServer
 {
@@ -32,27 +20,32 @@ public:
     bool startServer(quint16 port);
     void stopServer();
 
-public slots:
-    void handleClientFrame(const QString& id, QSharedPointer<FrameBuffer> frame);
-    void handleDisconnect(const QString& id);
-
 private slots:
     void onNewConnection();
+    void onClientDisconnected();
+    void onReadyRead();
+    void monitorClients();
 
 private:
     QByteArray getClients();
-    DispatcherType dataDispatcher(const QString& id, QSharedPointer<FrameBuffer> frame);
 
 private:
+    struct ClientInfo {
+        QTcpSocket* socket;
+        QString id;
+        qint64 connectTime;
+        QByteArray buffer;
+    };
+
+    void processClientData(QSharedPointer<ClientInfo> client);
+    bool forwardData(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame);
+    void replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame);
+    bool sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame);
+
     QString id_;
-
-    QMutex cliMut_;
     QReadWriteLock rwLock_;
+    QTimer* monitorTimer_;
     QMap<QString, QSharedPointer<ClientInfo>> clients_;
-
-    static constexpr int NO_HEATBEAT_TIMEOUT = 10;
-    static constexpr int MONITOR_HEART_SPED = 10 * 1000;   // 10秒检查一次
-    static constexpr int MAX_CLIENTS = 100;
 };
 
-#endif
+#endif   // SERVER_H

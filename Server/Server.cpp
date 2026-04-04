@@ -1,17 +1,25 @@
 ﻿#include "Server.h"
 
-#include <InfoClient.h>
-#include <InfoPack.hpp>
+#include <QDateTime>
+#include <QDebug>
+
+#include "InfoClient.h"
+#include "InfoMsg.h"
+#include "InfoPack.hpp"
+
+#define NO_HEATBEAT_TIMEOUT (60)
+#define MONITOR_HEART_SPED (60)
 
 Server::Server(QObject* parent) : QTcpServer(parent)
 {
-    auto similarSize = CHUNK_BUF_SIZE * MAX_FRAME_QUEUE_SIZE / 1024;
-    qDebug() << "单向 Buffer 大致参考大小 " << similarSize << " KB。";
+    monitorTimer_ = new QTimer(this);
+    connect(monitorTimer_, &QTimer::timeout, this, &Server::monitorClients);
     connect(this, &Server::newConnection, this, &Server::onNewConnection);
 }
 
 Server::~Server()
 {
+    stopServer();
 }
 
 bool Server::startServer(quint16 port)
@@ -22,164 +30,238 @@ bool Server::startServer(quint16 port)
     }
 
     qInfo() << "Server started on port" << serverPort();
+    monitorTimer_->start(MONITOR_HEART_SPED);
     id_ = QString("0.0.0.0:%1").arg(serverPort());
     return true;
 }
 
-void Server::handleClientFrame(const QString& id, QSharedPointer<FrameBuffer> frame)
+void Server::stopServer()
 {
-    // qDebug() << "Received data from" << id << "type:" << frame->type;
-    if (frame->type <= 30) {
-        switch (frame->type) {
-        case FBT_SER_MSG_HEARTBEAT: {
-            QReadLocker locker(&rwLock_);
-            if (clients_.contains(id)) {
-                auto& info = clients_[id];
-                info->lastHeart = QDateTime::currentSecsSinceEpoch();
-            }
-            break;
-        }
-        case FBT_SER_MSG_ASKCLIENTS: {
-            QByteArray clientList = getClients();
-            auto replyFrame = QSharedPointer<FrameBuffer>::create();
-            replyFrame->type = FBT_SER_MSG_ASKCLIENTS;
-            replyFrame->fid = id_;
-            replyFrame->tid = id;
-            replyFrame->data = clientList;
-            dataDispatcher(id, replyFrame);
-            break;
-        }
-        case FBT_SER_MSG_JUDGE_OTHER_ALIVE: {
-            bool targetAlive = false;
-            {
-                QReadLocker locker(&rwLock_);
-                targetAlive = clients_.contains(frame->tid);
-            }
-
-            if (!targetAlive) {
-                auto replyFrame = QSharedPointer<FrameBuffer>::create();
-                replyFrame->type = FBT_SER_MSG_OFFLINE;
-                replyFrame->fid = frame->tid;
-                replyFrame->tid = id;
-                dataDispatcher(id, replyFrame);
-            }
-            break;
-        }
-        default:
-            qWarning() << "Unknown request type:" << frame->type << "from" << frame->fid;
-            break;
-        }
-    } else {
-        auto dr = dataDispatcher(frame->tid, frame);
-        if (dr != DPT_SEND_SUCCESS) {
-            // 转发失败的话，回传消息。
-            auto errFrame = QSharedPointer<FrameBuffer>::create();
-            errFrame->type = FBT_SER_MSG_FORWARD_FAILED;
-            errFrame->fid = id_;
-            errFrame->tid = frame->fid;
-            if (dr == DPT_SEND_FAILED) {
-                errFrame->data = QString("Forwar to client %1 failed.").arg(frame->tid).toUtf8();
-            } else {
-                errFrame->data = QString("client %1 not found.").arg(frame->tid).toUtf8();
-            }
-            dataDispatcher(frame->fid, errFrame);
-        }
-    }
-}
-
-void Server::handleDisconnect(const QString& id)
-{
-    qDebug() << "---------> " << "开始清理 " << id;
+    monitorTimer_->stop();
+    close();
 
     QWriteLocker locker(&rwLock_);
-    auto it = clients_.find(id);
-    if (it == clients_.end()) {
-        return;
+    for (auto& client : clients_) {
+        client->socket->disconnectFromHost();
+        client->socket->deleteLater();
     }
-
-    auto& info = it.value();
-    auto r = QMetaObject::invokeMethod(info->worker.get(), "Stop", Qt::BlockingQueuedConnection);
-    if (info->workerTh && info->workerTh->isRunning()) {
-        info->workerTh->quit();
-        if (!info->workerTh->wait(1000)) {
-            qCritical() << "---------> " << info->worker->GetID() << ", 退出 workerTh 线程超时。";
-        }
-        info->workerTh->deleteLater();
-        info->workerTh = nullptr;
-    }
-    clients_.erase(it);
-    qDebug() << "---------> " << "清理结束 " << id << ", r = " << r << "。";
+    clients_.clear();
 }
 
 void Server::onNewConnection()
 {
     QTcpSocket* clientSocket = nextPendingConnection();
-    if (!clientSocket) {
-        qWarning() << "Invalid socket received";
-        return;
-    }
-
-    // 解除与创建线程的关系。
-    clientSocket->setParent(nullptr);
 
     QHostAddress peerAddress = clientSocket->peerAddress();
     quint32 ipv4 = peerAddress.toIPv4Address();
     QString ipStr = QHostAddress(ipv4).toString();
     QString clientId = QString("%1:%2").arg(ipStr).arg(clientSocket->peerPort());
 
-    // 检查客户端数量限制
-    {
-        QReadLocker locker(&rwLock_);
-        if (clients_.size() >= MAX_CLIENTS) {
-            qWarning() << "Client connection refused (max limit reached):" << clientId;
-            clientSocket->disconnectFromHost();
-            clientSocket->deleteLater();
-            return;
-        }
-        if (clients_.contains(clientId)) {
-            qWarning() << "Client already exists:" << clientId;
-            return;
-        }
-    }
-
-    // 创建客户端相关资源
-    auto info = QSharedPointer<ClientInfo>::create();
-    info->workerTh = new QThread();
-    info->worker = QSharedPointer<ClientWorker>::create(clientId, nullptr);
-    info->lastHeart = QDateTime::currentSecsSinceEpoch();
-    info->worker->moveToThread(info->workerTh);
-    clientSocket->moveToThread(info->workerTh);
-
-    connect(info->worker.get(), &ClientWorker::sigHaveFrame, this, &Server::handleClientFrame, Qt::BlockingQueuedConnection);
-    connect(info->worker.get(), &ClientWorker::sigDisconnect, this, &Server::handleDisconnect, Qt::QueuedConnection);
-
-    {
-        QWriteLocker locker(&rwLock_);
-        clients_.insert(clientId, info);
-    }
-
-    info->workerTh->start();
-
-    bool ret{false};
-    QMetaObject::invokeMethod(
-        info->worker.get(), [clientSocket, &ret, worker = info->worker.get()]() { ret = worker->InitSocket(clientSocket); },
-        Qt::BlockingQueuedConnection);
-
-    if (!ret) {
-        // 清理资源。
-        handleDisconnect(clientId);
+    if (clients_.size() >= 100) {
+        qWarning() << "Client connection refused (max limit reached):" << clientId;
+        clientSocket->disconnectFromHost();
         return;
     }
 
-    // 发送客户端ID
+    auto client = QSharedPointer<ClientInfo>::create();
+    client->socket = clientSocket;
+    client->socket->setProperty("clientId", clientId);
+    client->id = clientId;
+    // client->connectTime = QDateTime::currentSecsSinceEpoch();
+    // client->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
+    client->connectTime = QDateTime::currentMSecsSinceEpoch() / 1000;
+
+    connect(clientSocket, &QTcpSocket::readyRead, this, &Server::onReadyRead);
+    connect(clientSocket, &QTcpSocket::disconnected, this, &Server::onClientDisconnected);
+
+    {
+        QWriteLocker locker(&rwLock_);
+        clients_.insert(clientId, client);
+    }
+
+    qInfo() << "Client connected:" << clientId;
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->type = FBT_SER_MSG_YOURID;
     frame->fid = id_;
     frame->tid = clientId;
     frame->data = clientId.toUtf8();
-    dataDispatcher(clientId, frame);
+    sendData(clientSocket, frame);
+}
 
-    qInfo() << "Client connected:" << clientId << "Total clients:" << clients_.size();
+void Server::onReadyRead()
+{
+    QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender());
+    if (!socket) {
+        return;
+    }
+
+    QSharedPointer<ClientInfo> client;
+
+    {
+        QReadLocker locker(&rwLock_);
+        client = clients_.value(socket->property("clientId").toString());
+    }
+
+    if (client) {
+        if (client->buffer.size() > MAX_INVALID_PACKET_SIZE) {
+            auto mg = QString("Client %1 buffer size exceeded, XXXXX...").arg(client->id);
+            qWarning() << mg;
+            socket->disconnectFromHost();
+            return;
+        }
+        client->buffer.append(socket->readAll());
+        processClientData(client);
+    }
+}
+
+void Server::processClientData(QSharedPointer<ClientInfo> client)
+{
+    while (true) {
+        auto frame = Protocol::ParseBuffer(client->buffer);
+        if (frame.isNull()) {
+            break;
+        }
+        frame->fid = client->id;
+        if (frame->type <= 30) {
+            // frame->tid = "server";
+            replyRequest(client, frame);
+        } else {
+            if (!forwardData(client, frame)) {
+                qWarning() << "Failed to forward data from" << client->id << "to" << frame->tid;
+            }
+        }
+    }
+}
+
+bool Server::forwardData(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame)
+{
+    QSharedPointer<ClientInfo> targetClient;
+    QSharedPointer<ClientInfo> fromClient;
+
+    {
+        QReadLocker locker(&rwLock_);
+        targetClient = clients_.value(frame->tid);
+        fromClient = clients_.value(frame->fid);
+    }
+
+    if (targetClient && fromClient) {
+        return sendData(targetClient->socket, frame);
+    } else {
+        auto errorFrame = QSharedPointer<FrameBuffer>::create();
+        errorFrame->type = FBT_SER_MSG_FORWARD_FAILED;
+        errorFrame->fid = id_;
+        errorFrame->tid = client->id;
+        errorFrame->data = QString("Target client %1 not found").arg(frame->tid).toUtf8();
+        return sendData(client->socket, errorFrame);
+    }
+}
+
+void Server::replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<FrameBuffer> frame)
+{
+    switch (frame->type) {
+    case FBT_SER_MSG_ASKCLIENTS: {
+        QByteArray clientList = getClients();
+        auto replyFrame = QSharedPointer<FrameBuffer>::create();
+        replyFrame->type = FBT_SER_MSG_ASKCLIENTS;
+        replyFrame->fid = id_;
+        replyFrame->tid = client->id;
+        replyFrame->data = clientList;
+        auto ret = sendData(client->socket, replyFrame);
+        break;
+    }
+    case FBT_SER_MSG_HEARTBEAT: {
+        QSharedPointer<ClientInfo> cl;
+        {
+            QReadLocker locker(&rwLock_);
+            if (clients_.count(frame->fid)) {
+                cl = clients_.value(frame->fid);
+            }
+        }
+        if (cl) {
+            // qDebug() << "Client" << cl->id << "heartbeat received";
+            // cl->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
+            cl->connectTime = QDateTime::currentMSecsSinceEpoch() / 1000;
+        }
+        break;
+    }
+    case FBT_SER_MSG_JUDGE_OTHER_ALIVE: {
+        QSharedPointer<ClientInfo> cl;
+        {
+            QReadLocker locker(&rwLock_);
+            if (clients_.count(frame->tid)) {
+                cl = clients_.value(frame->tid);
+            }
+        }
+        if (!cl) {
+            auto rf = QSharedPointer<FrameBuffer>::create();
+            rf->type = FBT_SER_MSG_OFFLINE;
+            rf->fid = frame->tid;
+            rf->tid = frame->fid;
+            sendData(client->socket, rf);
+        }
+        break;
+    }
+    default:
+        qWarning() << "Unknown request type:" << frame->type;
+        break;
+    }
+}
+
+bool Server::sendData(QTcpSocket* socket, QSharedPointer<FrameBuffer> frame)
+{
+    if (!socket || !socket->isOpen() || frame.isNull()) {
+        return false;
+    }
+    if (frame == nullptr) {
+        return false;
+    }
+    auto data = Protocol::PackBuffer(frame);
+    qint64 bytesWritten = socket->write(data.constData(), data.size());
+    if (bytesWritten == -1 || !socket->waitForBytesWritten(1000 * 30)) {
+        qCritical() << QString("发送数据失败:[%1], written:[%2]").arg(socket->errorString()).arg(bytesWritten);
+        return false;
+    }
+    return bytesWritten == data.size();
+}
+
+void Server::onClientDisconnected()
+{
+    QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender());
+    if (!socket) {
+        return;
+    }
+
+    QString clientId = socket->property("clientId").toString();
+
+    {
+        QWriteLocker locker(&rwLock_);
+        if (clients_.count(clientId)) {
+            clients_.remove(clientId);
+        }
+    }
+
+    qInfo() << "Client disconnected:" << __LINE__ << clientId;
+    socket->deleteLater();
+}
+
+void Server::monitorClients()
+{
+    // qint64 now = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
+    qint64 now = QDateTime::currentMSecsSinceEpoch() / 1000;
+    std::vector<QTcpSocket*> prepareRemove;
+
+    {
+        QReadLocker locker(&rwLock_);
+        for (auto& c : clients_) {
+            if ((now - c->connectTime) > NO_HEATBEAT_TIMEOUT) {
+                prepareRemove.push_back(c->socket);
+            }
+        }
+    }
+    for (const auto& s : prepareRemove) {
+        qInfo() << "Removing inactive client:" << s->property("clientId").toString();
+        s->disconnectFromHost();
+    }
 }
 
 QByteArray Server::getClients()
@@ -190,35 +272,11 @@ QByteArray Server::getClients()
         QReadLocker locker(&rwLock_);
         for (auto& c : clients_) {
             InfoClient infoClient;
-            infoClient.id = c->worker->GetID();
+            infoClient.id = c->id;
             infoClients.vec.append(infoClient);
         }
     }
 
     auto ret = infoPack<InfoClientVec>(infoClients);
     return ret;
-}
-
-DispatcherType Server::dataDispatcher(const QString& id, QSharedPointer<FrameBuffer> frame)
-{
-    QSharedPointer<ClientInfo> cli;
-
-    {
-        QReadLocker locker(&rwLock_);
-        if (clients_.contains(id)) {
-            cli = clients_[id];
-        }
-    }
-
-    if (!cli) {
-        return DPT_NOT_FOUND;
-    }
-
-    auto r = QMetaObject::invokeMethod(cli->worker.get(), "onDataReadyOutIn", Qt::BlockingQueuedConnection,
-                                       Q_ARG(QSharedPointer<FrameBuffer>, frame));
-    if (r) {
-        return DPT_SEND_SUCCESS;
-    } else {
-        return DPT_SEND_FAILED;
-    }
 }
