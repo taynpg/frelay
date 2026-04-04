@@ -14,8 +14,13 @@ bool ClientWorker::InitSocket(QTcpSocket* sock)
     socket_->setParent(this);
 
     connect(socket_, &QTcpSocket::readyRead, this, &ClientWorker::onDataReadyIn, Qt::QueuedConnection);
-    // connect(socket_, &QTcpSocket::disconnected, this, &ClientWorker::onDisconnected, Qt::QueuedConnection);
-    // connect(socket_, &QTcpSocket::errorOccurred, this, &ClientWorker::onSocketError, Qt::QueuedConnection);
+    connect(
+        socket_, &QTcpSocket::errorOccurred, this,
+        [this]() {
+            qDebug() << id_ << ", socket 出现错误或断连, 请求清理。";
+            emit sigDisconnect(id_);
+        },
+        Qt::QueuedConnection);
 
     isRun_ = true;
 
@@ -178,4 +183,35 @@ bool ClientWorker::Send(QSharedPointer<FrameBuffer> frame)
         return false;
     }
     return true;
+}
+
+// Client 只处理停止自己负责的部分，socket 和 自身所在线程由 Server 统一处理。
+void ClientWorker::Stop()
+{
+    isRun_ = false;
+
+    cvRecvIn_.wakeAll();
+    cvRecvOut_.wakeAll();
+    cvSendIn_.wakeAll();
+    cvSendOut_.wakeAll();
+
+    if (recvTh_ && recvTh_->isRunning()) {
+        recvTh_->quit();
+        if (!recvTh_->wait(1000)) {
+            qCritical() << "---------> " << id_ << ", 退出 recvTh 线程超时。";
+        }
+        recvTh_->deleteLater();
+        recvTh_ = nullptr;
+    }
+
+    if (useTh_ && useTh_->isRunning()) {
+        useTh_->quit();
+        if (!useTh_->wait(1000)) {
+            qCritical() << "---------> " << id_ << ", 退出 useTh_ 线程超时。";
+        }
+        useTh_->deleteLater();
+        useTh_ = nullptr;
+    }
+
+    qDebug() << "---------> " << id_ << " 退出所有线程OK。";
 }

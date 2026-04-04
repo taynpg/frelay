@@ -34,6 +34,7 @@ public:
 
 public slots:
     void handleClientFrame(const QString& id, QSharedPointer<FrameBuffer> frame);
+    void handleDisconnect(const QString& id);
 
 private slots:
     void onNewConnection();

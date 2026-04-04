@@ -24,11 +24,13 @@ public:
 
 signals:
     void sigHaveFrame(const QString& id, QSharedPointer<FrameBuffer>);
+    void sigDisconnect(const QString& id);
 
 public slots:
     void onDataReadyIn();
     void onDataReadyOutIn(QSharedPointer<FrameBuffer> frame);
     bool Send(QSharedPointer<FrameBuffer> frame);
+    void Stop();
 
 private:
     void handleRecvTh();

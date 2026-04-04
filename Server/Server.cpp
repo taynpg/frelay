@@ -85,6 +85,30 @@ void Server::handleClientFrame(const QString& id, QSharedPointer<FrameBuffer> fr
     }
 }
 
+void Server::handleDisconnect(const QString& id)
+{
+    qDebug() << "---------> " << "开始清理 " << id;
+
+    QWriteLocker locker(&rwLock_);
+    auto it = clients_.find(id);
+    if (it == clients_.end()) {
+        return;
+    }
+
+    auto& info = it.value();
+    auto r = QMetaObject::invokeMethod(info->worker.get(), "Stop", Qt::BlockingQueuedConnection);
+    if (info->workerTh && info->workerTh->isRunning()) {
+        info->workerTh->quit();
+        if (!info->workerTh->wait(1000)) {
+            qCritical() << "---------> " << info->worker->GetID() << ", 退出 workerTh 线程超时。";
+        }
+        info->workerTh->deleteLater();
+        info->workerTh = nullptr;
+    }
+    clients_.erase(it);
+    qDebug() << "---------> " << "清理结束 " << id << ", r = " << r << "。";
+}
+
 void Server::onNewConnection()
 {
     QTcpSocket* clientSocket = nextPendingConnection();
@@ -125,6 +149,7 @@ void Server::onNewConnection()
     clientSocket->moveToThread(info->workerTh);
 
     connect(info->worker.get(), &ClientWorker::sigHaveFrame, this, &Server::handleClientFrame, Qt::QueuedConnection);
+    connect(info->worker.get(), &ClientWorker::sigDisconnect, this, &Server::handleDisconnect, Qt::QueuedConnection);
 
     {
         QWriteLocker locker(&rwLock_);
