@@ -71,7 +71,7 @@ public:
     qint32 GetSendProgress();
     qint32 GetDownProgress();
 
-public:
+public slots:
     void Interrupt(bool notic);
 
 private:

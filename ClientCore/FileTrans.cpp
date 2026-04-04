@@ -377,10 +377,7 @@ void FileTrans::Interrupt(bool notic)
         InfoMsg info;
         info.msg = QString(tr("传输文件 %1 主动中断。")).arg(sendTask_->file.fileName());
         auto f = clientCore_->GetBuffer(info, FBT_CLI_TRANS_INTERRUPT, sendTask_->task.remoteId);
-        if (!ClientCore::syncInvoke(clientCore_, f)) {
-            qCritical() << QString(tr("发送 %1 信息给 %2 失败。")).arg(info.msg).arg(sendTask_->task.remoteId);
-        }
-
+        ClientCore::asyncInvoke(clientCore_, f);
         sendTask_->state = TaskState::STATE_NONE;
     }
 }

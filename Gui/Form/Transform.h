@@ -33,6 +33,7 @@ signals:
     void sigSetUi(const TransTask& task);
     void sigTaskNum(const QString& data);
     void sigSetNotice();
+    void sigInterrupt();
 
 private:
     void setProgress(double val);

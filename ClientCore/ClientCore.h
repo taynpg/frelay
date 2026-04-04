@@ -67,6 +67,16 @@ public:
         }
         return result;
     }
+    static void asyncInvoke(ClientCore* context, QSharedPointer<FrameBuffer> frame)
+    {
+        bool success = QMetaObject::invokeMethod(context, "SendFrame",
+                                                 Qt::QueuedConnection,
+                                                 Q_ARG(QSharedPointer<FrameBuffer>, frame));
+
+        if (!success) {
+            qWarning() << "Failed to invoke SendFrame asynchronously";
+        }
+    }
 
 signals:
     void sigDisconnect();
