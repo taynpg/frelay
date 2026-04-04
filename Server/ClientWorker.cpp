@@ -59,12 +59,16 @@ void ClientWorker::onDataReadyIn()
         // 主动向整体逻辑请求断开
     }
 
+    //int testCount = 0;
     while (true) {
         QMutexLocker locker(&recvMut_);
         while (recvBuf_.size() >= MAX_FRAME_QUEUE_SIZE) {
             if (!isRun_) {
                 return;
             }
+            // if (testCount++ % 10 == 0) {
+            //     qDebug() << "超出20个限定，等待。";
+            // }
             cvRecvIn_.wait(&recvMut_, CV_WAIT_TIME);
         }
         if (!isRun_) {
@@ -150,12 +154,8 @@ void ClientWorker::handleSendTH()
 
 bool ClientWorker::syncSend(QSharedPointer<FrameBuffer> frame)
 {
-    bool result = false;
-    bool success = QMetaObject::invokeMethod(this, "Send", Qt::BlockingQueuedConnection, Q_RETURN_ARG(bool, result),
+    bool result  = QMetaObject::invokeMethod(this, "Send", Qt::BlockingQueuedConnection, Q_RETURN_ARG(bool, result),
                                              Q_ARG(QSharedPointer<FrameBuffer>, frame));
-    if (!success) {
-        return false;
-    }
     return result;
 }
 

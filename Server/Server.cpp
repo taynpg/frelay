@@ -5,6 +5,8 @@
 
 Server::Server(QObject* parent) : QTcpServer(parent)
 {
+    auto similarSize = CHUNK_BUF_SIZE * MAX_FRAME_QUEUE_SIZE / 1024;
+    qDebug() << "单向 Buffer 大致参考大小 " << similarSize << " KB。";
     connect(this, &Server::newConnection, this, &Server::onNewConnection);
 }
 
@@ -148,7 +150,7 @@ void Server::onNewConnection()
     info->worker->moveToThread(info->workerTh);
     clientSocket->moveToThread(info->workerTh);
 
-    connect(info->worker.get(), &ClientWorker::sigHaveFrame, this, &Server::handleClientFrame, Qt::QueuedConnection);
+    connect(info->worker.get(), &ClientWorker::sigHaveFrame, this, &Server::handleClientFrame, Qt::BlockingQueuedConnection);
     connect(info->worker.get(), &ClientWorker::sigDisconnect, this, &Server::handleDisconnect, Qt::QueuedConnection);
 
     {
@@ -165,6 +167,8 @@ void Server::onNewConnection()
 
     if (!ret) {
         // 清理资源。
+        handleDisconnect(clientId);
+        return;
     }
 
     // 发送客户端ID

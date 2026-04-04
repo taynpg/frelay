@@ -61,9 +61,6 @@ private:
     QMutex sendMut_;
 
     bool isRun_{};
-
-    static constexpr int MAX_FRAME_QUEUE_SIZE = 20;           // 每个队列最多20个frame
-    static constexpr int MAX_BUFFER_SIZE = 5 * 1024 * 1024;   // 5MB后备缓冲区
 };
 
 #endif

@@ -9,10 +9,12 @@
 
 // 一帧包大小
 constexpr quint32 CHUNK_BUF_SIZE = 1 * 1024 * 64;
-// 流量背压倍率
-constexpr quint32 FLOW_BACK_MULTIPLE = 20;
 // 允许最大的无效数据包大小
 constexpr quint32 MAX_INVALID_PACKET_SIZE = 1024 * 1024 * 5;
+// 每个队列最多20个frame
+constexpr int MAX_FRAME_QUEUE_SIZE = 20;
+// 5MB后备缓冲区
+constexpr int MAX_BUFFER_SIZE = 5 * 1024 * 1024;
 
 // It is specified here that the first 30 contents (inclusive) are
 // used for communication with the server.
