@@ -14,10 +14,10 @@
 #include <QScrollBar>
 #include <QTableWidgetItem>
 #include <RemoteFile.h>
-#include "Form/Notice.h"
 
 #include "Form/FileInfoForm.h"
 #include "Form/Loading.h"
+#include "Form/Notice.h"
 #include "GuiUtil/Public.h"
 #include "ui_FileControl.h"
 
@@ -655,9 +655,26 @@ void FileManager::UpDown()
         return;
     }
     QVector<QString> vec;
+
+    bool haveDir = false;
     for (const auto& item : TAS_CONST(datas)) {
-        vec.append(item->text());
+        auto d = item->text();
+        if (d == "Dir") {
+            haveDir = true;
+        }
+        vec.append(d);
     }
+
+    if (haveDir) {
+        // 确认
+        int ret = QMessageBox::question(this, tr(""), tr("传输包含文件夹，请确认操作。"), QMessageBox::Yes | QMessageBox::No,
+                                        QMessageBox::No);
+
+        if (ret != QMessageBox::Yes) {
+            return;
+        }
+    }
+
     QVector<TransTask> tasks;
     UpDownCommon(vec, 5, tasks, false, cliCore_, isRemote_, this);
     emit sigSendTasks(tasks);

@@ -6,6 +6,7 @@
 #include <QDrag>
 #include <QMimeData>
 #include <QPainter>
+#include <QMessageBox>
 
 #include "FileControl.h"
 
@@ -55,9 +56,24 @@ void CustomTableWidget::dropEvent(QDropEvent* event)
         parseData.append(roleData[Qt::DisplayRole].toString());
     }
 
+    bool haveDir = false;
     QVector<QString> datas;
     for (int i = 0; i < parseData.size(); ++i) {
+        auto d = parseData[i];
+        if (d == "Dir") {
+            haveDir = true;
+        }
         datas.append(parseData[i]);
+    }
+
+    if (haveDir) {
+        // 确认
+        int ret = QMessageBox::question(this, tr(""), tr("传输包含文件夹，请确认操作。"), QMessageBox::Yes | QMessageBox::No,
+                                        QMessageBox::No);
+
+        if (ret != QMessageBox::Yes) {
+            return;
+        }
     }
 
     FileManager::UpDownCommon(datas, 5, tasks, true, clientCore_, isRemote_, this);
