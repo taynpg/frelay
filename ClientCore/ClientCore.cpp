@@ -200,7 +200,7 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
                         break;
                     }
                     auto& vec = infoMsg.infos[item];
-                    for (const auto& dd : std::as_const(infoMsg.list)) {
+                    for (const auto& dd : TAS_CONST(infoMsg.list)) {
                         FileStruct fst;
                         fst.root = infoMsg.fst.root;
                         fst.mid = item;

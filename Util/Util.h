@@ -6,6 +6,13 @@
 #include <QMutex>
 #include <QObject>
 
+#if __cplusplus >= 201703L
+    #include <utility>
+    #define TAS_CONST std::as_const
+#else
+    #define TAS_CONST qAsConst
+#endif
+
 class GlobalData
 {
 public:

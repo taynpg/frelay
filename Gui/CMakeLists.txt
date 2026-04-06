@@ -29,13 +29,13 @@ GuiUtil/Config.h GuiUtil/Config.cpp
 ../Res/qss.qrc Form/Loading.h Form/Loading.cpp
 Control/Common.h Control/Common.cpp
 Form/FileInfoForm.h Form/FileInfoForm.cpp Form/FileInfoForm.ui
+Form/Notice.h Form/Notice.cpp Form/Notice.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(frelayGUI
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        Form/Notice.h Form/Notice.cpp Form/Notice.ui
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET frelayGUI APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

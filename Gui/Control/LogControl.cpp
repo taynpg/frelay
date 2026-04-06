@@ -1,7 +1,9 @@
 ﻿#include "LogControl.h"
 
+#include <QAction>
 #include <QDateTime>
 #include <QListWidgetItem>
+#include <QMenu>
 #include <QMessageBox>
 #include <QStandardItem>
 #include <chrono>
@@ -27,14 +29,23 @@ void LogPrint::InitControl()
 #endif
     ui->pedText->setReadOnly(true);
 
-    connect(ui->btnClear, &QPushButton::clicked, [this]() {
-        QMessageBox::StandardButton reply = QMessageBox::question(this, tr("确认清空"), tr("确定要清空所有内容吗？"),
+    QMenu* contextMenu = new QMenu(ui->pedText);
+    // contextMenu->addSeparator();
+    QAction* clearAction = new QAction(tr("清除"), contextMenu);
+
+    contextMenu->addAction(clearAction);
+
+    connect(clearAction, &QAction::triggered, [this]() {
+        QMessageBox::StandardButton reply = QMessageBox::question(this, tr(""), tr("确定要清空所有内容吗？"),
                                                                   QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
         if (reply == QMessageBox::Yes) {
             ui->pedText->clear();
         }
     });
+    ui->pedText->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->pedText, &QPlainTextEdit::customContextMenuRequested, this,
+            [contextMenu, this](const QPoint& pos) { contextMenu->exec(ui->pedText->mapToGlobal(pos)); });
 }
 
 std::string LogPrint::now_str()

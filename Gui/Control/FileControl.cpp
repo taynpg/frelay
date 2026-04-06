@@ -394,7 +394,7 @@ void FileManager::FilterFile(const QVector<QString>& selectedTypes)
         return;
     }
     currentShowInfo_.vec.clear();
-    for (const auto& d : std::as_const(currentInfo_.vec)) {
+    for (const auto& d : TAS_CONST(currentInfo_.vec)) {
         if (d.type == File) {
             auto ext = d.fullPath.lastIndexOf('.');
             if (ext != -1) {
@@ -411,7 +411,7 @@ void FileManager::FilterFile(const QVector<QString>& selectedTypes)
 void FileManager::GenFilter()
 {
     fileTypes_.clear();
-    for (const auto& fileInfo : std::as_const(currentInfo_.vec)) {
+    for (const auto& fileInfo : TAS_CONST(currentInfo_.vec)) {
         if (fileInfo.type == File) {
             auto ext = fileInfo.fullPath.lastIndexOf('.');
             if (ext != -1) {
@@ -435,7 +435,7 @@ void FileManager::ShowFilterForm()
     allItem->setCheckState(curSelectTypes_.contains("*") ? Qt::Checked : Qt::Unchecked);
     listWidget.addItem(allItem);
 
-    for (const QString& ext : std::as_const(fileTypes_)) {
+    for (const QString& ext : TAS_CONST(fileTypes_)) {
         QListWidgetItem* item = new QListWidgetItem(ext);
         item->setData(Qt::UserRole, ext);
         item->setCheckState(curSelectTypes_.contains(ext) ? Qt::Checked : Qt::Unchecked);
@@ -477,7 +477,7 @@ void FileManager::CopyFullPath()
 
     bool found = false;
     QString key = ui->tableWidget->item(row, 1)->text();
-    for (const auto& d : std::as_const(currentInfo_.vec)) {
+    for (const auto& d : TAS_CONST(currentInfo_.vec)) {
         if (d.name == key) {
             clip->setText(d.fullPath);
             found = true;
@@ -619,7 +619,7 @@ void FileManager::UpDownCommon(const QVector<QString>& vec, int grpSize, QVector
         -----------------------------------------------
     */
     // 这里的 file 是相对路径，不再是特定的文件名称。
-    for (const auto& file : std::as_const(resultFiles)) {
+    for (const auto& file : TAS_CONST(resultFiles)) {
 
         TransTask task;
         task.taskUUID = Util::UUID();
@@ -655,7 +655,7 @@ void FileManager::UpDown()
         return;
     }
     QVector<QString> vec;
-    for (const auto& item : std::as_const(datas)) {
+    for (const auto& item : TAS_CONST(datas)) {
         vec.append(item->text());
     }
     QVector<TransTask> tasks;
@@ -680,7 +680,7 @@ void FileManager::VerifySha256()
     }
 
     QVector<QString> vec;
-    for (const auto& item : std::as_const(ret)) {
+    for (const auto& item : TAS_CONST(ret)) {
         vec.push_back(item->text());
     }
 
@@ -834,7 +834,7 @@ void FileManager::OperDelete()
         QString errMsg;
         QVector<int> rowsToDelete;
 
-        for (const auto& item : std::as_const(delItems)) {
+        for (const auto& item : TAS_CONST(delItems)) {
             errMsg = Util::Delete(item.path);
             if (!errMsg.isEmpty()) {
                 break;
@@ -894,7 +894,7 @@ void FileManager::OperDelete()
     const auto& r = msg.infos["TASK"];
 
     QVector<int> rowsToDelete;
-    for (const auto& item : std::as_const(r)) {
+    for (const auto& item : TAS_CONST(r)) {
         if (item.state == 1) {
             rowsToDelete.append(item.line);
         }

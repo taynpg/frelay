@@ -190,7 +190,7 @@ QVector<QString> Util::GetLocalDrivers()
 {
     QVector<QString> result;
     auto drivers = QStorageInfo::mountedVolumes();
-    for (const auto& driver : std::as_const(drivers)) {
+    for (const auto& driver : TAS_CONST(drivers)) {
         if (driver.isValid() && driver.isReady()) {
             result.push_back(driver.rootPath());
         }
