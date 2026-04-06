@@ -13,6 +13,8 @@
     #define TAS_CONST qAsConst
 #endif
 
+#define LOCK_MSG "对方已锁定。"
+
 class GlobalData
 {
 public:
@@ -41,6 +43,7 @@ public:
     QString LocalID_;
     QString RemoteID_;
     std::string ConfigPath_;
+    bool isLock_{false};
 };
 
 class Util : public QObject

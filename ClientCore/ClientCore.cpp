@@ -124,7 +124,13 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
     }
     if (msg.command == STRMSG_AC_RENAME_FILEDIR) {
         msg.command = STRMSG_AC_ANSWER_RENAME_FILEDIR;
-        msg.msg = Util::Rename(msg.fromPath, msg.toPath, msg.type == STR_DIR);
+
+        if (GlobalData::Ins()->isLock_) {
+            msg.msg = LOCK_MSG;
+        } else {
+            msg.msg = Util::Rename(msg.fromPath, msg.toPath, msg.type == STR_DIR);
+        }
+
         if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
             auto logMsg = tr("给") + frame->fid + tr("返回重命名结果消息失败。");
             qCritical() << logMsg;
@@ -134,23 +140,29 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
     }
     if (msg.command == STRMSG_AC_DEL_FILEDIR) {
         msg.command = STRMSG_AC_ANSWER_DEL_FILEDIR;
-        auto& delItemsMap = msg.infos;
-        msg.msg.clear();
-        for (auto& key : delItemsMap.keys()) {
-            for (auto& delItem : delItemsMap[key]) {
-                qWarning() << frame->fid << "正在删除：" << delItem.path;
-                msg.msg = Util::Delete(delItem.path);
+
+        if (GlobalData::Ins()->isLock_) {
+            msg.msg = LOCK_MSG;
+        } else {
+            auto& delItemsMap = msg.infos;
+            msg.msg.clear();
+            for (auto& key : delItemsMap.keys()) {
+                for (auto& delItem : delItemsMap[key]) {
+                    qWarning() << frame->fid << "正在删除：" << delItem.path;
+                    msg.msg = Util::Delete(delItem.path);
+                    if (!msg.msg.isEmpty()) {
+                        break;
+                    } else {
+                        // 标记1表示删除成功。
+                        delItem.state = 1;
+                    }
+                }
                 if (!msg.msg.isEmpty()) {
                     break;
-                } else {
-                    // 标记1表示删除成功。
-                    delItem.state = 1;
                 }
             }
-            if (!msg.msg.isEmpty()) {
-                break;
-            }
         }
+
         if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
             auto logMsg = tr("给") + frame->fid + tr("返回删除结果消息失败。");
             qCritical() << logMsg;
@@ -160,7 +172,11 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
     }
     if (msg.command == STRMSG_AC_NEW_DIR) {
         msg.command = STRMSG_AC_ANSWER_NEW_DIR;
-        msg.msg = Util::NewDir(msg.fromPath);
+        if (GlobalData::Ins()->isLock_) {
+            msg.msg = LOCK_MSG;
+        } else {
+            msg.msg = Util::NewDir(msg.fromPath);
+        }
         if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
             auto logMsg = tr("给") + frame->fid + tr("返回新建结果消息失败。");
             qCritical() << logMsg;

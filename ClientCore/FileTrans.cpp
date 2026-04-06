@@ -172,6 +172,15 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
     qInfo() << QString(tr("%1 请求发送 %2 到 %3")).arg(frame->fid).arg(info.fromPath).arg(info.toPath);
 
     // judge is same client's same file.
+    if (GlobalData::Ins()->isLock_) {
+        info.msg = LOCK_MSG;
+        auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, frame->fid);
+        qWarning() << info.msg;
+        if (!ClientCore::syncInvoke(clientCore_, f)) {
+            qCritical() << QString(tr("%1 回复 %2 失败。")).arg(info.msg).arg(f->fid);
+        }
+        return;
+    }
 
     // recv is single thread recv, judge idle
     if (downTask_->state == TaskState::STATE_RUNNING) {
@@ -424,8 +433,8 @@ SendThread::SendThread(ClientCore* clientCore) : cliCore_(clientCore)
 void SendThread::fbtFlowBack(QSharedPointer<FrameBuffer> frame)
 {
     auto msg = infoUnpack<InfoMsg>(frame->data);
-    //delay_ = msg.mark * BLOCK_LEVEL_MULTIPLE;
-    delay_ = msg.mark ;
+    // delay_ = msg.mark * BLOCK_LEVEL_MULTIPLE;
+    delay_ = msg.mark;
     qInfo() << "===============>  拥塞流量调整：" << delay_;
 }
 
@@ -435,7 +444,7 @@ void SendThread::run()
     isSuccess_ = true;
     delay_ = 0;
     bool invokeSuccess = false;
-    while (!task_->file.atEnd()) { 
+    while (!task_->file.atEnd()) {
         auto frame = QSharedPointer<FrameBuffer>::create();
         frame->tid = task_->task.remoteId;
         frame->type = FBT_CLI_FILE_BUFFER;
