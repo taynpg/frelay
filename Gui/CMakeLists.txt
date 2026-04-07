@@ -12,13 +12,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_definitions(-DUSE_QT_GUI)
 
 if (DEFINED USE_THEME AND USE_THEME)
+add_subdirectory(Theme)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Concurrent Svg)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Concurrent Svg)
 else()
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Concurrent)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Concurrent)
 endif()
-
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 set(PROJECT_SOURCES main.cpp
@@ -67,12 +67,11 @@ target_link_libraries(frelayGUI PRIVATE
     Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::Concurrent
     ClientCore Protocol 
-    Util 
-    Struct SingleApplication::SingleApplication qlementine
+    Util Struct SingleApplication::SingleApplication
 )
 
 if (DEFINED USE_THEME AND USE_THEME)
-    target_link_libraries(frelayGUI PRIVATE Qt${QT_VERSION_MAJOR}::Svg qlementine)
+    target_link_libraries(frelayGUI PRIVATE frelayTheme)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")

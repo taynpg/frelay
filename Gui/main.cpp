@@ -4,7 +4,7 @@
 #include <SingleApplication>
 
 #ifdef USE_FRELAY_THEME
-#include <oclero/qlementine.hpp>
+#include <frelayTheme.h>
 #endif
 
 #include "frelayGUI.h"
@@ -35,8 +35,7 @@ int main(int argc, char* argv[])
     frelayGUI w;
 
 #ifdef USE_FRELAY_THEME
-    auto* style = new oclero::qlementine::QlementineStyle(&a);
-    QApplication::setStyle(style);
+    QApplication::setStyle(Theme::getStyle(&a));
 #endif
 
     QObject::connect(&a, &SingleApplication::instanceStarted, &w, [&w]() {
