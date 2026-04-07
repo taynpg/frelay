@@ -3,6 +3,10 @@
 #include <QFile>
 #include <SingleApplication>
 
+#ifdef USE_FRELAY_THEME
+#include <oclero/qlementine.hpp>
+#endif
+
 #include "frelayGUI.h"
 
 int main(int argc, char* argv[])
@@ -30,10 +34,10 @@ int main(int argc, char* argv[])
 
     frelayGUI w;
 
-    // QFile file(":/QtTheme/theme/Flat/Light/Blue/Pink.qss");
-    // if (file.open(QFile::ReadOnly)) {
-    //     a.setStyleSheet(file.readAll());
-    // }
+#ifdef USE_FRELAY_THEME
+    auto* style = new oclero::qlementine::QlementineStyle(&a);
+    QApplication::setStyle(style);
+#endif
 
     QObject::connect(&a, &SingleApplication::instanceStarted, &w, [&w]() {
         w.showNormal();

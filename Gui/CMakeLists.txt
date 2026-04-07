@@ -10,8 +10,15 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_definitions(-DUSE_QT_GUI)
+
+if (DEFINED USE_THEME AND USE_THEME)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Concurrent Svg)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Concurrent Svg)
+else()
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Concurrent)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Concurrent)
+endif()
+
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 set(PROJECT_SOURCES main.cpp
@@ -22,11 +29,11 @@ Control/ConnectControl.h Control/ConnectControl.cpp Control/ConnectControl.ui
 Control/CompareControl.h Control/CompareControl.cpp Control/CompareControl.ui
 GuiUtil/Public.h GuiUtil/Public.cpp
 Form/Transform.h Form/Transform.cpp Form/Transform.ui
-../Res/frelay.qrc ../Res/ico.rc ../Res/QtTheme.qrc 
+../Res/frelay.qrc ../Res/ico.rc
 Control/cusTableWidget.cpp Control/cusTableWidget.h
 Control/cpTableWidget.h Control/cpTableWidget.cpp
 GuiUtil/Config.h GuiUtil/Config.cpp
-../Res/qss.qrc Form/Loading.h Form/Loading.cpp
+Form/Loading.h Form/Loading.cpp
 Control/Common.h Control/Common.cpp
 Form/FileInfoForm.h Form/FileInfoForm.cpp Form/FileInfoForm.ui
 Form/Notice.h Form/Notice.cpp Form/Notice.ui
@@ -61,8 +68,12 @@ target_link_libraries(frelayGUI PRIVATE
     Qt${QT_VERSION_MAJOR}::Concurrent
     ClientCore Protocol 
     Util 
-    Struct SingleApplication::SingleApplication
+    Struct SingleApplication::SingleApplication qlementine
 )
+
+if (DEFINED USE_THEME AND USE_THEME)
+    target_link_libraries(frelayGUI PRIVATE Qt${QT_VERSION_MAJOR}::Svg qlementine)
+endif()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
     target_link_libraries(frelayGUI PRIVATE ws2_32 wsock32)

@@ -11,7 +11,7 @@ void ClientCore::Instance()
     // qDebug() << "Instance() thread:" << QThread::currentThread();
     socket_ = new QTcpSocket(this);
 
-    socket_->setSocketOption(QAbstractSocket::SendBufferSizeSocketOption, 1024 * 512);
+    //socket_->setSocketOption(QAbstractSocket::SendBufferSizeSocketOption, 1024 * 512);
 
     connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);
