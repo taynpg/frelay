@@ -36,6 +36,10 @@ int main(int argc, char* argv[])
 
 #ifdef USE_FRELAY_THEME
     QApplication::setStyle(Theme::getStyle(&a));
+    //    QFile file(":/QtTheme/theme/Flat/Light/Blue/Pink.qss");
+    // if (file.open(QFile::ReadOnly)) {
+    //     a.setStyleSheet(file.readAll());
+    // }
 #endif
 
     QObject::connect(&a, &SingleApplication::instanceStarted, &w, [&w]() {
