@@ -206,17 +206,17 @@ void Connecter::InitControl()
 
     connect(ui->btnLock, &QPushButton::clicked, this, [this]() {
         if (!GlobalData::Ins()->isLock_) {
-            ui->btnLock->setText("取消锁定");
+            ui->btnLock->setText("UnLock");
             ui->btnLock->setStyleSheet("color: red;");
             GlobalData::Ins()->isLock_ = true;
         } else {
-            ui->btnLock->setText("锁定");
+            ui->btnLock->setText("Lock");
             ui->btnLock->setStyleSheet("color: black;");
             GlobalData::Ins()->isLock_ = false;
         }
     });
 
-    setMaximumWidth(300);
+    setMaximumWidth(330);
 }
 
 bool Connecter::parseIpPort(const QString& ipPort, QString& outIp, QString& outPort)
