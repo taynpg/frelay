@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(frelayTheme LANGUAGES CXX)
+project(externTheme LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -12,14 +12,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Svg)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Svg)
 
-set(PROJECT_SOURCES frelayTheme.h frelayTheme.cpp)
+set(PROJECT_SOURCES externTheme.h externTheme.cpp)
 
-add_library(frelayTheme SHARED ${PROJECT_SOURCES})
-target_compile_definitions(frelayTheme PRIVATE THEME_EXPORT)
-target_link_libraries(frelayTheme PUBLIC Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg qlementine)
-target_include_directories(frelayTheme PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(externTheme SHARED ${PROJECT_SOURCES})
+target_compile_definitions(externTheme PRIVATE THEME_EXPORT)
+target_link_libraries(externTheme PUBLIC Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg qlementine)
+target_include_directories(externTheme PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-install(TARGETS frelayTheme
+install(TARGETS externTheme
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION bin
 )

@@ -25,7 +25,7 @@ void Settings::InitContrl()
     ui->cbTheme->addItem("fusion");
     ui->cbTheme->addItem("windows");
 
-#ifdef USE_FRELAY_THEME
+#ifdef USE_EXTERN_THEME
     ui->cbTheme->addItem("qlementine");
 #endif
 

@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_definitions(-DUSE_QT_GUI)
 
-if (DEFINED USE_THEME AND USE_THEME)
+if (DEFINED USE_EXTERN_THEME AND USE_EXTERN_THEME)
 add_subdirectory(Theme)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Concurrent Svg)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Concurrent Svg)
@@ -71,8 +71,8 @@ target_link_libraries(frelayGUI PRIVATE
     Util Struct SingleApplication::SingleApplication
 )
 
-if (DEFINED USE_THEME AND USE_THEME)
-    target_link_libraries(frelayGUI PRIVATE frelayTheme)
+if (DEFINED USE_EXTERN_THEME AND USE_EXTERN_THEME)
+    target_link_libraries(frelayGUI PRIVATE externTheme)
 endif()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")

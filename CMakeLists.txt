@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PROJECT_URL "https://github.com/taynpg/frelay")
 
-option(USE_THEME "Use theme mode" ON)
+option(USE_EXTERN_THEME "Use theme mode" ON)
 
 if(DEFINED RELEASE_MARK)
 message(STATUS "Set RELEASE_MARK => ${RELEASE_MARK}.")
@@ -104,11 +104,11 @@ add_subdirectory(Protocol)
 add_subdirectory(Server)
 add_subdirectory(ClientCore)
 
-if (DEFINED USE_THEME AND USE_THEME)
+if (DEFINED USE_EXTERN_THEME AND USE_EXTERN_THEME)
 if(DEFINED COMPILE_GUI AND COMPILE_GUI)
-    message(STATUS "---> USE_THEME ${USE_THEME}")
+    message(STATUS "---> USE_EXTERN_THEME ${USE_EXTERN_THEME}")
     # https://github.com/oclero/qlementine.git
-    add_definitions(-DUSE_FRELAY_THEME)
+    add_definitions(-DUSE_EXTERN_THEME)
     add_subdirectory(3rd/qlementine-1.4.2)
     list(APPEND QT_DEP_FILES ${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Svg.dll)
 endif()
