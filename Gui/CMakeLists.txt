@@ -37,6 +37,7 @@ Form/Loading.h Form/Loading.cpp
 Control/Common.h Control/Common.cpp
 Form/FileInfoForm.h Form/FileInfoForm.cpp Form/FileInfoForm.ui
 Form/Notice.h Form/Notice.cpp Form/Notice.ui
+Form/settings.cpp Form/settings.ui Form/settings.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

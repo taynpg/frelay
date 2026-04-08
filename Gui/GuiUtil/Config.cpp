@@ -88,6 +88,48 @@ std::vector<QString> FrelayConfig::GetIpPort()
     return result;
 }
 
+bool FrelayConfig::GetCurrentTheme(QString& theme)
+{
+    auto p = GlobalData::Ins()->GetConfigPath();
+    json j;
+    if (existFile(p)) {
+        std::ifstream ifs(p);
+        ifs >> j;
+        ifs.close();
+        if (j.contains("theme")) {
+            theme = QString::fromStdString(j["theme"].get<std::string>());
+        } else {
+            theme = "";
+            j["theme"] = theme.toStdString();
+            std::ofstream ofs(p);
+            ofs << std::setw(4) << j << std::endl;
+            ofs.close();
+            return true;
+        }
+    } else {
+        theme = "";
+    }
+    return true;
+}
+
+bool FrelayConfig::SetCurrentTheme(const QString& theme)
+{
+    auto p = GlobalData::Ins()->GetConfigPath();
+    json j;
+    if (existFile(p)) {
+        std::ifstream ifs(p);
+        ifs >> j;
+        ifs.close();
+        j["theme"] = theme.toStdString();
+    } else {
+        j["theme"] = theme.toStdString();
+    }
+    std::ofstream ofs(p);
+    ofs << std::setw(4) << j << std::endl;
+    ofs.close();
+    return true;
+}
+
 bool FrelayConfig::existFile(const std::string& path)
 {
     std::ifstream ifs(path);

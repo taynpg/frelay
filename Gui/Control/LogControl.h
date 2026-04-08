@@ -1,6 +1,7 @@
 ﻿#ifndef LOGCONTROL_H
 #define LOGCONTROL_H
 
+#include <GuiUtil/Config.h>
 #include <QBrush>
 #include <QGuiApplication>
 #include <QMap>
@@ -13,7 +14,12 @@ namespace Ui {
 class LogPrint;
 }
 
-enum PrintType { PT_INFO, PT_WARN, PT_ERROR, PT_DEBUG };
+enum PrintType {
+    PT_INFO,
+    PT_WARN,
+    PT_ERROR,
+    PT_DEBUG
+};
 
 struct LogEntry {
     QString message;
@@ -27,6 +33,9 @@ class LogPrint : public QWidget
 public:
     explicit LogPrint(QWidget* parent = nullptr);
     ~LogPrint();
+
+public:
+    void setConfigPtr(std::shared_ptr<FrelayConfig> config);
 
 public slots:
     void Info(const QString& message);
@@ -60,6 +69,7 @@ private:
 #endif
 
     QStandardItemModel* model_;
+    std::shared_ptr<FrelayConfig> config_;
 };
 
 #endif   // LOGCONTROL_H

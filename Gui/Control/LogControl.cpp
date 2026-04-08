@@ -10,6 +10,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <Form/settings.h>
 
 #include "ui_LogControl.h"
 
@@ -32,8 +33,10 @@ void LogPrint::InitControl()
     QMenu* contextMenu = new QMenu(ui->pedText);
     // contextMenu->addSeparator();
     QAction* clearAction = new QAction(tr("清除"), contextMenu);
+    QAction* settingAction = new QAction(tr("设置"), contextMenu);
 
     contextMenu->addAction(clearAction);
+    contextMenu->addAction(settingAction);
 
     connect(clearAction, &QAction::triggered, [this]() {
         QMessageBox::StandardButton reply = QMessageBox::question(this, tr(""), tr("确定要清空所有内容吗？"),
@@ -43,6 +46,14 @@ void LogPrint::InitControl()
             ui->pedText->clear();
         }
     });
+
+    connect(settingAction, &QAction::triggered, [this]() {
+        Settings settings(this);
+        settings.setFixedSize(300, 100);
+        settings.SetConfigPtr(config_);
+        settings.exec();
+    });
+
     ui->pedText->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->pedText, &QPlainTextEdit::customContextMenuRequested, this,
             [contextMenu, this](const QPoint& pos) { contextMenu->exec(ui->pedText->mapToGlobal(pos)); });
@@ -81,6 +92,11 @@ void LogPrint::ColorChange(Qt::ColorScheme scheme)
 LogPrint::~LogPrint()
 {
     delete ui;
+}
+
+void LogPrint::setConfigPtr(std::shared_ptr<FrelayConfig> config)
+{
+    config_ = config;
 }
 
 static const QColor DARK_INFO_COLOR = QColor(255, 255, 0);

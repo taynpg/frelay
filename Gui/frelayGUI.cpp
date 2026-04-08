@@ -14,14 +14,11 @@
 
 static LogPrint* logPrint = nullptr;
 
-frelayGUI::frelayGUI(QWidget* parent) : QDialog(parent), ui(new Ui::frelayGUI)
+frelayGUI::frelayGUI(QWidget* parent, std::shared_ptr<FrelayConfig> config)
+    : QDialog(parent), ui(new Ui::frelayGUI), config_(config)
 {
-    config_ = std::make_shared<FrelayConfig>();
 
     ui->setupUi(this);
-
-    QString configRoot = Util::GetCurConfigPath("frelay");
-    GlobalData::Ins()->SetConfigPath(configRoot.toStdString() + "/frelayConfig.json");
 
     InitControl();
     ControlSignal();
@@ -49,6 +46,8 @@ frelayGUI::~frelayGUI()
 void frelayGUI::InitControl()
 {
     logPrint = new LogPrint(this);
+    logPrint->setConfigPtr(config_);
+
     clientCore_ = new ClientCore();
 
     compare_ = new Compare(this);

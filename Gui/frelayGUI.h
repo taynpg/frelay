@@ -2,8 +2,8 @@
 #define FRELAYGUI_H
 
 #include <ClientCore.h>
-#include <QFile>
 #include <QDialog>
+#include <QFile>
 #include <QTabWidget>
 
 #include "Control/CompareControl.h"
@@ -23,7 +23,7 @@ class frelayGUI : public QDialog
     Q_OBJECT
 
 public:
-    frelayGUI(QWidget* parent = nullptr);
+    frelayGUI(QWidget* parent, std::shared_ptr<FrelayConfig> config);
     ~frelayGUI();
 
 private:

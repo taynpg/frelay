@@ -105,15 +105,17 @@ add_subdirectory(Server)
 add_subdirectory(ClientCore)
 
 if (DEFINED USE_THEME AND USE_THEME)
+if(DEFINED COMPILE_GUI AND COMPILE_GUI)
     message(STATUS "---> USE_THEME ${USE_THEME}")
     # https://github.com/oclero/qlementine.git
     add_definitions(-DUSE_FRELAY_THEME)
     add_subdirectory(3rd/qlementine-1.4.2)
     list(APPEND QT_DEP_FILES ${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Svg.dll)
 endif()
+endif()
 
 add_subdirectory(Util)
-if(DEFINED COMPILE_GUI)
+if(DEFINED COMPILE_GUI AND COMPILE_GUI)
 message(STATUS "Support Gui Part => ${COMPILE_GUI}.")
 add_subdirectory(3rd/SingleApplication-3.5.2)
 add_subdirectory(Gui)

@@ -147,11 +147,7 @@ void Connecter::RefreshClient()
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->data = infoPack(info);
     frame->type = FBT_SER_MSG_ASKCLIENTS;
-    auto sendRet = ClientCore::syncInvoke(clientCore_, frame);
-    if (!sendRet) {
-        qCritical() << QString(tr("请求查询客户端列表失败。"));
-        return;
-    }
+    ClientCore::asyncInvoke(clientCore_, frame);
     qInfo() << QString(tr("刷新在线客户端列表。"));
 }
 
@@ -208,13 +204,12 @@ void Connecter::InitControl()
         emit sigConfirmUse();
     });
 
-    connect(ui->btnLock, &QPushButton::clicked, this, [this](){
+    connect(ui->btnLock, &QPushButton::clicked, this, [this]() {
         if (!GlobalData::Ins()->isLock_) {
             ui->btnLock->setText("取消锁定");
             ui->btnLock->setStyleSheet("color: red;");
             GlobalData::Ins()->isLock_ = true;
-        }
-        else {
+        } else {
             ui->btnLock->setText("锁定");
             ui->btnLock->setStyleSheet("color: black;");
             GlobalData::Ins()->isLock_ = false;

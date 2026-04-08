@@ -23,6 +23,8 @@ public:
 public:
     bool SaveIpPort(const QString& ipPort);
     std::vector<QString> GetIpPort();
+    bool GetCurrentTheme(QString& theme);
+    bool SetCurrentTheme(const QString& theme);
 
 private:
     bool existFile(const std::string& path);

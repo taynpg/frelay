@@ -21,6 +21,10 @@ int main(int argc, char* argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
+    auto config = std::make_shared<FrelayConfig>();
+    QString configRoot = Util::GetCurConfigPath("frelay");
+    GlobalData::Ins()->SetConfigPath(configRoot.toStdString() + "/frelayConfig.json");
+
     SingleApplication a(argc, argv);
 
 #ifdef _WIN32
@@ -32,15 +36,24 @@ int main(int argc, char* argv[])
 
     qInstallMessageHandler(frelayGUI::ControlMsgHander);
 
-    frelayGUI w;
+    frelayGUI w(nullptr, config);
 
+    QString theme;
+    auto curTheme = config->GetCurrentTheme(theme);
+    if (theme == "qlementine") {
 #ifdef USE_FRELAY_THEME
-    QApplication::setStyle(Theme::getStyle(&a));
-    //    QFile file(":/QtTheme/theme/Flat/Light/Blue/Pink.qss");
-    // if (file.open(QFile::ReadOnly)) {
-    //     a.setStyleSheet(file.readAll());
-    // }
+        QApplication::setStyle(Theme::getStyle(&a));
 #endif
+    } else if (theme == "flat") {
+        QFile file(":/QtTheme/theme/Flat/Light/Blue/Pink.qss");
+        if (file.open(QFile::ReadOnly)) {
+            a.setStyleSheet(file.readAll());
+        }
+    } else if (theme.isEmpty()) {
+
+    } else {
+        a.setStyle(theme);
+    }
 
     QObject::connect(&a, &SingleApplication::instanceStarted, &w, [&w]() {
         w.showNormal();
