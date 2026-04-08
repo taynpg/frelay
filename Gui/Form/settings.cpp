@@ -39,6 +39,7 @@ void Settings::InitContrl()
     }
 
     connect(ui->btnSave, &QPushButton::clicked, this, [this]() { changeTheme(ui->cbTheme->currentText()); });
+    connect(ui->btnCancel, &QPushButton::clicked, this, [this]() { close(); });
 }
 
 void Settings::changeTheme(const QString& theme)
