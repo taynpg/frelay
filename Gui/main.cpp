@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
         if (file.open(QFile::ReadOnly)) {
             a.setStyleSheet(file.readAll());
         }
-    } else if (theme.isEmpty()) {
+    } else if (theme.isEmpty() || theme == "default") {
 
     } else {
         a.setStyle(theme);

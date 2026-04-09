@@ -24,6 +24,7 @@ void Settings::InitContrl()
     ui->cbTheme->addItem("flat");
     ui->cbTheme->addItem("fusion");
     ui->cbTheme->addItem("windows");
+    ui->cbTheme->addItem("default");
 
 #ifdef USE_EXTERN_THEME
     ui->cbTheme->addItem("qlementine");
@@ -32,7 +33,7 @@ void Settings::InitContrl()
     QString curTheme;
     config_->GetCurrentTheme(curTheme);
 
-    if (curTheme == "flat" || curTheme == "fusion" || curTheme == "windows" || curTheme == "qlementine") {
+    if (curTheme == "flat" || curTheme == "fusion" || curTheme == "windows" || curTheme == "qlementine" || curTheme == "default") {
         ui->cbTheme->setCurrentText(curTheme);
     } else {
         ui->cbTheme->setCurrentText("windows");
