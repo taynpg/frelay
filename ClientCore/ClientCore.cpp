@@ -11,7 +11,7 @@ void ClientCore::Instance()
     // qDebug() << "Instance() thread:" << QThread::currentThread();
     socket_ = new QTcpSocket(this);
 
-    //socket_->setSocketOption(QAbstractSocket::SendBufferSizeSocketOption, 1024 * 512);
+    // socket_->setSocketOption(QAbstractSocket::SendBufferSizeSocketOption, 1024 * 512);
 
     connect(socket_, &QTcpSocket::readyRead, this, &ClientCore::onReadyRead);
     connect(socket_, &QTcpSocket::disconnected, this, &ClientCore::onDisconnected);
@@ -531,18 +531,19 @@ void HeatBeat::run()
         if (!core_->IsConnect()) {
             continue;
         }
-        ClientCore::syncInvoke(core_, frame);
+        ClientCore::AsyncInvoke(core_, frame);
+
         auto rid = core_->GetRemoteID();
         if (!rid.isEmpty()) {
-            auto frame2 = core_->GetBuffer(info, FBT_SER_MSG_JUDGE_OTHER_ALIVE, rid);
-            ClientCore::syncInvoke(core_, frame2);
+            auto judgeFrame = core_->GetBuffer(info, FBT_SER_MSG_JUDGE_OTHER_ALIVE, rid);
+            ClientCore::AsyncInvoke(core_, judgeFrame);
         }
 
         {
             QReadLocker loker(&core_->rwIDLock_);
             for (auto& id : core_->remoteIDs_) {
-                auto frame3 = core_->GetBuffer(info, FBT_SER_MSG_JUDGE_OTHER_ALIVE, id);
-                ClientCore::syncInvoke(core_, frame3);
+                auto judgeFrameBy = core_->GetBuffer(info, FBT_SER_MSG_JUDGE_OTHER_ALIVE, id);
+                ClientCore::AsyncInvoke(core_, judgeFrameBy);
             }
         }
     }
@@ -588,7 +589,7 @@ void WaitOper::run()
     infoMsg_.type = type_;
 
     auto f = cli_->GetBuffer<InfoMsg>(infoMsg_, FBT_MSGINFO_ASK, cli_->GetRemoteID());
-    if (!ClientCore::syncInvoke(cli_, f)) {
+    if (!ClientCore::SyncInvoke(cli_, f)) {
         auto errMsg = QString(tr("向%1发送%2请求失败。")).arg(cli_->GetRemoteID()).arg(sendStrType_);
         emit sigCheckOver();
         qCritical() << errMsg;
@@ -663,7 +664,7 @@ void WaitOperOwn::run()
         execRet = func_();
     }
     if (!fid.isEmpty()) {
-        if (!cli_->syncInvoke(cli_, cli_->GetBuffer<InfoMsg>(infoMsg_, FBT_MSGINFO_ANSWER, fid))) {
+        if (!cli_->SyncInvoke(cli_, cli_->GetBuffer<InfoMsg>(infoMsg_, FBT_MSGINFO_ANSWER, fid))) {
             qCritical() << QString(tr("向%1发送%2请求失败。")).arg(fid).arg(infoMsg_.command);
         }
     }

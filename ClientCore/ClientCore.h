@@ -57,7 +57,7 @@ public:
         f->type = type;
         return f;
     }
-    static bool syncInvoke(ClientCore* context, QSharedPointer<FrameBuffer> frame)
+    static bool SyncInvoke(ClientCore* context, QSharedPointer<FrameBuffer> frame)
     {
         bool result = false;
         bool success = QMetaObject::invokeMethod(context, "SendFrame", Qt::BlockingQueuedConnection, Q_RETURN_ARG(bool, result),
@@ -67,7 +67,7 @@ public:
         }
         return result;
     }
-    static void asyncInvoke(ClientCore* context, QSharedPointer<FrameBuffer> frame)
+    static void AsyncInvoke(ClientCore* context, QSharedPointer<FrameBuffer> frame)
     {
         bool success = QMetaObject::invokeMethod(context, "SendFrame",
                                                  Qt::QueuedConnection,

@@ -55,7 +55,7 @@ void FileTrans::ReqSendFile(const TransTask& task)
     }
 
     auto frame = clientCore_->GetBuffer(info, FBT_CLI_REQ_SEND, task.remoteId);
-    if (!ClientCore::syncInvoke(clientCore_, frame)) {
+    if (!ClientCore::SyncInvoke(clientCore_, frame)) {
         qCritical() << QString(tr("返回发送请求失败：%1")).arg(info.msg);
         sendTask_->state = TaskState::STATE_NONE;
         sendTask_->file.close();
@@ -84,7 +84,7 @@ void FileTrans::ReqDownFile(const TransTask& task)
             info.msg = QString(tr("创建目录失败：%1")).arg(info.toPath);
             qCritical() << info.msg;
             auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, task.remoteId);
-            if (!ClientCore::syncInvoke(clientCore_, f)) {
+            if (!ClientCore::SyncInvoke(clientCore_, f)) {
                 qCritical() << QString(tr("%1 回复 %2 失败。")).arg(info.msg).arg(f->fid);
             }
             return;
@@ -99,7 +99,7 @@ void FileTrans::ReqDownFile(const TransTask& task)
         return;
     }
     auto frame = clientCore_->GetBuffer(info, FBT_CLI_REQ_DOWN, task.remoteId);
-    if (!ClientCore::syncInvoke(clientCore_, frame)) {
+    if (!ClientCore::SyncInvoke(clientCore_, frame)) {
         qCritical() << QString(tr("返回发送请求失败：%1")).arg(info.msg);
         downTask_->state = TaskState::STATE_NONE;
         downTask_->file.close();
@@ -176,7 +176,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
         info.msg = LOCK_MSG;
         auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, frame->fid);
         qWarning() << info.msg;
-        if (!ClientCore::syncInvoke(clientCore_, f)) {
+        if (!ClientCore::SyncInvoke(clientCore_, f)) {
             qCritical() << QString(tr("%1 回复 %2 失败。")).arg(info.msg).arg(f->fid);
         }
         return;
@@ -186,7 +186,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
     if (downTask_->state == TaskState::STATE_RUNNING) {
         info.msg = QString(tr("繁忙......"));
         auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, frame->fid);
-        ClientCore::syncInvoke(clientCore_, f);
+        ClientCore::SyncInvoke(clientCore_, f);
         return;
     }
 
@@ -197,7 +197,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
             info.msg = QString(tr("创建目录失败：%1")).arg(info.toPath);
             qCritical() << info.msg;
             auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, frame->fid);
-            if (!ClientCore::syncInvoke(clientCore_, f)) {
+            if (!ClientCore::SyncInvoke(clientCore_, f)) {
                 qCritical() << QString(tr("%1 回复 %2 失败。")).arg(info.msg).arg(f->fid);
             }
             return;
@@ -211,7 +211,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
         info.msg = QString(tr("打卡文件失败： %1")).arg(newerPath);
         qCritical() << info.msg;
         auto f = clientCore_->GetBuffer(info, FBT_CLI_CANOT_SEND, frame->fid);
-        if (!ClientCore::syncInvoke(clientCore_, f)) {
+        if (!ClientCore::SyncInvoke(clientCore_, f)) {
             qCritical() << QString(tr("打开接收文件 %1 失败，回复 %2 失败。")).arg(info.msg).arg(f->fid);
             downTask_->file.close();
         }
@@ -225,7 +225,7 @@ void FileTrans::fbtReqSend(QSharedPointer<FrameBuffer> frame)
     info.msg = QString(tr("打开待接收文件成功：%1")).arg(newerPath);
     qInfo() << info.msg;
     auto f = clientCore_->GetBuffer(info, FBT_CLI_CAN_SEND, frame->fid);
-    if (!ClientCore::syncInvoke(clientCore_, f)) {
+    if (!ClientCore::SyncInvoke(clientCore_, f)) {
         qCritical() << QString(tr("打开接收文件 %1 成功, 但是回复 %2 失败。")).arg(info.msg).arg(frame->fid);
         downTask_->file.close();
         return;
@@ -261,7 +261,7 @@ void FileTrans::fbtReqDown(QSharedPointer<FrameBuffer> frame)
 
     // reply fileinfo
     auto f = clientCore_->GetBuffer(info, FBT_CLI_FILE_INFO, frame->fid);
-    if (!ClientCore::syncInvoke(clientCore_, f)) {
+    if (!ClientCore::SyncInvoke(clientCore_, f)) {
         qCritical() << QString(tr("发送 %1 信息失败。")).arg(info.fromPath);
         doTask->file.close();
         return;
@@ -320,7 +320,7 @@ void FileTrans::fbtFileBuffer(QSharedPointer<FrameBuffer> frame)
         InfoMsg info;
         info.msg = downTask_->file.errorString();
         auto f = clientCore_->GetBuffer(info, FBT_CLI_TRANS_FAILED, frame->fid);
-        ClientCore::syncInvoke(clientCore_, f);
+        ClientCore::SyncInvoke(clientCore_, f);
         downTask_->file.close();
     }
     downTask_->tranSize += ws;
@@ -372,7 +372,7 @@ void FileTrans::Interrupt(bool notic)
             InfoMsg info;
             info.msg = QString(tr("传输文件 %1 主动中断。")).arg(downTask_->file.fileName());
             auto f = clientCore_->GetBuffer(info, FBT_CLI_TRANS_INTERRUPT, downTask_->task.remoteId);
-            if (!ClientCore::syncInvoke(clientCore_, f)) {
+            if (!ClientCore::SyncInvoke(clientCore_, f)) {
                 qCritical() << QString(tr("发送 %1 信息给 %2 失败。")).arg(info.msg).arg(downTask_->task.remoteId);
             }
         }
@@ -386,7 +386,7 @@ void FileTrans::Interrupt(bool notic)
         InfoMsg info;
         info.msg = QString(tr("传输文件 %1 主动中断。")).arg(sendTask_->file.fileName());
         auto f = clientCore_->GetBuffer(info, FBT_CLI_TRANS_INTERRUPT, sendTask_->task.remoteId);
-        ClientCore::asyncInvoke(clientCore_, f);
+        ClientCore::AsyncInvoke(clientCore_, f);
         sendTask_->state = TaskState::STATE_NONE;
     }
 }
@@ -476,7 +476,7 @@ void SendThread::run()
     if (task_->file.isOpen()) {
         InfoMsg info;
         auto f = cliCore_->GetBuffer(info, FBT_CLI_TRANS_DONE, task_->task.remoteId);
-        ClientCore::syncInvoke(cliCore_, f);
+        ClientCore::SyncInvoke(cliCore_, f);
         task_->file.close();
         task_->state = TaskState::STATE_FINISH;
     }

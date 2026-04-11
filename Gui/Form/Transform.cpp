@@ -22,6 +22,8 @@ TransForm::TransForm(QWidget* parent) : QDialog(parent), ui(new Ui::TransForm)
     connect(this, &TransForm::sigSetUi, this, &TransForm::handleUI);
     connect(this, &TransForm::sigTaskNum, this, &TransForm::showNum);
     connect(this, &TransForm::sigSetNotice, this, &TransForm::SetNotice);
+
+    setMinimumSize(423, 343);
 }
 
 TransForm::~TransForm()
@@ -216,7 +218,7 @@ void WaitCheck::run()
     }
 
     auto f = cli_->GetBuffer(msg, FBT_MSGINFO_ASK, cli_->GetRemoteID());
-    if (!ClientCore::syncInvoke(cli_, f)) {
+    if (!ClientCore::SyncInvoke(cli_, f)) {
         auto errMsg = tr("检查远程文件存在性数据发送失败。");
         emit sigCheckOver();
         qCritical() << errMsg;

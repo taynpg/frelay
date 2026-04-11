@@ -178,7 +178,7 @@ void Server::replyRequest(QSharedPointer<ClientInfo> client, QSharedPointer<Fram
             }
         }
         if (cl) {
-            // qDebug() << "Client" << cl->id << "heartbeat received";
+            qDebug() << "Client" << cl->id << "heartbeat received";
             // cl->connectTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000;
             cl->connectTime = QDateTime::currentMSecsSinceEpoch() / 1000;
         }
@@ -240,7 +240,7 @@ void Server::onClientDisconnected()
         }
     }
 
-    qInfo() << "Client disconnected:" << __LINE__ << clientId;
+    qInfo() << "Client disconnected:" << __LINE__ << clientId << socket->errorString();
     socket->deleteLater();
 }
 

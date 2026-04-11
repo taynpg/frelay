@@ -147,7 +147,7 @@ void Connecter::RefreshClient()
     auto frame = QSharedPointer<FrameBuffer>::create();
     frame->data = infoPack(info);
     frame->type = FBT_SER_MSG_ASKCLIENTS;
-    ClientCore::asyncInvoke(clientCore_, frame);
+    ClientCore::AsyncInvoke(clientCore_, frame);
     qInfo() << QString(tr("刷新在线客户端列表。"));
 }
 
