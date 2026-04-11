@@ -51,6 +51,11 @@ int main(int argc, char* argv[])
         }
     } else if (theme.isEmpty() || theme == "default") {
 
+    } else if (theme == "flatgray") {
+        QFile file("://qss/flatgray.css");
+        if (file.open(QFile::ReadOnly)) {
+            a.setStyleSheet(file.readAll());
+        }
     } else {
         a.setStyle(theme);
     }

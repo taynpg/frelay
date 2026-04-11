@@ -22,6 +22,7 @@ void Settings::SetConfigPtr(std::shared_ptr<FrelayConfig> config)
 void Settings::InitContrl()
 {
     ui->cbTheme->addItem("flat");
+    ui->cbTheme->addItem("flatgray");
     ui->cbTheme->addItem("fusion");
     ui->cbTheme->addItem("windows");
     ui->cbTheme->addItem("default");
@@ -33,7 +34,8 @@ void Settings::InitContrl()
     QString curTheme;
     config_->GetCurrentTheme(curTheme);
 
-    if (curTheme == "flat" || curTheme == "fusion" || curTheme == "windows" || curTheme == "qlementine" || curTheme == "default") {
+    if (curTheme == "flat" || curTheme == "fusion" || curTheme == "windows" || curTheme == "qlementine" ||
+        curTheme == "default" || curTheme == "flatgray") {
         ui->cbTheme->setCurrentText(curTheme);
     } else {
         ui->cbTheme->setCurrentText("windows");

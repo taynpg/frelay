@@ -35,11 +35,14 @@ bool FrelayConfig::SaveIpPort(const QString& ipPort)
         }
     };
 
-    auto saveConfig = [this, &p](const CgConVec& vec) {
-        json j;
-        j["connections"] = vec;
+    auto saveConfig = [this, &p, &j](const CgConVec& vec) {
+        json jn;
+        jn["connections"] = vec;
+        if (j.contains("theme")) {
+            jn["theme"] = j["theme"];
+        }
         std::ofstream ofs(p);
-        ofs << std::setw(4) << j << std::endl;
+        ofs << std::setw(4) << jn << std::endl;
     };
 
     bool exist = false;
