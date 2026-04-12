@@ -239,6 +239,44 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
         HandleThread(msg, harg);
         return;
     }
+    if (msg.command == STRMSG_AC_UNCOMPRESS_DIRFILES) {
+        HandleThreadArg harg;
+        harg.actionDesc = "解压缩文件";
+        harg.fid = frame->fid;
+        harg.tid = frame->tid;
+        harg.fromCommand = STRMSG_AC_UNCOMPRESS_DIRFILES;
+        harg.toCommand = STRMSG_AC_ANSWER_UNCOMPRESS_DIRFILES;
+        auto fid = frame->fid;
+        harg.funcMsg = [this, fid](InfoMsg& inMsg) {
+            inMsg.command = STRMSG_AC_ANSWER_UNCOMPRESS_DIRFILES;
+            inMsg.msg.clear();
+            bool success = false;
+            if (inMsg.fst.path.isEmpty() || inMsg.fst.root.isEmpty()) {
+                auto errMsg = "解压缩路径或者目标路径为空，跳过。";
+                inMsg.msg = errMsg;
+                qDebug() << errMsg;
+                return success;
+            }
+            qDebug() << fid << "请求解压缩文件：" << inMsg.fst.path;
+            QZipStream zip;
+            auto baseName = Util::GetBaseName(inMsg.fst.path);
+            auto newDir = Util::Join(inMsg.fst.root, baseName);
+            if (Util::DirExist(newDir, false)) {
+                auto errMsg = "解压缩路径或者目标路径已存在。";
+                inMsg.msg = errMsg;
+                qDebug() << errMsg;
+                return success;
+            }
+            if (!zip.unCompress(inMsg.fst.path, newDir)) {
+                inMsg.msg = zip.lastError();
+                return false;
+            }
+            qDebug() << fid << "请求解压缩文件：" << inMsg.fst.path << "成功。";
+            return true;
+        };
+        HandleThread(msg, harg);
+        return;
+    }
     if (msg.command == STRMSG_AC_COMPRESS_DIRFILES) {
         HandleThreadArg harg;
         harg.actionDesc = "压缩文件/文件夹";

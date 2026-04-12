@@ -70,6 +70,7 @@ public:
     static QString UUID();
     static QVector<QString> GetLocalDrivers();
     static QString GenSha256(const QString& str, bool isFilePath = true);
+    static QString GetBaseName(const QString& path);
 };
 
 class DirFileHelper : public QObject

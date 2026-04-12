@@ -129,6 +129,7 @@ void FileManager::InitMenu()
     menu_->addAction(tr("新建文件夹"), this, &FileManager::OperNewFolder);
     menu_->addAction(tr("SHA256"), this, &FileManager::VerifySha256);
     menu_->addAction(tr("压缩"), this, &FileManager::Compress);
+    menu_->addAction(tr("解压缩"), this, &FileManager::UnCompress);
     menu_->addSeparator();
 }
 
@@ -852,6 +853,86 @@ void FileManager::Compress()
 
         LoadingDialog checking(this);
         checking.setTipsText("正在压缩...");
+        checking.setCanCancel(false);
+        connect(&wo, &WaitOperOwn::sigOver, &checking, &LoadingDialog::cancelBtnClicked);
+
+        wo.start();
+        checking.exec();
+    }
+}
+
+void FileManager::UnCompress()
+{
+    auto ret = ui->tableWidget->selectedItems();
+    if (ret.isEmpty()) {
+        SHOW_NOTICE(this, tr("请选择一项。"));
+        return;
+    }
+    if (ret.size() != 5) {
+        SHOW_NOTICE(this, tr("请选择单行。"));
+        return;
+    }
+    if (ret[3]->text() != "File") {
+        SHOW_NOTICE(this, tr("请选择文件操作。"));
+        return;
+    }
+
+    QVector<QString> vec;
+    for (const auto& item : TAS_CONST(ret)) {
+        vec.push_back(item->text());
+    }
+
+    if (isRemote_) {
+        // 远程等待别人。
+        WaitOper wi(this);
+        wi.SetClient(cliCore_);
+        wi.SetType(STRMSG_AC_UNCOMPRESS_DIRFILES, STRMSG_AC_ANSWER_UNCOMPRESS_DIRFILES);
+
+        auto& infoMsg = wi.GetMsgRef();
+        infoMsg.infos.clear();
+        infoMsg.fst.root = GlobalData::Ins()->GetRemoteRoot();
+        infoMsg.fst.path = Util::Join(GlobalData::Ins()->GetRemoteRoot(), vec[1]);
+
+        LoadingDialog checking(this);
+        checking.setTipsText("正在等待对方解压缩文件...");
+        connect(&wi, &WaitOper::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+        connect(&checking, &LoadingDialog::cancelWaiting, &wi, &WaitOper::interrupCheck);
+        connect(cliCore_, &ClientCore::sigMsgAnswer, &wi, &WaitOper::recvFrame);
+
+        wi.start();
+        checking.exec();
+
+        if (infoMsg.msg.isEmpty()) {
+            qDebug() << GlobalData::Ins()->GetRemoteID() << infoMsg.fst.path << infoMsg.fst.mark;
+        } else {
+            SHOW_NOTICE(this, infoMsg.msg);
+        }
+
+    } else {
+        // 本地自己等待。
+        WaitOperOwn wo(this);
+        auto zipName = Util::Join(GlobalData::Ins()->GetLocalRoot(), vec[1]);
+        wo.funcMsg_ = [vec, zipName](InfoMsg& inMsg) {
+            qDebug() << "开始解压缩：" << zipName;
+            QZipStream zip;
+            auto baseName = Util::GetBaseName(zipName);
+            auto newDir = Util::Join(GlobalData::Ins()->GetLocalRoot(), baseName);
+            if (Util::DirExist(newDir, false)) {
+                auto errMsg = "解压缩路径或者目标路径已存在。";
+                inMsg.msg = errMsg;
+                qDebug() << errMsg;
+                return false;
+            }
+            if (!zip.unCompress(zipName, newDir)) {
+                qDebug() << zip.lastError();
+                return false;
+            }
+            qDebug() << "解压缩结束=》" << zipName;
+            return true;
+        };
+
+        LoadingDialog checking(this);
+        checking.setTipsText("正在解压缩...");
         checking.setCanCancel(false);
         connect(&wo, &WaitOperOwn::sigOver, &checking, &LoadingDialog::cancelBtnClicked);
 

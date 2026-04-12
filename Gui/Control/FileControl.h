@@ -66,6 +66,7 @@ private:
     void UpDown();
     void VerifySha256();
     void Compress();
+    void UnCompress();
 
 private:
     void OperNewFolder();

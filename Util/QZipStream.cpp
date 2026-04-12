@@ -8,6 +8,8 @@
 #include <QFileInfo>
 #include <zlib.h>
 
+#include "Util.h"
+
 // Zip文件头结构
 #pragma pack(push, 1)
 struct LocalFileHeader {
@@ -96,7 +98,7 @@ bool QZipStream::addFolder(const QString& dir)
         basePath += '/';
     }
 
-             // 递归添加文件夹中的所有文件
+    // 递归添加文件夹中的所有文件
     QFileInfoList allFiles =
         directory.entryInfoList(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks | QDir::Hidden, QDir::Name);
 
@@ -115,14 +117,14 @@ bool QZipStream::addFolder(const QString& dir)
         emit fileAdded(fileInfo.absoluteFilePath(), fileInfo.size());
     }
 
-             // 递归处理子文件夹
+    // 递归处理子文件夹
     QFileInfoList subdirs = directory.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDir::Name);
 
     foreach (const QFileInfo& dirInfo, subdirs) {
         QString subdirPath = dirInfo.absoluteFilePath();
         QString subdirName = dirInfo.fileName();
 
-                 // 递归添加子文件夹
+        // 递归添加子文件夹
         if (!addFolder(subdirPath)) {
             return false;
         }
@@ -169,14 +171,14 @@ bool QZipStream::endCompress()
 
     m_centralRecords.clear();
 
-             // 写入所有文件的本地头和数据
+    // 写入所有文件的本地头和数据
     for (int i = 0; i < m_files.size(); i++) {
         const FileInfo& fileInfo = m_files[i];
 
-                 // 压缩数据
+        // 压缩数据
         QByteArray compressedData;
         if (m_compressionLevel != NoCompression) {
-            if (!compressDataDeflate(fileInfo.data, compressedData, m_compressionLevel)) {  // 改为deflate
+            if (!compressDataDeflate(fileInfo.data, compressedData, m_compressionLevel)) {   // 改为deflate
                 m_lastError = QString("压缩文件失败: %1").arg(fileInfo.relativePath);
                 emit errorOccurred(m_lastError);
                 zipFile.close();
@@ -187,7 +189,7 @@ bool QZipStream::endCompress()
             compressedData = fileInfo.data;   // 不压缩
         }
 
-                 // 写入本地文件头
+        // 写入本地文件头
         LocalFileHeader localHeader;
         localHeader.signature = 0x04034b50;
         localHeader.versionNeeded = 20;
@@ -203,17 +205,17 @@ bool QZipStream::endCompress()
         localHeader.fileNameLength = fileNameBytes.size();
         localHeader.extraFieldLength = 0;
 
-                 // 记录本地头位置
+        // 记录本地头位置
         quint32 localHeaderOffset = zipFile.pos();
 
-                 // 写入本地头
+        // 写入本地头
         out.writeRawData(reinterpret_cast<const char*>(&localHeader), sizeof(localHeader));
         out.writeRawData(fileNameBytes.constData(), fileNameBytes.size());
 
-                 // 写入文件数据
+        // 写入文件数据
         out.writeRawData(compressedData.constData(), compressedData.size());
 
-                 // 创建中央目录记录
+        // 创建中央目录记录
         CentralDirRecord cdRecord;
         CentralDirHeader cdHeader;
         cdHeader.signature = 0x02014b50;
@@ -234,7 +236,7 @@ bool QZipStream::endCompress()
         cdHeader.externalFileAttr = 0;
         cdHeader.localHeaderOffset = localHeaderOffset;
 
-                 // 将中央目录头和数据序列化
+        // 将中央目录头和数据序列化
         QByteArray cdData;
         QDataStream cdStream(&cdData, QIODevice::WriteOnly);
         cdStream.setByteOrder(QDataStream::LittleEndian);
@@ -248,14 +250,14 @@ bool QZipStream::endCompress()
         emit progressChanged(i + 1, m_files.size(), fileInfo.relativePath);
     }
 
-             // 写入中央目录
+    // 写入中央目录
     quint32 centralDirOffset = zipFile.pos();
-    for (const CentralDirRecord& record : m_centralRecords) {
+    for (const CentralDirRecord& record : TAS_CONST(m_centralRecords)) {
         out.writeRawData(record.data.constData(), record.data.size());
     }
     quint32 centralDirSize = zipFile.pos() - centralDirOffset;
 
-             // 写入目录结束标记
+    // 写入目录结束标记
     EndOfCentralDir eocd;
     eocd.signature = 0x06054b50;
     eocd.diskNumber = 0;
@@ -288,7 +290,7 @@ bool QZipStream::unCompress(const QString& zipFile, const QString& outDir)
         return false;
     }
 
-             // 创建输出目录
+    // 创建输出目录
     QDir outputDir(outDir);
     if (!outputDir.exists()) {
         outputDir.mkpath(".");
@@ -297,7 +299,7 @@ bool QZipStream::unCompress(const QString& zipFile, const QString& outDir)
     QDataStream in(&file);
     in.setByteOrder(QDataStream::LittleEndian);
 
-             // 简单实现：查找中央目录
+    // 查找中央目录结束标记
     file.seek(file.size() - sizeof(EndOfCentralDir));
 
     EndOfCentralDir eocd;
@@ -305,7 +307,7 @@ bool QZipStream::unCompress(const QString& zipFile, const QString& outDir)
 
     if (eocd.signature != 0x06054b50) {
         // 没有找到目录结束标记，尝试从文件末尾扫描
-        file.seek(file.size() - 65536);   // 扫描最后64KB
+        file.seek(qMax((qint64)0, file.size() - 65536));   // 扫描最后64KB
         QByteArray tail = file.readAll();
         int pos = tail.lastIndexOf("PK\x05\x06");   // 目录结束标记
 
@@ -320,8 +322,12 @@ bool QZipStream::unCompress(const QString& zipFile, const QString& outDir)
         in.readRawData(reinterpret_cast<char*>(&eocd), sizeof(eocd));
     }
 
-             // 定位到中央目录开始
+    // 定位到中央目录开始
     file.seek(eocd.centralDirOffset);
+
+    // 先收集所有文件信息
+    QList<CentralDirHeader> centralHeaders;
+    QList<QString> fileNames;
 
     for (quint16 i = 0; i < eocd.totalCentralDirEntries; i++) {
         CentralDirHeader cdHeader;
@@ -333,16 +339,30 @@ bool QZipStream::unCompress(const QString& zipFile, const QString& outDir)
             break;
         }
 
-                 // 读取文件名
+        // 读取文件名
         QByteArray fileNameBytes(cdHeader.fileNameLength, 0);
         in.readRawData(fileNameBytes.data(), cdHeader.fileNameLength);
         QString fileName = QString::fromUtf8(fileNameBytes);
 
-                 // 跳过额外字段和注释
+        // 跳过额外字段和注释
         file.seek(file.pos() + cdHeader.extraFieldLength + cdHeader.fileCommentLength);
 
-                 // 定位到本地文件头
-        file.seek(cdHeader.localHeaderOffset);
+        // 存储文件信息
+        centralHeaders.append(cdHeader);
+        fileNames.append(fileName);
+    }
+
+    // 解压所有文件
+    for (int i = 0; i < centralHeaders.size(); i++) {
+        const CentralDirHeader& cdHeader = centralHeaders[i];
+        const QString& fileName = fileNames[i];
+
+        // 定位到本地文件头
+        if (!file.seek(cdHeader.localHeaderOffset)) {
+            m_lastError = QString("无法定位到文件头: %1").arg(fileName);
+            emit errorOccurred(m_lastError);
+            continue;
+        }
 
         LocalFileHeader localHeader;
         in.readRawData(reinterpret_cast<char*>(&localHeader), sizeof(localHeader));
@@ -353,26 +373,62 @@ bool QZipStream::unCompress(const QString& zipFile, const QString& outDir)
             continue;
         }
 
-                 // 读取文件名
+        // 读取文件名
         QByteArray localFileNameBytes(localHeader.fileNameLength, 0);
         in.readRawData(localFileNameBytes.data(), localHeader.fileNameLength);
         QString localFileName = QString::fromUtf8(localFileNameBytes);
 
-                 // 跳过额外字段
+        // 检查文件名是否匹配
+        if (localFileName != fileName) {
+            m_lastError = QString("文件名不匹配: 中央目录[%1] vs 本地头[%2]").arg(fileName).arg(localFileName);
+            emit errorOccurred(m_lastError);
+            continue;
+        }
+
+        // 跳过额外字段
         file.seek(file.pos() + localHeader.extraFieldLength);
 
-                 // 读取压缩数据
+        // 读取压缩数据
         QByteArray compressedData(localHeader.compressedSize, 0);
-        in.readRawData(compressedData.data(), localHeader.compressedSize);
+        qint64 bytesRead = in.readRawData(compressedData.data(), localHeader.compressedSize);
 
-                 // 解压数据
+        if (bytesRead != localHeader.compressedSize) {
+            m_lastError = QString("读取压缩数据失败: %1 (期望%2字节, 实际%3字节)")
+                              .arg(fileName)
+                              .arg(localHeader.compressedSize)
+                              .arg(bytesRead);
+            emit errorOccurred(m_lastError);
+            continue;
+        }
+
+        // 验证CRC（可选）
+        if (localHeader.crc32 != cdHeader.crc32) {
+            m_lastError = QString("CRC校验失败: %1 (本地头:%2, 中央目录:%3)")
+                              .arg(fileName)
+                              .arg(localHeader.crc32, 8, 16, QChar('0'))
+                              .arg(cdHeader.crc32, 8, 16, QChar('0'));
+            qDebug() << m_lastError;
+            // 继续处理，不一定立即失败
+        }
+
+        // 检查大小是否一致
+        if (localHeader.compressedSize != cdHeader.compressedSize || localHeader.uncompressedSize != cdHeader.uncompressedSize) {
+            m_lastError = QString("文件大小不一致: %1").arg(fileName);
+            qDebug() << m_lastError;
+            // 使用中央目录的大小信息
+        }
+
+        // 解压数据
         QByteArray uncompressedData;
+        bool decompressSuccess = true;
+
         if (localHeader.compressionMethod == 0) {
             // 不压缩
             uncompressedData = compressedData;
         } else if (localHeader.compressionMethod == 8) {
             // DEFLATE压缩
-            uncompressedData.resize(localHeader.uncompressedSize);
+            quint32 uncompressedSize = cdHeader.uncompressedSize;
+            uncompressedData.resize(uncompressedSize);
 
             z_stream stream;
             stream.zalloc = Z_NULL;
@@ -386,46 +442,62 @@ bool QZipStream::unCompress(const QString& zipFile, const QString& outDir)
             if (inflateInit2(&stream, -MAX_WBITS) != Z_OK) {
                 m_lastError = QString("解压初始化失败: %1").arg(fileName);
                 emit errorOccurred(m_lastError);
-                continue;
-            }
+                decompressSuccess = false;
+            } else {
+                int ret = inflate(&stream, Z_FINISH);
+                inflateEnd(&stream);
 
-            int ret = inflate(&stream, Z_FINISH);
-            inflateEnd(&stream);
-
-            if (ret != Z_STREAM_END) {
-                m_lastError = QString("解压失败: %1").arg(fileName);
-                emit errorOccurred(m_lastError);
-                continue;
-            }
-
-            // 检查解压后大小
-            if (stream.total_out != localHeader.uncompressedSize) {
-                m_lastError = QString("解压大小不匹配: 期望%1, 实际%2").arg(localHeader.uncompressedSize).arg(stream.total_out);
-                emit errorOccurred(m_lastError);
-                continue;
+                if (ret != Z_STREAM_END) {
+                    m_lastError = QString("解压失败: %1 (错误码:%2)").arg(fileName).arg(ret);
+                    emit errorOccurred(m_lastError);
+                    decompressSuccess = false;
+                } else if (stream.total_out != uncompressedSize) {
+                    m_lastError =
+                        QString("解压大小不匹配: %1 (期望%2, 实际%3)").arg(fileName).arg(uncompressedSize).arg(stream.total_out);
+                    qDebug() << m_lastError;
+                    uncompressedData.resize(stream.total_out);
+                }
             }
         } else {
-            m_lastError = QString("不支持的压缩方法: %1").arg(fileName);
+            m_lastError = QString("不支持的压缩方法(%1): %2").arg(localHeader.compressionMethod).arg(fileName);
+            emit errorOccurred(m_lastError);
+            decompressSuccess = false;
+        }
+
+        if (!decompressSuccess) {
+            continue;   // 跳过这个文件，继续处理下一个
+        }
+
+        // 创建输出文件路径
+        QString outputPath = outputDir.filePath(localFileName);
+        QFileInfo fileInfo(outputPath);
+
+        // 创建目录
+        if (!QDir().mkpath(fileInfo.absolutePath())) {
+            m_lastError = QString("无法创建目录: %1").arg(fileInfo.absolutePath());
             emit errorOccurred(m_lastError);
             continue;
         }
 
-                 // 创建输出文件路径
-        QString outputPath = outputDir.filePath(localFileName);
-        QFileInfo fileInfo(outputPath);
-        QDir().mkpath(fileInfo.absolutePath());
-
-                 // 写入文件
+        // 写入文件
         QFile outFile(outputPath);
         if (outFile.open(QIODevice::WriteOnly)) {
-            outFile.write(uncompressedData);
+            qint64 written = outFile.write(uncompressedData);
             outFile.close();
 
-                     // 恢复文件时间
-            QDateTime fileTime = QDateTime::currentDateTime();   // 简化，实际应从DOS时间恢复
-            // 这里可以添加恢复文件时间的代码
+            if (written != uncompressedData.size()) {
+                m_lastError =
+                    QString("写入文件不完整: %1 (期望%2, 实际%3)").arg(outputPath).arg(uncompressedData.size()).arg(written);
+                emit errorOccurred(m_lastError);
+            } else {
+                qDebug() << "成功解压文件:" << outputPath;
 
-            emit progressChanged(i + 1, eocd.totalCentralDirEntries, fileName);
+                // 设置文件时间（从DOS时间恢复）
+                QDateTime fileTime = QDateTime::currentDateTime();
+                // 这里可以添加从DOS时间恢复文件时间的代码
+
+                emit progressChanged(i + 1, centralHeaders.size(), fileName);
+            }
         } else {
             m_lastError = QString("无法创建文件: %1").arg(outputPath);
             emit errorOccurred(m_lastError);
@@ -433,6 +505,13 @@ bool QZipStream::unCompress(const QString& zipFile, const QString& outDir)
     }
 
     file.close();
+
+    if (centralHeaders.isEmpty()) {
+        m_lastError = "没有找到可解压的文件";
+        emit errorOccurred(m_lastError);
+        emit compressionFinished(false);
+        return false;
+    }
 
     emit compressionFinished(true);
     return true;
