@@ -1,6 +1,7 @@
 ﻿#include "ClientCore.h"
 
 #include <QDebug>
+#include <QZipStream.h>
 
 ClientCore::ClientCore(QObject* parent) : QObject(parent)
 {
@@ -233,6 +234,56 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
                 inMsg.msg.clear();
                 inMsg.fst.mark = sha256;
             }
+            return success;
+        };
+        HandleThread(msg, harg);
+        return;
+    }
+    if (msg.command == STRMSG_AC_COMPRESS_DIRFILES) {
+        HandleThreadArg harg;
+        harg.actionDesc = "压缩文件/文件夹";
+        harg.fid = frame->fid;
+        harg.tid = frame->tid;
+        harg.fromCommand = STRMSG_AC_COMPRESS_DIRFILES;
+        harg.toCommand = STRMSG_AC_ANSWER_COMPRESS_DIRFILES;
+        auto fid = frame->fid;
+        harg.funcMsg = [this, fid](InfoMsg& inMsg) {
+            inMsg.command = STRMSG_AC_ANSWER_COMPRESS_DIRFILES;
+            inMsg.msg.clear();
+            bool success = false;
+            if (inMsg.infos.empty()) {
+                auto errMsg = "压缩名单为空，跳过。";
+                inMsg.msg = errMsg;
+                qDebug() << errMsg;
+                return success;
+            }
+            auto it = inMsg.infos.keys();
+            QString key = it[0];
+            qDebug() << fid << "请求压缩文件：" << key;
+
+            QZipStream zip;
+            if (!zip.startCompress(key)) {
+                inMsg.msg = zip.lastError();
+                return false;
+            }
+            for (const auto& file : TAS_CONST(inMsg.infos[key])) {
+                if (file.mark == "Dir") {
+                    if (!zip.addFolder(file.path)) {
+                        inMsg.msg = zip.lastError();
+                        return false;
+                    }
+                } else {
+                    if (!zip.addFile(file.path)) {
+                        inMsg.msg = zip.lastError();
+                        return false;
+                    }
+                }
+            }
+            if (!zip.endCompress()) {
+                inMsg.msg = zip.lastError();
+                return false;
+            }
+            qDebug() << fid << "请求压缩文件：" << key << "成功。";
             return success;
         };
         HandleThread(msg, harg);

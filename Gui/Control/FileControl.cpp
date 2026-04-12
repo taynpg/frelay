@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QTableWidgetItem>
+#include <QZipStream.h>
 #include <RemoteFile.h>
 
 #include "Form/FileInfoForm.h"
@@ -127,6 +128,7 @@ void FileManager::InitMenu()
     menu_->addAction(tr("删除"), this, &FileManager::OperDelete);
     menu_->addAction(tr("新建文件夹"), this, &FileManager::OperNewFolder);
     menu_->addAction(tr("SHA256"), this, &FileManager::VerifySha256);
+    menu_->addAction(tr("压缩"), this, &FileManager::Compress);
     menu_->addSeparator();
 }
 
@@ -737,6 +739,119 @@ void FileManager::VerifySha256()
 
         LoadingDialog checking(this);
         checking.setTipsText("正在计算...");
+        checking.setCanCancel(false);
+        connect(&wo, &WaitOperOwn::sigOver, &checking, &LoadingDialog::cancelBtnClicked);
+
+        wo.start();
+        checking.exec();
+    }
+}
+
+void FileManager::Compress()
+{
+    auto ret = ui->tableWidget->selectedItems();
+    if (ret.isEmpty()) {
+        SHOW_NOTICE(this, tr("请至少选择一项。"));
+        return;
+    }
+    QVector<QString> vec;
+    for (const auto& item : TAS_CONST(ret)) {
+        vec.push_back(item->text());
+    }
+
+    QInputDialog dialog(this);
+    dialog.setWindowTitle("输入");
+    dialog.setLabelText("请输入压缩包名称（不用输后缀）:");
+    dialog.setOkButtonText("确定");
+    dialog.setCancelButtonText("取消");
+    auto size = dialog.minimumSizeHint();
+    size.setWidth(size.width() + 200);
+    dialog.setFixedSize(size);
+    dialog.setTextValue("Default");
+
+    QString text;
+    if (dialog.exec() == QDialog::Accepted) {
+        text = dialog.textValue().trimmed();
+        if (text.isEmpty()) {
+            return;
+        }
+    } else {
+        return;
+    }
+
+    text += ".zip";
+
+    if (isRemote_) {
+        // 远程等待别人。
+        WaitOper wi(this);
+        wi.SetClient(cliCore_);
+        wi.SetType(STRMSG_AC_COMPRESS_DIRFILES, STRMSG_AC_ANSWER_COMPRESS_DIRFILES);
+        auto& infoMsg = wi.GetMsgRef();
+        infoMsg.infos.clear();
+
+        // 压缩名称
+        auto zipName = Util::Join(GlobalData::Ins()->GetRemoteRoot(), text);
+        infoMsg.infos[zipName] = QVector<FileStruct>();
+        auto& files = infoMsg.infos[zipName];
+
+        for (int i = 0; i < vec.size() / 5; ++i) {
+            FileStruct fst;
+            fst.mark = vec[5 * i + 3];
+            fst.path = Util::Join(GlobalData::Ins()->GetRemoteRoot(), vec[5 * i + 1]);
+            files.push_back(fst);
+        }
+
+        LoadingDialog checking(this);
+        checking.setTipsText("正在等待对方压缩文件...");
+        connect(&wi, &WaitOper::sigCheckOver, &checking, &LoadingDialog::cancelBtnClicked);
+        connect(&checking, &LoadingDialog::cancelWaiting, &wi, &WaitOper::interrupCheck);
+        connect(cliCore_, &ClientCore::sigMsgAnswer, &wi, &WaitOper::recvFrame);
+
+        wi.start();
+        checking.exec();
+
+        if (infoMsg.msg.isEmpty()) {
+            qDebug() << GlobalData::Ins()->GetRemoteID() << zipName;
+        } else {
+            SHOW_NOTICE(this, infoMsg.msg);
+        }
+
+    } else {
+        // 本地自己等待。
+        WaitOperOwn wo(this);
+        // 压缩名称
+        auto zipName = Util::Join(GlobalData::Ins()->GetLocalRoot(), text);
+        wo.funcMsg_ = [vec, zipName](InfoMsg& inMsg) {
+            qDebug() << "开始压缩：" << zipName;
+            QZipStream zip;
+            if (!zip.startCompress(zipName)) {
+                qDebug() << zip.lastError();
+                return false;
+            }
+            for (int i = 0; i < vec.size() / 5; ++i) {
+                auto fp = Util::Join(GlobalData::Ins()->GetLocalRoot(), vec[5 * i + 1]);
+                if (vec[5 * i + 3] == "Dir") {
+                    if (!zip.addFolder(fp)) {
+                        qDebug() << zip.lastError();
+                        return false;
+                    }
+                } else {
+                    if (!zip.addFile(fp)) {
+                        qDebug() << zip.lastError();
+                        return false;
+                    }
+                }
+            }
+            if (!zip.endCompress()) {
+                qDebug() << zip.lastError();
+                return false;
+            }
+            qDebug() << "压缩：" << zipName << "完成。";
+            return true;
+        };
+
+        LoadingDialog checking(this);
+        checking.setTipsText("正在压缩...");
         checking.setCanCancel(false);
         connect(&wo, &WaitOperOwn::sigOver, &checking, &LoadingDialog::cancelBtnClicked);
 

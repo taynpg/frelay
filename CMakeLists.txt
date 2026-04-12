@@ -102,6 +102,7 @@ include_directories(${PROJECT_BINARY_DIR})
 
 add_definitions(-DFMT_HEADER_ONLY)
 include_directories(3rd)
+include_directories(3rd/zlib-1.3.2)
 
 add_subdirectory(Protocol)
 add_subdirectory(Server)

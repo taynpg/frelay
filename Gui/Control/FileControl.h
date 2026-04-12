@@ -65,6 +65,7 @@ private:
     void ShowProperties();
     void UpDown();
     void VerifySha256();
+    void Compress();
 
 private:
     void OperNewFolder();
