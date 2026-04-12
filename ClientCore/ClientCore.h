@@ -18,6 +18,15 @@
 #include <QTimer>
 #include <array>
 
+struct HandleThreadArg {
+    QString actionDesc;
+    QString fromCommand;
+    QString toCommand;
+    QString fid;
+    QString tid;
+    std::function<bool(InfoMsg& inMsg)> funcMsg;
+};
+
 class WaitOperOwn;
 struct WaitTask {
     QString id;
@@ -69,9 +78,8 @@ public:
     }
     static void AsyncInvoke(ClientCore* context, QSharedPointer<FrameBuffer> frame)
     {
-        bool success = QMetaObject::invokeMethod(context, "SendFrame",
-                                                 Qt::QueuedConnection,
-                                                 Q_ARG(QSharedPointer<FrameBuffer>, frame));
+        bool success =
+            QMetaObject::invokeMethod(context, "SendFrame", Qt::QueuedConnection, Q_ARG(QSharedPointer<FrameBuffer>, frame));
 
         if (!success) {
             qWarning() << "Failed to invoke SendFrame asynchronously";
@@ -113,6 +121,8 @@ private:
 
 private:
     void UseFrame(QSharedPointer<FrameBuffer> frame);
+    // 封装一个耗时操作处理。
+    void HandleThread(InfoMsg& msg, HandleThreadArg& arg);
 
 public:
     void SetRemoteID(const QString& id);
@@ -248,7 +258,7 @@ public:
 public:
     QString fid;
     InfoMsg infoMsg_{};
-    std::function<bool()> func_;
+    std::function<bool(InfoMsg& inMsg)> funcMsg_;
 };
 
 #endif   // CLIENTCORE_H

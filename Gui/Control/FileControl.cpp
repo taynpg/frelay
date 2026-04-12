@@ -562,7 +562,7 @@ void FileManager::UpDownCommon(const QVector<QString>& vec, int grpSize, QVector
     } else {
         // 本地自己等待。
         WaitOperOwn wo(parent);
-        wo.func_ = [parent, &vec, &resultFiles]() {
+        wo.funcMsg_ = [parent, &vec, &resultFiles](InfoMsg& inMsg) {
             resultFiles.clear();
             for (int i = 0; i < (vec.size() / 5); ++i) {
                 FileStruct fst;
@@ -728,7 +728,7 @@ void FileManager::VerifySha256()
     } else {
         // 本地自己等待。
         WaitOperOwn wo(this);
-        wo.func_ = [vec]() {
+        wo.funcMsg_ = [vec](InfoMsg& inMsg) {
             auto localFile = Util::Join(GlobalData::Ins()->GetLocalRoot(), vec[1]);
             auto sha256Local = Util::GenSha256(localFile);
             qDebug() << localFile << "=>" << sha256Local;

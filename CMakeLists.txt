@@ -1,7 +1,7 @@
 ﻿cmake_minimum_required(VERSION 3.16)
 
 project(frelay VERSION 0.2.8 LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -32,11 +32,8 @@ add_compile_options(/utf-8)
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
-if(DEFINED CMAKE_PREFIX_PATH)
-message(STATUS "CMAKE_PREFIX_PATH => ${CMAKE_PREFIX_PATH}.")
-endif()
-
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/3rd/binary/mingw32)
 message(STATUS "frelay use MINGW compiler.")
 set(COMPILER_USE_MINGW ON)
 add_definitions(-DCOMPILER_USE_MINGW)
@@ -54,6 +51,8 @@ set(MINGW_DLLS
     "${CXX_COMPILER_PATH}/libwinpthread-1.dll"
 )
 endif()
+else()
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/3rd/binary/common)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -74,21 +73,25 @@ else()
 #add_definitions(-D_WIN32_WINNT=0x0601)
 endif()
 set(QT_DEP_FILES
-"${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Core.dll"
-"${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Gui.dll"
-"${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Widgets.dll"
-"${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Network.dll"
+"${QT_ROOT_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Core.dll"
+"${QT_ROOT_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Gui.dll"
+"${QT_ROOT_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Widgets.dll"
+"${QT_ROOT_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Network.dll"
 )
-set(QT_DEP_PLATFORM "${CMAKE_PREFIX_PATH}/plugins/platforms/qwindows.dll")
+set(QT_DEP_PLATFORM "${QT_ROOT_PATH}/plugins/platforms/qwindows.dll")
 set(QT_DEP_STYLES
-"${CMAKE_PREFIX_PATH}/plugins/styles/qmodernwindowsstyle.dll"
-"${CMAKE_PREFIX_PATH}/plugins/styles/qwindowsvistastyle.dll"
+"${QT_ROOT_PATH}/plugins/styles/qmodernwindowsstyle.dll"
+"${QT_ROOT_PATH}/plugins/styles/qwindowsvistastyle.dll"
 )
 set(QT_IMG_DEP
-"${CMAKE_PREFIX_PATH}/plugins/imageformats/qgif.dll"
-"${CMAKE_PREFIX_PATH}/plugins/imageformats/qico.dll"
-"${CMAKE_PREFIX_PATH}/plugins/imageformats/qjpeg.dll"
+"${QT_ROOT_PATH}/plugins/imageformats/qgif.dll"
+"${QT_ROOT_PATH}/plugins/imageformats/qico.dll"
+"${QT_ROOT_PATH}/plugins/imageformats/qjpeg.dll"
 )
+endif()
+
+if(DEFINED CMAKE_PREFIX_PATH)
+message(STATUS "CMAKE_PREFIX_PATH => ${CMAKE_PREFIX_PATH}.")
 endif()
 
 set(CMAKE_DEBUG_POSTFIX "d")
@@ -110,7 +113,7 @@ if(DEFINED COMPILE_GUI AND COMPILE_GUI)
     # https://github.com/oclero/qlementine.git
     add_definitions(-DUSE_EXTERN_THEME)
     add_subdirectory(3rd/qlementine-1.4.2)
-    list(APPEND QT_DEP_FILES ${CMAKE_PREFIX_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Svg.dll)
+    list(APPEND QT_DEP_FILES ${QT_ROOT_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Svg.dll)
 endif()
 endif()
 

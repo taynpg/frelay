@@ -186,89 +186,89 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
     }
     // 这个请求的处理可能是耗时的，需要开线程处理。
     if (msg.command == STRMSG_AC_ALL_DIRFILES) {
-        msg.command = STRMSG_AC_ANSWER_ALL_DIRFILES;
-        auto taskKey = frame->fid + "=" + STRMSG_AC_ALL_DIRFILES;
-        QMutexLocker locker(&waitTaskMut_);
-        if (waitTask_.contains(taskKey)) {
-            msg.msg = STRMSG_ST_COMMAND_ALREADY_RUNNING;
-            if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
-                auto logMsg = tr("给") + frame->fid + tr("返回获取文件列表结果消息失败。");
-                qCritical() << logMsg;
-                return;
-            }
-        } else {
-            waitTask_[taskKey] = WaitTask();
-            auto& wt = waitTask_[taskKey];
-            QString fid = frame->fid;
-            wt.wo = new WaitOperOwn(this);
-            wt.wo->SetClient(this);
-            wt.wo->fid = fid;
-            wt.wo->infoMsg_ = msg;
-            wt.wo->func_ = [this, &wt, fid]() {
-                auto& infoMsg = wt.wo->infoMsg_;
-                infoMsg.command = STRMSG_AC_ANSWER_ALL_DIRFILES;
-                bool success = false;
-                // infoMsg.infos.clear();
-                for (auto& item : infoMsg.infos.keys()) {
-                    auto fullDir = Util::Join(infoMsg.fst.root, item);
-                    if (!DirFileHelper::GetAllFiles(fullDir, infoMsg.list)) {
-                        success = false;
-                        break;
-                    }
-                    auto& vec = infoMsg.infos[item];
-                    for (const auto& dd : TAS_CONST(infoMsg.list)) {
-                        FileStruct fst;
-                        fst.root = infoMsg.fst.root;
-                        fst.mid = item;
-                        fst.relative = dd;
-                        vec.push_back(fst);
-                    }
+        HandleThreadArg harg;
+        harg.actionDesc = "获取文件列表";
+        harg.fid = frame->fid;
+        harg.tid = frame->tid;
+        harg.fromCommand = STRMSG_AC_ALL_DIRFILES;
+        harg.toCommand = STRMSG_AC_ANSWER_ALL_DIRFILES;
+        harg.funcMsg = [this](InfoMsg& inMsg) {
+            inMsg.command = STRMSG_AC_ANSWER_ALL_DIRFILES;
+            bool success = false;
+            // inMsg.infos.clear();
+            for (auto& item : inMsg.infos.keys()) {
+                auto fullDir = Util::Join(inMsg.fst.root, item);
+                if (!DirFileHelper::GetAllFiles(fullDir, inMsg.list)) {
+                    success = false;
+                    break;
                 }
-                return success;
-            };
-            wt.wo->start();
-        }
+                auto& vec = inMsg.infos[item];
+                for (const auto& dd : TAS_CONST(inMsg.list)) {
+                    FileStruct fst;
+                    fst.root = inMsg.fst.root;
+                    fst.mid = item;
+                    fst.relative = dd;
+                    vec.push_back(fst);
+                }
+            }
+            return success;
+        };
+        HandleThread(msg, harg);
         return;
     }
     if (msg.command == STRMSG_AC_ASK_SHA256) {
-        msg.command = STRMSG_AC_ANSWER_SHA256;
-        auto taskKey = frame->fid + "=" + STRMSG_AC_ASK_SHA256;
-        QMutexLocker locker(&waitTaskMut_);
-        if (waitTask_.contains(taskKey)) {
-            msg.msg = STRMSG_ST_COMMAND_ALREADY_RUNNING;
-            if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, frame->fid)) {
-                auto logMsg = tr("给") + frame->fid + tr("返回获取SHA256结果消息失败。");
-                qCritical() << logMsg;
-                return;
+        HandleThreadArg harg;
+        harg.actionDesc = "获取sha256";
+        harg.fid = frame->fid;
+        harg.tid = frame->tid;
+        harg.fromCommand = STRMSG_AC_ASK_SHA256;
+        harg.toCommand = STRMSG_AC_ANSWER_SHA256;
+        harg.funcMsg = [this](InfoMsg& inMsg) {
+            inMsg.command = STRMSG_AC_ANSWER_SHA256;
+            bool success = false;
+            auto sha256 = Util::GenSha256(inMsg.fst.path);
+            if (sha256.isEmpty()) {
+                inMsg.msg = QString("获取%1的sha256失败。").arg(inMsg.fst.path);
+            } else {
+                inMsg.msg.clear();
+                inMsg.fst.mark = sha256;
             }
-        } else {
-            waitTask_[taskKey] = WaitTask();
-            auto& wt = waitTask_[taskKey];
-            QString fid = frame->fid;
-            wt.wo = new WaitOperOwn(this);
-            wt.wo->SetClient(this);
-            wt.wo->fid = fid;
-            wt.wo->infoMsg_ = msg;
-            wt.wo->func_ = [this, &wt, fid]() {
-                auto& infoMsg = wt.wo->infoMsg_;
-                infoMsg.command = STRMSG_AC_ANSWER_SHA256;
-                bool success = false;
-                auto sha256 = Util::GenSha256(infoMsg.fst.path);
-                if (sha256.isEmpty()) {
-                    infoMsg.msg = QString("获取%1的sha256失败。").arg(infoMsg.fst.path);
-                } else {
-                    infoMsg.msg.clear();
-                    infoMsg.fst.mark = sha256;
-                }
-                return success;
-            };
-            wt.wo->start();
-        }
+            return success;
+        };
+        HandleThread(msg, harg);
         return;
     }
 
     // 未知信息
     qWarning() << QString(tr("未知询问信息类型：%1")).arg(msg.command);
+}
+
+void ClientCore::HandleThread(InfoMsg& msg, HandleThreadArg& arg)
+{
+    if (msg.command == arg.fromCommand) {
+        msg.command = arg.toCommand;
+        auto taskKey = arg.fid + "=" + arg.fromCommand;
+        QMutexLocker locker(&waitTaskMut_);
+        if (waitTask_.contains(taskKey)) {
+            msg.msg = STRMSG_ST_COMMAND_ALREADY_RUNNING;
+            if (!Send<InfoMsg>(msg, FBT_MSGINFO_ANSWER, arg.fid)) {
+                auto logMsg = tr("给") + arg.fid + QString(tr("返回%1消息失败。")).arg(arg.actionDesc);
+                qCritical() << logMsg;
+                return;
+            }
+        } else {
+            waitTask_[taskKey] = WaitTask();
+            auto& wt = waitTask_[taskKey];
+            QString fid = arg.fid;
+            wt.wo = new WaitOperOwn(this);
+            wt.wo->SetClient(this);
+            wt.wo->fid = fid;
+            wt.wo->infoMsg_ = msg;
+            wt.wo->funcMsg_ = arg.funcMsg;
+            wt.wo->start();
+        }
+        return;
+    }
 }
 
 void ClientCore::clearWaitTask()
@@ -660,8 +660,8 @@ WaitOperOwn::WaitOperOwn(QObject* parent) : WaitThread(parent)
 void WaitOperOwn::run()
 {
     auto execRet = false;
-    if (func_) {
-        execRet = func_();
+    if (funcMsg_) {
+        execRet = funcMsg_(infoMsg_);
     }
     if (!fid.isEmpty()) {
         if (!cli_->SyncInvoke(cli_, cli_->GetBuffer<InfoMsg>(infoMsg_, FBT_MSGINFO_ANSWER, fid))) {

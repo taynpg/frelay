@@ -102,6 +102,10 @@ enum FileCheckState {
 #define STRMSG_AC_ANSWER_ALL_DIRFILES "answerAllDirFiles"
 #define STRMSG_AC_ASK_SHA256 "askSha256"
 #define STRMSG_AC_ANSWER_SHA256 "answerSha256"
+#define STRMSG_AC_COMPRESS_DIRFILES "askCompress"
+#define STRMSG_AC_ANSWER_COMPRESS_DIRFILES "answerCompress"
+#define STRMSG_AC_UNCOMPRESS_DIRFILES "askUnCompress"
+#define STRMSG_AC_ANSWER_UNCOMPRESS_DIRFILES "answerUnCompress"
 
 #define STRMSG_ST_FILEEXIT "fileExist"
 #define STRMSG_ST_FILENOEXIT "fileNotExist"

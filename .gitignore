@@ -41,3 +41,8 @@ xpbuild
 .xmake
 compile_commands.json
 build*
+binary
+debug-build*
+release-build*
+
+!3rd/zstd-1.5.7/build
