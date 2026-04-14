@@ -27,15 +27,10 @@ void Settings::InitContrl()
     ui->cbTheme->addItem("windows");
     ui->cbTheme->addItem("default");
 
-#ifdef USE_EXTERN_THEME
-    ui->cbTheme->addItem("qlementine");
-#endif
-
     QString curTheme;
     config_->GetCurrentTheme(curTheme);
 
-    if (curTheme == "flat" || curTheme == "fusion" || curTheme == "windows" || curTheme == "qlementine" ||
-        curTheme == "default" || curTheme == "flatgray") {
+    if (curTheme == "flat" || curTheme == "fusion" || curTheme == "windows" || curTheme == "default" || curTheme == "flatgray") {
         ui->cbTheme->setCurrentText(curTheme);
     } else {
         ui->cbTheme->setCurrentText("windows");

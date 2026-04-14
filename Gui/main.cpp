@@ -3,10 +3,6 @@
 #include <QFile>
 #include <SingleApplication>
 
-#ifdef USE_EXTERN_THEME
-#include <externTheme.h>
-#endif
-
 #include "frelayGUI.h"
 
 int main(int argc, char* argv[])
@@ -40,11 +36,7 @@ int main(int argc, char* argv[])
 
     QString theme;
     auto curTheme = config->GetCurrentTheme(theme);
-    if (theme == "qlementine") {
-#ifdef USE_EXTERN_THEME
-        QApplication::setStyle(Theme::getStyle(&a));
-#endif
-    } else if (theme == "flat") {
+    if (theme == "flat") {
         QFile file(":/QtTheme/theme/Flat/Light/Blue/Pink.qss");
         if (file.open(QFile::ReadOnly)) {
             a.setStyleSheet(file.readAll());
