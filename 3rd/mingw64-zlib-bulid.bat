@@ -13,7 +13,7 @@ if not exist "%SOURCE_DIR%" (
 )
 
 REM Set installation directory (relative to script)
-set "INSTALL_DIR=%SCRIPT_DIR%binary\mingw32\zlib"
+set "INSTALL_DIR=%SCRIPT_DIR%binary\mingw64\zlib"
 
 echo ========================================
 echo Building zlib Library
@@ -29,7 +29,7 @@ echo ========================================
 echo Building DEBUG configuration
 echo ========================================
 
-set "DEBUG_BUILD_DIR=%BUILD_BASE%\debug-build-mingw32"
+set "DEBUG_BUILD_DIR=%BUILD_BASE%\debug-build-mingw64"
 
 echo Creating debug build directory...
 if exist "%DEBUG_BUILD_DIR%" (
@@ -83,7 +83,7 @@ echo ========================================
 echo Building RELEASE configuration
 echo ========================================
 
-set "RELEASE_BUILD_DIR=%BUILD_BASE%\release-build-mingw32"
+set "RELEASE_BUILD_DIR=%BUILD_BASE%\release-build-mingw64"
 
 echo Creating release build directory...
 if exist "%RELEASE_BUILD_DIR%" (

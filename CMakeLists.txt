@@ -31,7 +31,6 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/3rd/binary/mingw32)
 message(STATUS "frelay use MINGW compiler.")
 set(COMPILER_USE_MINGW ON)
 add_definitions(-DCOMPILER_USE_MINGW)
@@ -42,12 +41,14 @@ set(MINGW_DLLS
     "${CXX_COMPILER_PATH}/libstdc++-6.dll"
     "${CXX_COMPILER_PATH}/libwinpthread-1.dll"
 )
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/3rd/binary/mingw64)
 else()
 set(MINGW_DLLS
     "${CXX_COMPILER_PATH}/libgcc_s_dw2-1.dll"
     "${CXX_COMPILER_PATH}/libstdc++-6.dll"
     "${CXX_COMPILER_PATH}/libwinpthread-1.dll"
 )
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/3rd/binary/mingw32)
 endif()
 else()
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/3rd/binary/common)
