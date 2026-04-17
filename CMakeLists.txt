@@ -40,6 +40,7 @@ set(MINGW_DLLS
     "${CXX_COMPILER_PATH}/libgcc_s_seh-1.dll"
     "${CXX_COMPILER_PATH}/libstdc++-6.dll"
     "${CXX_COMPILER_PATH}/libwinpthread-1.dll"
+    "${CXX_COMPILER_PATH}/libzstd.dll"
 )
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/3rd/binary/mingw64)
 else()
