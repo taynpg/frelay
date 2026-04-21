@@ -18,6 +18,9 @@ public:
     bool compressFiles(const QString& zipPath, const QStringList& filePaths);
     bool compressDirectory(const QString& zipPath, const QString& dirPath, bool recursive = true);
 
+    // 新增函数：压缩指定目录下的特定子文件夹和文件
+    bool compress(const QString& zipPath, const QString& dirRoot, const QStringList& subDirs, const QStringList& subFiles);
+
     // 解压相关方法
     bool extractFile(const QString& zipPath, const QString& targetFileName, const QString& destPath = QString());
     bool extractFiles(const QString& zipPath, const QStringList& fileNames, const QString& destDir = QString());
@@ -37,6 +40,9 @@ signals:
 private:
     QString m_lastError;
     int m_lastErrorCode = 0;
+
+    // 辅助函数：收集指定目录下的所有文件
+    void collectFilesFromDir(const QString& dirPath, QStringList& fileList, const QString& relativePath = QString());
 
     // 清除错误状态
     void clearError();

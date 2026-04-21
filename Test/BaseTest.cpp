@@ -21,10 +21,11 @@ int main(int argc, char** argv)
 
     QZip zip;
 
-    QStringList ps;
-    ps << "D:\\TTDown\\①中国历史时空图.jpg";
-    ps << "D:\\TTDown\\LXGWWenKaiMono-Regular.ttf";
-    zip.compressFiles("D:/ceshi.zip", ps);
+    QStringList subDirs;
+    QStringList subFiles;
+    subDirs << "test";
+    subFiles << "xmake.lua";
+    zip.compress("D:/ceshi.zip", "D:\\Code\\zoost", subDirs, subFiles);
     zip.extractAll("D:/ceshi.zip", "D:/666");
 
     return app.exec();
