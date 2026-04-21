@@ -1,12 +1,10 @@
+// qzip.h
 #ifndef QZIP_H
 #define QZIP_H
 
-#include <QDebug>
-#include <QDir>
-#include <QFileInfo>
 #include <QObject>
 #include <QString>
-#include <quazip/quazip.h>
+#include <QStringList>
 
 class QZip : public QObject
 {
@@ -14,36 +12,37 @@ class QZip : public QObject
 
 public:
     explicit QZip(QObject* parent = nullptr);
-    ~QZip();
+    virtual ~QZip();
 
-    // 压缩相关函数
-    bool startCompress(const QString& outFile);
-    bool addFolder(const QString& dir);
-    bool addFile(const QString& file);
-    bool endCompress();
+    // 压缩相关方法
+    bool compressFiles(const QString& zipPath, const QStringList& filePaths);
+    bool compressDirectory(const QString& zipPath, const QString& dirPath, bool recursive = true);
 
-    // 解压相关函数
-    bool unCompress(const QString& zipFile, const QString& outDir);
+    // 解压相关方法
+    bool extractFile(const QString& zipPath, const QString& targetFileName, const QString& destPath = QString());
+    bool extractFiles(const QString& zipPath, const QStringList& fileNames, const QString& destDir = QString());
+    bool extractAll(const QString& zipPath, const QString& destDir = QString());
 
-    // 设置压缩级别 (0-9, 0=不压缩, 9=最大压缩)
-    void setCompressionLevel(int level);
+    // 工具方法
+    QStringList getFileList(const QString& zipPath);
 
-    // 获取最后一次错误信息
+    // 错误处理
     QString lastError() const;
+    int lastErrorCode() const;
+
+signals:
+    void progressChanged(int current, int total);
+    void operationCompleted(bool success, const QString& message);
 
 private:
-    // 递归添加文件夹
-    bool addFolderRecursive(const QString& dir, const QString& baseDir = "");
-    
-    // 设置错误信息
-    void setError(const QString& error);
+    QString m_lastError;
+    int m_lastErrorCode = 0;
 
-private:
-    QuaZip* m_zipFile;        // 压缩文件对象
-    QString m_outFilePath;    // 输出文件路径
-    int m_compressionLevel;   // 压缩级别
-    bool m_isCompressing;     // 是否正在压缩
-    QString m_lastError;      // 最后一次错误信息
+    // 清除错误状态
+    void clearError();
+
+    // 设置错误
+    void setError(int code, const QString& message);
 };
 
 #endif   // QZIP_H

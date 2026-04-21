@@ -825,28 +825,28 @@ void FileManager::Compress()
         wo.funcMsg_ = [vec, zipName](InfoMsg& inMsg) {
             qDebug() << "开始压缩：" << zipName;
             QZip zip;
-            if (!zip.startCompress(zipName)) {
-                qDebug() << zip.lastError();
-                return false;
-            }
-            for (int i = 0; i < vec.size() / 5; ++i) {
-                auto fp = Util::Join(GlobalData::Ins()->GetLocalRoot(), vec[5 * i + 1]);
-                if (vec[5 * i + 3] == "Dir") {
-                    if (!zip.addFolder(fp)) {
-                        qDebug() << zip.lastError();
-                        return false;
-                    }
-                } else {
-                    if (!zip.addFile(fp)) {
-                        qDebug() << zip.lastError();
-                        return false;
-                    }
-                }
-            }
-            if (!zip.endCompress()) {
-                qDebug() << zip.lastError();
-                return false;
-            }
+            // if (!zip.startCompress(zipName)) {
+            //     qDebug() << zip.lastError();
+            //     return false;
+            // }
+            // for (int i = 0; i < vec.size() / 5; ++i) {
+            //     auto fp = Util::Join(GlobalData::Ins()->GetLocalRoot(), vec[5 * i + 1]);
+            //     if (vec[5 * i + 3] == "Dir") {
+            //         if (!zip.addFolder(fp)) {
+            //             qDebug() << zip.lastError();
+            //             return false;
+            //         }
+            //     } else {
+            //         if (!zip.addFile(fp)) {
+            //             qDebug() << zip.lastError();
+            //             return false;
+            //         }
+            //     }
+            // }
+            // if (!zip.endCompress()) {
+            //     qDebug() << zip.lastError();
+            //     return false;
+            // }
             qDebug() << "压缩：" << zipName << "完成。";
             return true;
         };
@@ -923,10 +923,10 @@ void FileManager::UnCompress()
                 qDebug() << errMsg;
                 return false;
             }
-            if (!zip.unCompress(zipName, newDir)) {
-                qDebug() << zip.lastError();
-                return false;
-            }
+            // if (!zip.unCompress(zipName, newDir)) {
+            //     qDebug() << zip.lastError();
+            //     return false;
+            // }
             qDebug() << "解压缩结束=》" << zipName;
             return true;
         };

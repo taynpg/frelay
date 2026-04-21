@@ -2,6 +2,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <Util.h>
+#include <QZip.h>
 
 void DateTimeTest()
 {
@@ -17,6 +18,14 @@ int main(int argc, char** argv)
 
     QVector<QString> files;
     DirFileHelper::GetAllFiles("D:/备份软件", files);
+
+    QZip zip;
+
+    QStringList ps;
+    ps << "D:\\TTDown\\①中国历史时空图.jpg";
+    ps << "D:\\TTDown\\LXGWWenKaiMono-Regular.ttf";
+    zip.compressFiles("D:/ceshi.zip", ps);
+    zip.extractAll("D:/ceshi.zip", "D:/666");
 
     return app.exec();
 }
