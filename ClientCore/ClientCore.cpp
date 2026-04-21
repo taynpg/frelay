@@ -1,7 +1,7 @@
 ﻿#include "ClientCore.h"
 
 #include <QDebug>
-#include <QZipStream.h>
+#include <QZip.h>
 
 ClientCore::ClientCore(QObject* parent) : QObject(parent)
 {
@@ -258,7 +258,7 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
                 return success;
             }
             qDebug() << fid << "请求解压缩文件：" << inMsg.fst.path;
-            QZipStream zip;
+            QZip zip;
             auto baseName = Util::GetBaseName(inMsg.fst.path);
             auto newDir = Util::Join(inMsg.fst.root, baseName);
             if (Util::DirExist(newDir, false)) {
@@ -299,7 +299,7 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
             QString key = it[0];
             qDebug() << fid << "请求压缩文件：" << key;
 
-            QZipStream zip;
+            QZip zip;
             if (!zip.startCompress(key)) {
                 inMsg.msg = zip.lastError();
                 return false;

@@ -13,7 +13,7 @@
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QTableWidgetItem>
-#include <QZipStream.h>
+#include <QZip.h>
 #include <RemoteFile.h>
 
 #include "Form/FileInfoForm.h"
@@ -824,7 +824,7 @@ void FileManager::Compress()
         auto zipName = Util::Join(GlobalData::Ins()->GetLocalRoot(), text);
         wo.funcMsg_ = [vec, zipName](InfoMsg& inMsg) {
             qDebug() << "开始压缩：" << zipName;
-            QZipStream zip;
+            QZip zip;
             if (!zip.startCompress(zipName)) {
                 qDebug() << zip.lastError();
                 return false;
@@ -914,7 +914,7 @@ void FileManager::UnCompress()
         auto zipName = Util::Join(GlobalData::Ins()->GetLocalRoot(), vec[1]);
         wo.funcMsg_ = [vec, zipName](InfoMsg& inMsg) {
             qDebug() << "开始解压缩：" << zipName;
-            QZipStream zip;
+            QZip zip;
             auto baseName = Util::GetBaseName(zipName);
             auto newDir = Util::Join(GlobalData::Ins()->GetLocalRoot(), baseName);
             if (Util::DirExist(newDir, false)) {

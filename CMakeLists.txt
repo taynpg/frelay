@@ -1,7 +1,7 @@
 ﻿cmake_minimum_required(VERSION 3.16)
 
 project(frelay VERSION 0.2.8 LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -103,6 +103,7 @@ include_directories(${PROJECT_BINARY_DIR})
 add_definitions(-DFMT_HEADER_ONLY)
 include_directories(3rd)
 include_directories(3rd/zlib-1.3.2)
+add_subdirectory(3rd/quazip-1.5)
 
 add_subdirectory(Protocol)
 add_subdirectory(Server)

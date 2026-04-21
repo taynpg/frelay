@@ -17,7 +17,7 @@
         "args": []
     },
     "cmake.configureSettings": {
-        "CMAKE_PREFIX_PATH": "C:/local/qt6",
+        "CMAKE_PREFIX_PATH": "C:/mingw/qt6",
     },
     "cmake.configureArgs": [
         "-Wno-dev",
