@@ -109,6 +109,7 @@ add_definitions(-DFMT_HEADER_ONLY)
 include_directories(3rd)
 include_directories(3rd/zlib-1.3.2)
 add_subdirectory(3rd/quazip-1.5)
+add_subdirectory(3rd/tinyxml2)
 
 add_subdirectory(Protocol)
 add_subdirectory(Server)

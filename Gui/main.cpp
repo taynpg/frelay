@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 
     auto config = std::make_shared<FrelayConfig>();
     QString configRoot = Util::GetCurConfigPath("frelay");
-    GlobalData::Ins()->SetConfigPath(configRoot.toStdString() + "/frelayConfig.json");
+    GlobalData::Ins()->SetConfigPath(configRoot.toStdString() + "/frelayConfig");
 
     SingleApplication a(argc, argv);
 

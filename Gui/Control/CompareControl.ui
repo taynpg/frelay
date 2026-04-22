@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>636</width>
-    <height>277</height>
+    <width>1185</width>
+    <height>422</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,6 +30,13 @@
       <widget class="QPushButton" name="btnSave">
        <property name="text">
         <string>保存</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnDel">
+       <property name="text">
+        <string>删除</string>
        </property>
       </widget>
      </item>
@@ -85,6 +92,9 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QComboBox" name="cbMark"/>
      </item>
      <item>
       <widget class="QLineEdit" name="edSearch"/>

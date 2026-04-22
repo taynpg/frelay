@@ -38,7 +38,7 @@ target_link_libraries(frelayGUI PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::Concurrent
-    ClientCore Protocol 
+    ClientCore Protocol tinyxml2
     Util Struct SingleApplication::SingleApplication
 )
 

@@ -14,6 +14,8 @@ struct CompareItem {
     QString baseName;
     QString localDir;
     QString remoteDir;
+    QString mark;
+    QString type;
 };
 
 class Compare : public QWidget
@@ -39,6 +41,9 @@ private:
     void LoadTitles();
     void Search();
     void Reset();
+    void DelTitle();
+    void FilterMark();
+    void RefreshMark();
     void SetResult(const QVector<CompareItem>& items);
     void FilterFiles(bool isUpload);
 
@@ -56,6 +61,9 @@ private:
     QSet<QString> curSelectTypes_;
     bool isResource_{};
     QVector<CompareItem> items_;
+
+    //
+    bool isAutoChangeFilter_{false};
 };
 
 #endif   // COMPARECONTROL_H

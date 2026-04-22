@@ -6,12 +6,13 @@
 #include <QFile>
 #include <QListWidget>
 #include <QMessageBox>
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
+#include <tinyxml2.h>
 
 #include "Form/Loading.h"
 #include "GuiUtil/Public.h"
 #include "ui_CompareControl.h"
+
+using namespace tinyxml2;
 
 Compare::Compare(QWidget* parent) : QWidget(parent), ui(new Ui::Compare)
 {
@@ -27,31 +28,32 @@ Compare::~Compare()
 
 void Compare::InitMenu()
 {
+    ui->comboBox->setMinimumWidth(150);
     menu_ = new QMenu(ui->tableWidget);
     menu_->addAction(tr("尝试访问本地路径"), this, [this]() {
         auto selected = ui->tableWidget->selectedItems();
-        if (selected.size() != 3) {
+        if (selected.size() != 5) {
             return;
         }
-        auto item = selected[1];
+        auto item = selected[3];
         auto path = item->text();
         emit sigTryVisit(true, path);
     });
     menu_->addAction(tr("尝试访问远程路径"), this, [this]() {
         auto selected = ui->tableWidget->selectedItems();
-        if (selected.size() != 3) {
+        if (selected.size() != 5) {
             return;
         }
-        auto item = selected[2];
+        auto item = selected[4];
         auto path = item->text();
         emit sigTryVisit(false, path);
     });
     menu_->addAction(tr("尝试打开本地路径"), this, [this]() {
         auto selected = ui->tableWidget->selectedItems();
-        if (selected.size() != 3) {
+        if (selected.size() != 5) {
             return;
         }
-        auto item = selected[1];
+        auto item = selected[3];
         auto path = item->text();
         QDir dir(path);
         if (!dir.exists()) {
@@ -66,9 +68,13 @@ void Compare::InitMenu()
         auto item1 = new QTableWidgetItem("");
         auto item2 = new QTableWidgetItem("");
         auto item3 = new QTableWidgetItem("");
+        auto item4 = new QTableWidgetItem("");
+        auto item5 = new QTableWidgetItem("");
         ui->tableWidget->setItem(cnt, 0, item1);
         ui->tableWidget->setItem(cnt, 1, item2);
         ui->tableWidget->setItem(cnt, 2, item3);
+        ui->tableWidget->setItem(cnt, 3, item4);
+        ui->tableWidget->setItem(cnt, 4, item5);
     });
     menu_->addAction(tr("删除"), this, [this]() { deleteSelectedRows(); });
     menu_->addAction(tr("上传"), this, [this]() { TransToRight(false); });
@@ -90,12 +96,19 @@ void Compare::InitControl()
     connect(ui->btnTypeUpload, &QPushButton::clicked, this, [this]() { FilterFiles(true); });
     connect(ui->btnSearch, &QPushButton::clicked, this, &Compare::Search);
     connect(ui->btnReset, &QPushButton::clicked, this, &Compare::Reset);
+    connect(ui->btnDel, &QPushButton::clicked, this, &Compare::DelTitle);
 
     // 测试代码
     connect(ui->btnReplace, &QPushButton::clicked, this, [this]() {
         // auto* loading = new LoadingDialog(this);
         // loading->exec();
     });
+
+    ui->cbMark->setMinimumWidth(90);
+    ui->cbMark->clear();
+    ui->cbMark->addItem("ALL");
+    ui->cbMark->setCurrentIndex(0);
+    connect(ui->cbMark, &QComboBox::currentTextChanged, this, [this]() { FilterMark(); });
 
     LoadTitles();
 
@@ -106,22 +119,23 @@ void Compare::InitControl()
 void Compare::InitTabWidget()
 {
     QStringList headers;
-    headers << tr("文件") << tr("本地目录") << tr("远端目录");
+    headers << tr("文件") << tr("标记") << tr("类型") << tr("本地目录") << tr("远端目录");
     ui->tableWidget->setColumnCount(headers.size());
     ui->tableWidget->setHorizontalHeaderLabels(headers);
     ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     ui->comboBox->setEditable(true);
     // ui->tableWidget->setColumnWidth(0, 50);
-    ui->tableWidget->setColumnWidth(0, 400);
-    /// ui->tableWidget->setColumnWidth(1, 300);
-    ui->tableWidget->setColumnWidth(2, 300);
+    ui->tableWidget->setColumnWidth(0, 260);
+    ui->tableWidget->setColumnWidth(1, 100);
+    ui->tableWidget->setColumnWidth(2, 100);
+    ui->tableWidget->setColumnWidth(3, 200);
 
     ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
     // ui->tableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     // ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-    ui->tableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(4, QHeaderView::Stretch);
     ui->tableWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
     ui->tableWidget->setDragEnabled(false);
@@ -146,89 +160,91 @@ void Compare::Save()
         return;
     }
 
-    QFile file("CompareData.xml");
-    if (!file.open(QIODevice::ReadWrite | QIODevice::Text)) {
-        FTCommon::msg(this, tr("打开数据文件失败。"));
-        return;
-    }
-
-    QString existingContent;
-    QMap<QString, QStringList> dataMap;
-    if (file.size() > 0) {
-        existingContent = file.readAll();
-        file.seek(0);
-        QXmlStreamReader reader(existingContent);
-        while (!reader.atEnd()) {
-            if (reader.isStartElement() && reader.name() == "Entry") {
-                QString key = reader.attributes().value("title").toString();
-                QStringList paths;
-                while (!(reader.isEndElement() && reader.name() == "Entry")) {
-                    reader.readNext();
-                    if (reader.isStartElement() && reader.name() == "FileName") {
-                        paths << reader.readElementText();
-                    }
-                    if (reader.isStartElement() && reader.name() == "LocalDir") {
-                        paths << reader.readElementText();
-                    }
-                    if (reader.isStartElement() && reader.name() == "RemoteDir") {
-                        paths << reader.readElementText();
-                    }
-                }
-                dataMap.insert(key, paths);
-            }
-            reader.readNext();
+    if (ui->tableWidget->rowCount() < 1) {
+        if (!FTCommon::affirm(this, tr("确认"), tr("保存的空数据，继续？"))) {
+            return;
         }
     }
 
-    QStringList paths;
-    items_.clear();
+    // 使用tinyxml2加载或创建XML文档
+    XMLDocument doc;
 
+    // 尝试加载现有文件
+    if (doc.LoadFile("CompareData.xml") != XML_SUCCESS) {
+        // 如果文件不存在或无法读取，创建一个新的文档
+        XMLElement* root = doc.NewElement("CompareData");
+        doc.InsertFirstChild(root);
+    }
+
+    // 获取或创建根元素
+    XMLElement* root = doc.RootElement();
+    if (!root) {
+        root = doc.NewElement("CompareData");
+        doc.InsertFirstChild(root);
+    }
+
+    // 查找或创建对应的Entry元素
+    XMLElement* entryElem = nullptr;
+    for (XMLElement* elem = root->FirstChildElement("Entry"); elem != nullptr; elem = elem->NextSiblingElement("Entry")) {
+        const char* title = elem->Attribute("title");
+        if (title && QString(title) == titleKey) {
+            entryElem = elem;
+            // 删除现有的Item子元素
+            while (XMLElement* child = elem->FirstChildElement("Item")) {
+                elem->DeleteChild(child);
+            }
+            break;
+        }
+    }
+
+    // 如果没有找到对应的Entry，创建新的
+    if (!entryElem) {
+        entryElem = doc.NewElement("Entry");
+        entryElem->SetAttribute("title", titleKey.toUtf8().constData());
+        root->InsertEndChild(entryElem);
+    }
+
+    // 获取表格中的数据
+    items_.clear();
     for (int row = 0; row < ui->tableWidget->rowCount(); ++row) {
         QTableWidgetItem* fileName = ui->tableWidget->item(row, 0);
-        QTableWidgetItem* localItem = ui->tableWidget->item(row, 1);
-        QTableWidgetItem* remoteItem = ui->tableWidget->item(row, 2);
+        QTableWidgetItem* localItem = ui->tableWidget->item(row, 3);
+        QTableWidgetItem* remoteItem = ui->tableWidget->item(row, 4);
+        QTableWidgetItem* markItem = ui->tableWidget->item(row, 1);   // 假设第4列是mark
+        QTableWidgetItem* typeItem = ui->tableWidget->item(row, 2);   // 假设第5列是type
 
         auto baseName = (fileName ? fileName->text() : "");
         auto localDir = (localItem ? localItem->text() : "");
         auto remoteDir = (remoteItem ? remoteItem->text() : "");
+        auto mark = (markItem ? markItem->text() : "");
+        auto type = (typeItem ? typeItem->text() : "");
 
         CompareItem item;
         item.baseName = baseName;
         item.localDir = localDir;
         item.remoteDir = remoteDir;
+        item.mark = mark;
+        item.type = type;
         items_.push_back(item);
 
-        paths << baseName;
-        paths << localDir;
-        paths << remoteDir;
+        // 创建Item元素
+        XMLElement* itemElem = doc.NewElement("Item");
+        itemElem->SetAttribute("FileName", baseName.toUtf8().constData());
+        itemElem->SetAttribute("LocalDir", localDir.toUtf8().constData());
+        itemElem->SetAttribute("RemoteDir", remoteDir.toUtf8().constData());
+        itemElem->SetAttribute("Mark", mark.toUtf8().constData());
+        itemElem->SetAttribute("Type", type.toUtf8().constData());
+
+        entryElem->InsertEndChild(itemElem);
     }
 
-    dataMap[titleKey] = paths;
-
-    file.resize(0);
-    QXmlStreamWriter writer(&file);
-    writer.setAutoFormatting(true);
-    writer.writeStartDocument();
-    writer.writeStartElement("CompareData");
-
-    for (auto it = dataMap.begin(); it != dataMap.end(); ++it) {
-        writer.writeStartElement("Entry");
-        writer.writeAttribute("title", it.key());
-
-        const QStringList& pathList = it.value();
-        for (int i = 0; i < pathList.size(); i += 3) {
-            writer.writeTextElement("FileName", pathList[i]);
-            writer.writeTextElement("LocalDir", pathList[i + 1]);
-            writer.writeTextElement("RemoteDir", pathList[i + 2]);
-        }
-
-        writer.writeEndElement();
+    // 保存到文件
+    if (doc.SaveFile("CompareData.xml") != XML_SUCCESS) {
+        FTCommon::msg(this, tr("保存数据文件失败。"));
+        return;
     }
 
-    writer.writeEndElement();
-    writer.writeEndDocument();
-    file.close();
-
+    // 更新下拉框
     if (ui->comboBox->findText(titleKey) == -1) {
         ui->comboBox->addItem(titleKey);
     }
@@ -244,77 +260,203 @@ void Compare::Load()
         return;
     }
 
-    QFile file("CompareData.xml");
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    // 使用tinyxml2加载XML文档
+    XMLDocument doc;
+    if (doc.LoadFile("CompareData.xml") != XML_SUCCESS) {
         FTCommon::msg(this, tr("打开数据文件失败。"));
+        return;
+    }
+
+    XMLElement* root = doc.RootElement();
+    if (!root) {
+        FTCommon::msg(this, tr("数据文件格式错误。"));
         return;
     }
 
     items_.clear();
     isResource_ = true;
     ui->tableWidget->setIsResource(isResource_);
-    QXmlStreamReader reader(&file);
+    ui->tableWidget->setRowCount(0);
+
     bool found = false;
 
-    ui->tableWidget->setRowCount(0);
-    while (!reader.atEnd() && !found) {
-        if (reader.isStartElement() && reader.name() == "Entry") {
-            if (reader.attributes().value("title").toString() == titleKey) {
-                found = true;
-                QStringList paths;
+    // 查找对应的Entry元素
+    for (XMLElement* entryElem = root->FirstChildElement("Entry"); entryElem != nullptr;
+         entryElem = entryElem->NextSiblingElement("Entry")) {
 
-                while (!(reader.isEndElement() && reader.name() == "Entry")) {
-                    reader.readNext();
-                    if (reader.isStartElement() && reader.name() == "FileName") {
-                        paths << reader.readElementText();
-                    }
-                    if (reader.isStartElement() && reader.name() == "LocalDir") {
-                        paths << reader.readElementText();
-                    }
-                    if (reader.isStartElement() && reader.name() == "RemoteDir") {
-                        paths << reader.readElementText();
-                    }
-                }
-                for (int i = 0; i < paths.size(); i += 3) {
+        const char* title = entryElem->Attribute("title");
+        if (title && QString(title) == titleKey) {
+            found = true;
+
+            // 遍历所有的Item子元素
+            for (XMLElement* itemElem = entryElem->FirstChildElement("Item"); itemElem != nullptr;
+                 itemElem = itemElem->NextSiblingElement("Item")) {
+
+                const char* fileName = itemElem->Attribute("FileName");
+                const char* localDir = itemElem->Attribute("LocalDir");
+                const char* remoteDir = itemElem->Attribute("RemoteDir");
+                const char* mark = itemElem->Attribute("Mark");
+                const char* type = itemElem->Attribute("Type");
+
+                if (fileName && localDir && remoteDir) {
                     int row = ui->tableWidget->rowCount();
                     ui->tableWidget->insertRow(row);
 
                     CompareItem item;
-                    item.baseName = paths[i];
-                    item.localDir = paths[i + 1];
-                    item.remoteDir = paths[i + 2];
+                    item.baseName = QString::fromUtf8(fileName);
+                    item.localDir = QString::fromUtf8(localDir);
+                    item.remoteDir = QString::fromUtf8(remoteDir);
+                    item.mark = mark ? QString::fromUtf8(mark) : "";
+                    item.type = type ? QString::fromUtf8(type) : "";
                     items_.push_back(item);
 
-                    QTableWidgetItem* fileName = new QTableWidgetItem(paths[i]);
-                    QTableWidgetItem* localItem = new QTableWidgetItem(paths[i + 1]);
-                    QTableWidgetItem* remoteItem = new QTableWidgetItem(paths[i + 2]);
-
-                    ui->tableWidget->setItem(row, 0, fileName);
-                    ui->tableWidget->setItem(row, 1, localItem);
-                    ui->tableWidget->setItem(row, 2, remoteItem);
+                    ui->tableWidget->setItem(row, 0, new QTableWidgetItem(item.baseName));
+                    ui->tableWidget->setItem(row, 3, new QTableWidgetItem(item.localDir));
+                    ui->tableWidget->setItem(row, 4, new QTableWidgetItem(item.remoteDir));
+                    ui->tableWidget->setItem(row, 1, new QTableWidgetItem(item.mark));
+                    ui->tableWidget->setItem(row, 2, new QTableWidgetItem(item.type));
                 }
             }
+            break;
         }
-        reader.readNext();
     }
 
-    file.close();
     if (!found) {
         FTCommon::msg(this, tr("没有找到标题对应的数据。"));
     } else {
-        // FTCommon::msg(this, tr("Data loaded successfully."));
+        RefreshMark();
     }
+}
+
+void Compare::DelTitle()
+{
+    auto titleKey = ui->comboBox->currentText().trimmed();
+    if (titleKey.isEmpty()) {
+        FTCommon::msg(this, tr("请选择要删除的标题。"));
+        return;
+    }
+
+    // 确认对话框
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, tr("确认删除"), tr("确定要删除标题 '%1' 及其所有数据吗？").arg(titleKey),
+                                  QMessageBox::Yes | QMessageBox::No);
+
+    if (reply != QMessageBox::Yes) {
+        return;   // 用户取消删除
+    }
+
+    // 使用tinyxml2加载XML文档
+    XMLDocument doc;
+    if (doc.LoadFile("CompareData.xml") != XML_SUCCESS) {
+        FTCommon::msg(this, tr("打开数据文件失败。"));
+        return;
+    }
+
+    XMLElement* root = doc.RootElement();
+    if (!root) {
+        FTCommon::msg(this, tr("数据文件格式错误。"));
+        return;
+    }
+
+    bool found = false;
+    XMLElement* entryToDelete = nullptr;
+
+    // 查找对应的Entry元素
+    for (XMLElement* entryElem = root->FirstChildElement("Entry"); entryElem != nullptr;
+         entryElem = entryElem->NextSiblingElement("Entry")) {
+
+        const char* title = entryElem->Attribute("title");
+        if (title && QString(title) == titleKey) {
+            entryToDelete = entryElem;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        FTCommon::msg(this, tr("没有找到标题 '%1' 对应的数据。").arg(titleKey));
+        return;
+    }
+
+    // 删除找到的Entry元素
+    if (entryToDelete) {
+        root->DeleteChild(entryToDelete);
+    }
+
+    // 保存修改后的XML文件
+    if (doc.SaveFile("CompareData.xml") != XML_SUCCESS) {
+        FTCommon::msg(this, tr("保存数据文件失败。"));
+        return;
+    }
+
+    // 重新加载标题到下拉框
+    ui->comboBox->clear();
+    LoadTitles();
+
+    // 清空表格中的数据
+    items_.clear();
+    isResource_ = true;
+    ui->tableWidget->setIsResource(true);
+    ui->tableWidget->setRowCount(0);
+
+    FTCommon::msg(this, tr("标题 '%1' 已删除。").arg(titleKey));
+}
+
+void Compare::FilterMark()
+{
+    if (isAutoChangeFilter_) {
+        return;
+    }
+    auto key = ui->cbMark->currentText();
+    if (key.isEmpty()) {
+        return;
+    }
+
+    key = key.toUpper();
+    QVector<CompareItem> result;
+    for (const auto& item : TAS_CONST(items_)) {
+        auto markName = item.mark.toUpper();
+        if (markName == key || key == "ALL") {
+            result.push_back(item);
+        }
+    }
+    SetResult(result);
+
+    if (key == "ALL") {
+        isResource_ = false;
+    } else {
+        isResource_ = true;
+    }
+    ui->tableWidget->setIsResource(isResource_);
+}
+
+void Compare::RefreshMark()
+{
+    isAutoChangeFilter_ = true;
+    QStringList re;
+    re << "ALL";
+    for (const auto& item : TAS_CONST(items_)) {
+        auto k = item.mark.toLower();
+        if (!k.isEmpty() && !re.contains(k)) {
+            re.append(k);
+        }
+    }
+    ui->cbMark->clear();
+    ui->cbMark->addItems(re);
+    ui->cbMark->setCurrentIndex(0);
+    isAutoChangeFilter_ = false;
 }
 
 void Compare::LoadTitles()
 {
-    QFile file("CompareData.xml");
-    if (!file.exists()) {
-        return;
+    // 使用tinyxml2加载XML文档
+    XMLDocument doc;
+    if (doc.LoadFile("CompareData.xml") != XML_SUCCESS) {
+        return;   // 文件不存在是正常的
     }
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        FTCommon::msg(this, tr("Failed to open data file."));
+    XMLElement* root = doc.RootElement();
+    if (!root) {
         return;
     }
 
@@ -322,18 +464,15 @@ void Compare::LoadTitles()
     ui->comboBox->clear();
     ui->comboBox->setEditText(currentText);
 
-    QXmlStreamReader reader(&file);
-    while (!reader.atEnd()) {
-        if (reader.isStartElement() && reader.name() == "Entry") {
-            QString title = reader.attributes().value("title").toString();
-            if (!title.isEmpty() && ui->comboBox->findText(title) == -1) {
-                ui->comboBox->addItem(title);
-            }
-        }
-        reader.readNext();
-    }
+    // 遍历所有的Entry元素，获取title属性
+    for (XMLElement* entryElem = root->FirstChildElement("Entry"); entryElem != nullptr;
+         entryElem = entryElem->NextSiblingElement("Entry")) {
 
-    file.close();
+        const char* title = entryElem->Attribute("title");
+        if (title && !QString(title).isEmpty() && ui->comboBox->findText(QString(title)) == -1) {
+            ui->comboBox->addItem(QString(title));
+        }
+    }
 
     if (ui->comboBox->count() > 0) {
         ui->comboBox->setCurrentIndex(0);
@@ -349,7 +488,7 @@ void Compare::Search()
 
     key = key.toUpper();
     QVector<CompareItem> result;
-    for (const auto& item : items_) {
+    for (const auto& item : TAS_CONST(items_)) {
         auto baseNameU = item.baseName.toUpper();
         auto localDirU = item.localDir.toUpper();
         auto remoteDirU = item.remoteDir.toUpper();
@@ -377,8 +516,10 @@ void Compare::SetResult(const QVector<CompareItem>& items)
         int row = ui->tableWidget->rowCount();
         ui->tableWidget->insertRow(row);
         ui->tableWidget->setItem(row, 0, new QTableWidgetItem(item.baseName));
-        ui->tableWidget->setItem(row, 1, new QTableWidgetItem(item.localDir));
-        ui->tableWidget->setItem(row, 2, new QTableWidgetItem(item.remoteDir));
+        ui->tableWidget->setItem(row, 1, new QTableWidgetItem(item.mark));
+        ui->tableWidget->setItem(row, 2, new QTableWidgetItem(item.type));
+        ui->tableWidget->setItem(row, 3, new QTableWidgetItem(item.localDir));
+        ui->tableWidget->setItem(row, 4, new QTableWidgetItem(item.remoteDir));
     }
 }
 
@@ -457,8 +598,8 @@ void Compare::TransToLeft(bool useSelectTypes)
         for (int i = 0; i < ui->tableWidget->rowCount(); ++i) {
             QString ext = ui->tableWidget->item(i, 0)->text().split(".").last().toLower();
             if (curSelectTypes_.contains(ext) || curSelectTypes_.contains("*ALL")) {
-                const QTableWidgetItem* itemF = ui->tableWidget->item(i, 1);
-                const QTableWidgetItem* itemT = ui->tableWidget->item(i, 2);
+                const QTableWidgetItem* itemF = ui->tableWidget->item(i, 3);
+                const QTableWidgetItem* itemT = ui->tableWidget->item(i, 4);
                 pushTask(itemT->text(), Util::Join(itemF->text(), ui->tableWidget->item(i, 0)->text()));
             }
         }
@@ -472,8 +613,8 @@ void Compare::TransToLeft(bool useSelectTypes)
             return;
         }
         for (int i = 0; i < indexList.size(); ++i) {
-            const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 2);
-            const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 1);
+            const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 4);
+            const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 3);
             pushTask(itemT->text(), Util::Join(itemF->text(), ui->tableWidget->item(indexList[i].row(), 0)->text()));
         }
         if (tasks.size() > 0) {
@@ -501,8 +642,8 @@ void Compare::TransToRight(bool useSelectTypes)
         for (int i = 0; i < ui->tableWidget->rowCount(); ++i) {
             QString ext = ui->tableWidget->item(i, 0)->text().split(".").last().toLower();
             if (curSelectTypes_.contains(ext) || curSelectTypes_.contains("*ALL")) {
-                const QTableWidgetItem* itemF = ui->tableWidget->item(i, 1);
-                const QTableWidgetItem* itemT = ui->tableWidget->item(i, 2);
+                const QTableWidgetItem* itemF = ui->tableWidget->item(i, 3);
+                const QTableWidgetItem* itemT = ui->tableWidget->item(i, 4);
                 pushTask(Util::Join(itemF->text(), ui->tableWidget->item(i, 0)->text()), itemT->text());
             }
         }
@@ -516,8 +657,8 @@ void Compare::TransToRight(bool useSelectTypes)
             return;
         }
         for (int i = 0; i < indexList.size(); ++i) {
-            const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 1);
-            const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 2);
+            const QTableWidgetItem* itemF = ui->tableWidget->item(indexList[i].row(), 3);
+            const QTableWidgetItem* itemT = ui->tableWidget->item(indexList[i].row(), 4);
             pushTask(Util::Join(itemF->text(), ui->tableWidget->item(indexList[i].row(), 0)->text()), itemT->text());
         }
         if (tasks.size() > 0) {

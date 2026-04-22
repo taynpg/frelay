@@ -46,7 +46,7 @@ void CpTableWidget::dropEvent(QDropEvent* event)
 
     int startRow = rowAt(pos.y());
     int startCol = columnAt(pos.x());
-    if (startCol != 1 && startCol != 2) {
+    if (startCol != 3 && startCol != 4) {
         event->ignore();
         return;
     }
@@ -83,7 +83,7 @@ void CpTableWidget::dropEvent(QDropEvent* event)
             insertRow(rowCount());
         }
         if (parseData[i * 5 + 3] == "Dir") {
-            if (startCol == 1) {
+            if (startCol == 3) {
                 setItemData(currentRow, startCol, Util::Join(GlobalData::Ins()->GetLocalRoot(), parseData[i * 5 + 1]));
             } else {
                 setItemData(currentRow, startCol, Util::Join(GlobalData::Ins()->GetRemoteRoot(), parseData[i * 5 + 1]));
@@ -91,10 +91,10 @@ void CpTableWidget::dropEvent(QDropEvent* event)
             continue;
         }
         setItemData(currentRow, 0, parseData[i * 5 + 1]);
-        if (startCol == 1) {
-            setItemData(currentRow, 1, GlobalData::Ins()->GetLocalRoot());
+        if (startCol == 3) {
+            setItemData(currentRow, 3, GlobalData::Ins()->GetLocalRoot());
         } else {
-            setItemData(currentRow, 2, GlobalData::Ins()->GetRemoteRoot());
+            setItemData(currentRow, 4, GlobalData::Ins()->GetRemoteRoot());
         }
     }
     event->acceptProposedAction();
