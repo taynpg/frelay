@@ -795,10 +795,12 @@ void FileManager::Compress()
         infoMsg.infos[zipName] = QVector<FileStruct>();
         auto& files = infoMsg.infos[zipName];
 
+        infoMsg.fst.root = GlobalData::Ins()->GetRemoteRoot();
+
         for (int i = 0; i < vec.size() / 5; ++i) {
             FileStruct fst;
             fst.mark = vec[5 * i + 3];
-            fst.path = Util::Join(GlobalData::Ins()->GetRemoteRoot(), vec[5 * i + 1]);
+            fst.relative = vec[5 * i + 1];
             files.push_back(fst);
         }
 
@@ -825,28 +827,21 @@ void FileManager::Compress()
         wo.funcMsg_ = [vec, zipName](InfoMsg& inMsg) {
             qDebug() << "开始压缩：" << zipName;
             QZip zip;
-            // if (!zip.startCompress(zipName)) {
-            //     qDebug() << zip.lastError();
-            //     return false;
-            // }
-            // for (int i = 0; i < vec.size() / 5; ++i) {
-            //     auto fp = Util::Join(GlobalData::Ins()->GetLocalRoot(), vec[5 * i + 1]);
-            //     if (vec[5 * i + 3] == "Dir") {
-            //         if (!zip.addFolder(fp)) {
-            //             qDebug() << zip.lastError();
-            //             return false;
-            //         }
-            //     } else {
-            //         if (!zip.addFile(fp)) {
-            //             qDebug() << zip.lastError();
-            //             return false;
-            //         }
-            //     }
-            // }
-            // if (!zip.endCompress()) {
-            //     qDebug() << zip.lastError();
-            //     return false;
-            // }
+
+            QVector<QString> subDirs;
+            QVector<QString> subFiles;
+
+            for (int i = 0; i < vec.size() / 5; ++i) {
+                if (vec[5 * i + 3] == "Dir") {
+                    subDirs.push_back(vec[5 * i + 1]);
+                } else {
+                    subFiles.push_back(vec[5 * i + 1]);
+                }
+            }
+            if (!zip.compress(zipName, GlobalData::Ins()->GetLocalRoot(), subDirs, subFiles)) {
+                qDebug() << zip.lastError();
+                return false;
+            }
             qDebug() << "压缩：" << zipName << "完成。";
             return true;
         };
@@ -882,6 +877,28 @@ void FileManager::UnCompress()
         vec.push_back(item->text());
     }
 
+    QInputDialog dialog(this);
+    dialog.setWindowTitle("输入");
+    dialog.setLabelText("请输入解压目录名称:");
+    dialog.setOkButtonText("确定");
+    dialog.setCancelButtonText("取消");
+    auto size = dialog.minimumSizeHint();
+    size.setWidth(size.width() + 200);
+    dialog.setFixedSize(size);
+
+    auto zipName = Util::Join(GlobalData::Ins()->GetLocalRoot(), vec[1]);
+    auto baseName = Util::GetBaseName(zipName);
+    dialog.setTextValue(baseName);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        baseName = dialog.textValue().trimmed();
+        if (baseName.isEmpty()) {
+            return;
+        }
+    } else {
+        return;
+    }
+
     if (isRemote_) {
         // 远程等待别人。
         WaitOper wi(this);
@@ -891,6 +908,7 @@ void FileManager::UnCompress()
         auto& infoMsg = wi.GetMsgRef();
         infoMsg.infos.clear();
         infoMsg.fst.root = GlobalData::Ins()->GetRemoteRoot();
+        infoMsg.fst.relative = baseName;
         infoMsg.fst.path = Util::Join(GlobalData::Ins()->GetRemoteRoot(), vec[1]);
 
         LoadingDialog checking(this);
@@ -911,11 +929,9 @@ void FileManager::UnCompress()
     } else {
         // 本地自己等待。
         WaitOperOwn wo(this);
-        auto zipName = Util::Join(GlobalData::Ins()->GetLocalRoot(), vec[1]);
-        wo.funcMsg_ = [vec, zipName](InfoMsg& inMsg) {
+        wo.funcMsg_ = [vec, zipName, baseName](InfoMsg& inMsg) {
             qDebug() << "开始解压缩：" << zipName;
             QZip zip;
-            auto baseName = Util::GetBaseName(zipName);
             auto newDir = Util::Join(GlobalData::Ins()->GetLocalRoot(), baseName);
             if (Util::DirExist(newDir, false)) {
                 auto errMsg = "解压缩路径或者目标路径已存在。";
@@ -923,10 +939,10 @@ void FileManager::UnCompress()
                 qDebug() << errMsg;
                 return false;
             }
-            // if (!zip.unCompress(zipName, newDir)) {
-            //     qDebug() << zip.lastError();
-            //     return false;
-            // }
+            if (!zip.extractAll(zipName, newDir)) {
+                inMsg.msg = zip.lastError();
+                return false;
+            }
             qDebug() << "解压缩结束=》" << zipName;
             return true;
         };

@@ -21,8 +21,8 @@ int main(int argc, char** argv)
 
     QZip zip;
 
-    QStringList subDirs;
-    QStringList subFiles;
+    QVector<QString> subDirs;
+    QVector<QString> subFiles;
     subDirs << "test";
     subFiles << "xmake.lua";
     zip.compress("D:/ceshi.zip", "D:\\Code\\zoost", subDirs, subFiles);

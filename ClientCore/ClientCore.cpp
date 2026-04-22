@@ -259,18 +259,17 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
             }
             qDebug() << fid << "请求解压缩文件：" << inMsg.fst.path;
             QZip zip;
-            auto baseName = Util::GetBaseName(inMsg.fst.path);
-            auto newDir = Util::Join(inMsg.fst.root, baseName);
+            auto newDir = Util::Join(inMsg.fst.root, inMsg.fst.relative);
             if (Util::DirExist(newDir, false)) {
                 auto errMsg = "解压缩路径或者目标路径已存在。";
                 inMsg.msg = errMsg;
                 qDebug() << errMsg;
                 return success;
             }
-            // if (!zip.unCompress(inMsg.fst.path, newDir)) {
-            //     inMsg.msg = zip.lastError();
-            //     return false;
-            // }
+            if (!zip.extractAll(inMsg.fst.path, newDir)) {
+                inMsg.msg = zip.lastError();
+                return false;
+            }
             qDebug() << fid << "请求解压缩文件：" << inMsg.fst.path << "成功。";
             return true;
         };
@@ -300,27 +299,20 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
             qDebug() << fid << "请求压缩文件：" << key;
 
             QZip zip;
-            // if (!zip.startCompress(key)) {
-            //     inMsg.msg = zip.lastError();
-            //     return false;
-            // }
-            // for (const auto& file : TAS_CONST(inMsg.infos[key])) {
-            //     if (file.mark == "Dir") {
-            //         if (!zip.addFolder(file.path)) {
-            //             inMsg.msg = zip.lastError();
-            //             return false;
-            //         }
-            //     } else {
-            //         if (!zip.addFile(file.path)) {
-            //             inMsg.msg = zip.lastError();
-            //             return false;
-            //         }
-            //     }
-            // }
-            // if (!zip.endCompress()) {
-            //     inMsg.msg = zip.lastError();
-            //     return false;
-            // }
+            QVector<QString> subDirs;
+            QVector<QString> subFiles;
+
+            for (const auto& file : TAS_CONST(inMsg.infos[key])) {
+                if (file.mark == "Dir") {
+                    subDirs.push_back(file.relative);
+                } else {
+                    subFiles.push_back(file.relative);
+                }
+            }
+            if (!zip.compress(key, inMsg.fst.root, subDirs, subFiles)) {
+                inMsg.msg = zip.lastError();
+                return false;
+            }
             qDebug() << fid << "请求压缩文件：" << key << "成功。";
             return success;
         };
