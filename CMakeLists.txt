@@ -114,6 +114,7 @@ add_subdirectory(3rd/tinyxml2)
 add_subdirectory(Protocol)
 add_subdirectory(Server)
 add_subdirectory(ClientCore)
+add_subdirectory(Http)
 
 add_subdirectory(Util)
 if(DEFINED COMPILE_GUI AND COMPILE_GUI)
