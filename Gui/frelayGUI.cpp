@@ -73,10 +73,10 @@ void frelayGUI::InitControl()
     connect(compare_, &Compare::sigTryVisit, this, [this](bool local, const QString& path) {
         if (local) {
             localFile_->SetUiCurrentPath(path);
-            localFile_->evtFile();
+            //localFile_->evtFile();
         } else {
             remoteFile_->SetUiCurrentPath(path);
-            remoteFile_->evtFile();
+            //remoteFile_->evtFile();
         }
     });
     connect(connecter_, &Connecter::sigConfirmUse, remoteFile_, &FileManager::evtHome);

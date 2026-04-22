@@ -71,6 +71,9 @@ public:
     static QVector<QString> GetLocalDrivers();
     static QString GenSha256(const QString& str, bool isFilePath = true);
     static QString GetBaseName(const QString& path);
+    // 这俩主要用于旧版本的Qt。
+    static QStringList ToList(const QVector<QString>& vec);
+    static QVector<QString> ToVec(const QStringList& list);
 };
 
 class DirFileHelper : public QObject

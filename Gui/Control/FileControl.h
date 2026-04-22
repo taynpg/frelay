@@ -67,6 +67,7 @@ private:
     void VerifySha256();
     void Compress();
     void UnCompress();
+    void Explore();
 
 private:
     void OperNewFolder();
@@ -79,6 +80,7 @@ public slots:
     void evtFile();
     void evtUp();
     void RefreshTab();
+    void visitPath(const QString& path);
 
 private:
     bool isRemote_;

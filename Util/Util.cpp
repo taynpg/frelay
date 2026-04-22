@@ -219,11 +219,29 @@ QString Util::GenSha256(const QString& str, bool isFilePath)
     return QString(hash.result().toHex());
 }
 
-QString Util::GetBaseName(const QString &path)
+QString Util::GetBaseName(const QString& path)
 {
     QFileInfo fileInfo(path);
     QString baseName = fileInfo.completeBaseName();
     return baseName;
+}
+
+QStringList Util::ToList(const QVector<QString>& vec)
+{
+    QStringList list;
+    for (const auto& item : TAS_CONST(vec)) {
+        list.push_back(item);
+    }
+    return list;
+}
+
+QVector<QString> Util::ToVec(const QStringList& list)
+{
+    QVector<QString> vec;
+    for (const auto& item : TAS_CONST(list)) {
+        vec.push_back(item);
+    }
+    return vec;
 }
 
 QString DirFileHelper::GetErr() const

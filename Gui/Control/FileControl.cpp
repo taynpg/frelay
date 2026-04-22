@@ -3,6 +3,7 @@
 #include <LocalFile.h>
 #include <QClipboard>
 #include <QDateTime>
+#include <QDesktopServices>
 #include <QDialog>
 #include <QDir>
 #include <QFile>
@@ -130,6 +131,7 @@ void FileManager::InitMenu()
     menu_->addAction(tr("SHA256"), this, &FileManager::VerifySha256);
     menu_->addAction(tr("压缩"), this, &FileManager::Compress);
     menu_->addAction(tr("解压缩"), this, &FileManager::UnCompress);
+    menu_->addAction(tr("Explore"), this, &FileManager::Explore);
     menu_->addSeparator();
 }
 
@@ -386,7 +388,22 @@ void FileManager::SetUiCurrentPath(const QString& path)
         return;
     }
     ui->comboBox->addItem(path);
+    // ui->comboBox->setCurrentText(path);
+    // QMetaObject::invokeMethod(
+    //     this,
+    //     [this, path]() {
+    //         ui->comboBox->setCurrentText(path);
+    //         evtFile();
+    //     },
+    //     Qt::QueuedConnection);
+
+    QMetaObject::invokeMethod(this, "visitPath", Qt::QueuedConnection, Q_ARG(QString, path));
+}
+
+void FileManager::visitPath(const QString& path)
+{
     ui->comboBox->setCurrentText(path);
+    evtFile();
 }
 
 void FileManager::FilterFile(const QVector<QString>& selectedTypes)
@@ -828,8 +845,8 @@ void FileManager::Compress()
             qDebug() << "开始压缩：" << zipName;
             QZip zip;
 
-            QVector<QString> subDirs;
-            QVector<QString> subFiles;
+            QStringList subDirs;
+            QStringList subFiles;
 
             for (int i = 0; i < vec.size() / 5; ++i) {
                 if (vec[5 * i + 3] == "Dir") {
@@ -955,6 +972,20 @@ void FileManager::UnCompress()
         wo.start();
         checking.exec();
     }
+}
+
+void FileManager::Explore()
+{
+    if (isRemote_) {
+        return;
+    }
+    auto root = GlobalData::Ins()->GetLocalRoot();
+    auto ret = ui->tableWidget->selectedItems();
+    if (ret.size() == 5 && ret[3]->text() == "Dir") {
+        root = Util::Join(root, ret[1]->text());
+    }
+    // 打开本地文件夹
+    QDesktopServices::openUrl(QUrl::fromLocalFile(root));
 }
 
 void FileManager::OperNewFolder()

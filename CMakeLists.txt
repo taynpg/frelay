@@ -78,6 +78,11 @@ set(QT_DEP_FILES
 "${QT_ROOT_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Widgets.dll"
 "${QT_ROOT_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Network.dll"
 )
+if(QT_DEFAULT_MAJOR_VERSION STREQUAL "6")
+list(APPEND QT_DEP_FILES
+"${QT_ROOT_PATH}/bin/Qt${QT_DEFAULT_MAJOR_VERSION}Core5Compat.dll"
+)
+endif()
 set(QT_DEP_PLATFORM "${QT_ROOT_PATH}/plugins/platforms/qwindows.dll")
 set(QT_DEP_STYLES
 "${QT_ROOT_PATH}/plugins/styles/qmodernwindowsstyle.dll"

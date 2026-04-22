@@ -33,7 +33,7 @@ Form/Notice.h Form/Notice.cpp Form/Notice.ui
 Form/settings.cpp Form/settings.ui Form/settings.h
 )
 
-add_executable(frelayGUI ${PROJECT_SOURCES})
+add_executable(frelayGUI WIN32 ${PROJECT_SOURCES})
 target_link_libraries(frelayGUI PRIVATE 
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Network

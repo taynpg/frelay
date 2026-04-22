@@ -299,8 +299,8 @@ void ClientCore::handleAsk(QSharedPointer<FrameBuffer> frame)
             qDebug() << fid << "请求压缩文件：" << key;
 
             QZip zip;
-            QVector<QString> subDirs;
-            QVector<QString> subFiles;
+            QStringList subDirs;
+            QStringList subFiles;
 
             for (const auto& file : TAS_CONST(inMsg.infos[key])) {
                 if (file.mark == "Dir") {
