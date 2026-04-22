@@ -1,56 +1,58 @@
+// HttpServer.h
 #ifndef HTTPSERVER_H
 #define HTTPSERVER_H
 
-#include <QDebug>
+#include <QByteArray>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QMimeDatabase>
-#include <QTcpServer>
-#include <QTcpSocket>
-#include <QUrl>
+#include <QString>
+#include <httplib.h>
+#include <memory>
+#include <string>
 
-class HttpServer : public QTcpServer
+class HttpServer
 {
-    Q_OBJECT
+private:
+    std::unique_ptr<httplib::Server> server;
+    QString root_dir;
+
+    // 内部处理函数
+    void setupRoutes();
+    void handleRoot(const httplib::Request& req, httplib::Response& res);
+    void handleFileList(const httplib::Request& req, httplib::Response& res, const std::string& relativePath = "");
+    void handleDownload(const httplib::Request& req, httplib::Response& res);
+    void handleHealth(const httplib::Request& req, httplib::Response& res);
+
+    // 辅助函数
+    std::string getContentType(const QString& filename) const;
+    void ensureRootDirectory() const;
+    std::string formatFileSize(qint64 size) const;
+    std::string formatFolderSize() const;
 
 public:
-    explicit HttpServer(QObject* parent = nullptr);
-    ~HttpServer();
+    // 构造函数
+    HttpServer(const QString& directory = "./files");
 
-    bool start(quint16 port = 8080, const QString& shareDir = "");
+    // 启动服务器
+    bool start(int port = 8080);
+
+    // 停止服务器
     void stop();
 
-    QString getServerUrl() const;
+    // 检查服务器是否在运行
+    bool is_running() const;
 
-protected:
-    void incomingConnection(qintptr socketDescriptor) override;
-
-private slots:
-    void onClientReadyRead();
-    void onClientDisconnected();
-
-private:
-    struct ClientConnection {
-        QTcpSocket* socket;
-        QByteArray buffer;
-    };
-
-    QHash<QTcpSocket*, ClientConnection> m_clients;
-    QString m_shareDir;
-    quint16 m_port;
-    QString m_localIp;
-
-    QString parseRequestPath(const QByteArray& requestData);
-    void sendHttpResponse(QTcpSocket* socket, int statusCode, const QString& statusText, const QByteArray& body = QByteArray(),
-                          const QString& contentType = "application/octet-stream");
-    void sendFile(QTcpSocket* socket, const QString& filePath);
-    bool isValidPath(const QString& requestedPath, QString& absolutePath);
-    void sendDirectoryListing(QTcpSocket* socket, const QString& dirPath, const QString& requestPath);
-    QString getMimeType(const QString& fileName);
-    void send404(QTcpSocket* socket, const QString& path = "");
-    void send400(QTcpSocket* socket, const QString& message = "");
-    QString formatDirectoryPath(const QString& path);
+    // 获取服务器信息
+    QString getRootDir() const
+    {
+        return root_dir;
+    }
+    void setRootDir(const QString& dir)
+    {
+        root_dir = dir;
+        ensureRootDirectory();
+    }
 };
 
 #endif   // HTTPSERVER_H

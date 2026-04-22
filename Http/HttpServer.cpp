@@ -1,550 +1,622 @@
+// HttpServer.cpp
 #include "HttpServer.h"
 
-#include <QDateTime>
-#include <QNetworkInterface>
-#include <QTextStream>
+#include <algorithm>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 
-HttpServer::HttpServer(QObject* parent) : QTcpServer(parent), m_port(0)
+HttpServer::HttpServer(const QString& directory) : server(std::make_unique<httplib::Server>()), root_dir(directory)
 {
-    // 获取本机IP
-    QString localIp = "127.0.0.1";
-    foreach (const QHostAddress& address, QNetworkInterface::allAddresses()) {
-        if (address.protocol() == QAbstractSocket::IPv4Protocol && address != QHostAddress(QHostAddress::LocalHost)) {
-            QString addrStr = address.toString();
-            // 优先使用以192.168、10.、172.16-31开头的局域网IP
-            if (addrStr.startsWith("192.168.") || addrStr.startsWith("10.") || addrStr.startsWith("172.16.") ||
-                addrStr.startsWith("172.17.") || addrStr.startsWith("172.18.") || addrStr.startsWith("172.19.") ||
-                addrStr.startsWith("172.20.") || addrStr.startsWith("172.21.") || addrStr.startsWith("172.22.") ||
-                addrStr.startsWith("172.23.") || addrStr.startsWith("172.24.") || addrStr.startsWith("172.25.") ||
-                addrStr.startsWith("172.26.") || addrStr.startsWith("172.27.") || addrStr.startsWith("172.28.") ||
-                addrStr.startsWith("172.29.") || addrStr.startsWith("172.30.") || addrStr.startsWith("172.31.")) {
-                localIp = addrStr;
-                break;
-            } else if (localIp == "127.0.0.1") {
-                localIp = addrStr;
-            }
-        }
-    }
-    m_localIp = localIp;
+    ensureRootDirectory();
 }
 
-HttpServer::~HttpServer()
+bool HttpServer::start(int port)
 {
-    stop();
-}
+    setupRoutes();
 
-bool HttpServer::start(quint16 port, const QString& shareDir)
-{
-    m_port = port;
-
-    // 规范化共享目录路径
-    QDir dir(shareDir);
-    if (!dir.exists()) {
-        qWarning() << "Share directory does not exist:" << shareDir;
-        qWarning() << "Current directory will be used instead.";
-        m_shareDir = QDir::currentPath();
-    } else {
-        m_shareDir = dir.absolutePath();
-    }
-
-    qDebug() << "Using share directory:" << m_shareDir;
-
-    if (!this->listen(QHostAddress::Any, port)) {
-        qWarning() << "Failed to start server on port" << port;
-        return false;
-    }
-
-    qDebug() << "";
-    qDebug() << "========================================";
-    qDebug() << "HTTP Server started successfully!";
-    qDebug() << "Share directory: " << m_shareDir;
-    qDebug() << "Access URLs:";
-    qDebug() << "  Local:  http://127.0.0.1:" << port;
-    qDebug() << "  Network: http://" << m_localIp << ":" << port;
-    qDebug() << "========================================";
-    qDebug() << "Press Ctrl+C to stop";
-    qDebug() << "";
-
-    return true;
+    std::cout << "==========================================" << std::endl;
+    std::cout << "文件下载服务启动成功！" << std::endl;
+    std::cout << "访问地址: http://localhost:" << port << std::endl;
+    std::cout << "文件目录: " << root_dir.toStdString() << std::endl;
+    std::cout << "==========================================" << std::endl;
+    return server->listen("0.0.0.0", port);
 }
 
 void HttpServer::stop()
 {
-    if (isListening()) {
-        close();
-        qDebug() << "HTTP Server stopped";
-    }
-
-    // 断开所有客户端连接
-    for (auto it = m_clients.begin(); it != m_clients.end(); ++it) {
-        it.key()->close();
-        it.key()->deleteLater();
-    }
-    m_clients.clear();
-}
-
-QString HttpServer::getServerUrl() const
-{
-    return QString("http://%1:%2").arg(m_localIp).arg(m_port);
-}
-
-void HttpServer::incomingConnection(qintptr socketDescriptor)
-{
-    QTcpSocket* clientSocket = new QTcpSocket(this);
-    if (!clientSocket->setSocketDescriptor(socketDescriptor)) {
-        delete clientSocket;
-        return;
-    }
-
-    ClientConnection connection;
-    connection.socket = clientSocket;
-    m_clients[clientSocket] = connection;
-
-    connect(clientSocket, &QTcpSocket::readyRead, this, &HttpServer::onClientReadyRead);
-    connect(clientSocket, &QTcpSocket::disconnected, this, &HttpServer::onClientDisconnected);
-
-    QString clientAddr = clientSocket->peerAddress().toString();
-    if (clientAddr.startsWith("::ffff:")) {
-        clientAddr = clientAddr.mid(7);   // 移除IPv6前缀
-    }
-    qDebug() << "New client connected:" << clientAddr;
-}
-
-void HttpServer::onClientReadyRead()
-{
-    QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender());
-    if (!socket || !m_clients.contains(socket))
-        return;
-
-    ClientConnection& connection = m_clients[socket];
-    connection.buffer.append(socket->readAll());
-
-    // 检查是否接收到完整的HTTP请求（以空行结束）
-    if (connection.buffer.contains("\r\n\r\n")) {
-        QString requestedPath = parseRequestPath(connection.buffer);
-
-        // 记录请求
-        QString clientAddr = socket->peerAddress().toString();
-        if (clientAddr.startsWith("::ffff:")) {
-            clientAddr = clientAddr.mid(7);
-        }
-        qDebug() << "Request:" << requestedPath << "from" << clientAddr;
-
-        // 特殊处理 favicon.ico
-        if (requestedPath == "/favicon.ico") {
-            // 返回一个空的favicon响应
-            sendHttpResponse(socket, 204, "No Content");
-            connection.buffer.clear();
-            return;
-        }
-
-        // 验证路径安全性
-        QString absolutePath;
-        if (isValidPath(requestedPath, absolutePath)) {
-            QFileInfo fileInfo(absolutePath);
-
-            if (fileInfo.isDir()) {
-                // 如果是目录，返回目录列表
-                sendDirectoryListing(socket, absolutePath, requestedPath);
-            } else if (fileInfo.isFile() && fileInfo.isReadable()) {
-                // 如果是文件，发送文件
-                sendFile(socket, absolutePath);
-            } else {
-                send404(socket, requestedPath);
-            }
-        } else {
-            send400(socket, "Invalid path: " + requestedPath);
-        }
-
-        // 清空缓冲区
-        connection.buffer.clear();
+    if (server) {
+        server->stop();
     }
 }
 
-void HttpServer::onClientDisconnected()
+bool HttpServer::is_running() const
 {
-    QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender());
-    if (socket && m_clients.contains(socket)) {
-        m_clients.remove(socket);
-        socket->deleteLater();
-    }
+    return server && server->is_running();
 }
 
-QString HttpServer::parseRequestPath(const QByteArray& requestData)
+void HttpServer::ensureRootDirectory() const
 {
-    QString request = QString::fromUtf8(requestData);
-
-    // 查找请求行
-    int lineEnd = request.indexOf("\r\n");
-    if (lineEnd == -1)
-        return "/";
-
-    QString requestLine = request.left(lineEnd);
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    QStringList parts = requestLine.split(' ', Qt::SkipEmptyParts);
-#else
-    QStringList parts = requestLine.split(' ', QString::SkipEmptyParts);
-#endif
-
-    if (parts.size() < 2)
-        return "/";
-
-    QString path = parts[1];
-
-    // 处理URL编码
-    path = QUrl::fromPercentEncoding(path.toUtf8());
-
-    // 处理查询字符串
-    int queryIndex = path.indexOf('?');
-    if (queryIndex != -1) {
-        path = path.left(queryIndex);
-    }
-
-    // 确保路径以斜杠开头
-    if (!path.startsWith("/")) {
-        path = "/" + path;
-    }
-
-    return path;
-}
-
-bool HttpServer::isValidPath(const QString& requestedPath, QString& absolutePath)
-{
-    // 移除开头的斜杠
-    QString cleanRequest = requestedPath;
-    if (cleanRequest.startsWith("/")) {
-        cleanRequest = cleanRequest.mid(1);
-    }
-
-    // 规范化请求路径
-    cleanRequest = QDir::cleanPath(cleanRequest);
-
-    // 防止路径穿越攻击
-    if (cleanRequest.startsWith("..") || cleanRequest.contains("/..") || cleanRequest.contains("../") || cleanRequest == "..") {
-        return false;
-    }
-
-    // 构建绝对路径
-    QDir baseDir(m_shareDir);
-    absolutePath = baseDir.absoluteFilePath(cleanRequest);
-
-    // 规范化绝对路径
-    absolutePath = QDir::cleanPath(absolutePath);
-
-    // 确保路径在共享目录内
-    if (!absolutePath.startsWith(m_shareDir)) {
-        return false;
-    }
-
-    return true;
-}
-
-void HttpServer::sendFile(QTcpSocket* socket, const QString& filePath)
-{
-    QFile file(filePath);
-    if (!file.exists()) {
-        send404(socket, QFileInfo(filePath).fileName());
-        return;
-    }
-
-    if (!file.open(QIODevice::ReadOnly)) {
-        sendHttpResponse(socket, 403, "Forbidden",
-                         QString("<html><body><h1>403 Forbidden</h1><p>Permission denied</p></body></html>").toUtf8(),
-                         "text/html");
-        return;
-    }
-
-    QByteArray fileData = file.readAll();
-    file.close();
-
-    QString fileName = QFileInfo(filePath).fileName();
-    QString mimeType = getMimeType(fileName);
-
-    // 设置响应头
-    QByteArray response;
-    response.append("HTTP/1.1 200 OK\r\n");
-    response.append("Content-Type: " + mimeType.toUtf8() + "\r\n");
-
-    // 对于某些文件类型，直接显示而不是下载
-    if (mimeType.startsWith("text/") || mimeType.startsWith("image/") || mimeType.startsWith("application/pdf") ||
-        mimeType == "application/json" || mimeType == "application/xml") {
-        response.append("Content-Disposition: inline; filename=\"" + QUrl::toPercentEncoding(fileName) + "\"\r\n");
-    } else {
-        response.append("Content-Disposition: attachment; filename=\"" + QUrl::toPercentEncoding(fileName) + "\"\r\n");
-    }
-
-    response.append("Content-Length: " + QByteArray::number(fileData.size()) + "\r\n");
-    response.append("Connection: close\r\n");
-    response.append("\r\n");
-    response.append(fileData);
-
-    socket->write(response);
-    socket->flush();
-    socket->waitForBytesWritten(3000);
-    socket->disconnectFromHost();
-}
-
-void HttpServer::sendDirectoryListing(QTcpSocket* socket, const QString& dirPath, const QString& requestPath)
-{
-    QDir dir(dirPath);
+    QDir dir(root_dir);
     if (!dir.exists()) {
-        send404(socket, requestPath);
-        return;
+        dir.mkpath(".");
     }
-
-    dir.setFilter(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
-    dir.setSorting(QDir::DirsFirst | QDir::Name);
-
-    QFileInfoList entries = dir.entryInfoList();
-
-    QString formattedPath = formatDirectoryPath(requestPath);
-    QString parentPath = requestPath;
-    if (parentPath != "/") {
-        if (parentPath.endsWith("/")) {
-            parentPath.chop(1);
-        }
-        int lastSlash = parentPath.lastIndexOf("/");
-        if (lastSlash > 0) {
-            parentPath = parentPath.left(lastSlash);
-        } else {
-            parentPath = "/";
-        }
-    }
-
-    QString html = "<!DOCTYPE html>";
-    html += "<html><head>";
-    html += "<meta charset='UTF-8'>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
-    html += "<title>文件列表 - " + formattedPath + "</title>";
-    html += "<style>";
-    html +=
-        "body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }";
-    html += ".container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px "
-            "rgba(0,0,0,0.1); padding: 20px; }";
-    html += "h1 { color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }";
-    html += ".info { background: #e8f5e9; border-left: 4px solid #4CAF50; padding: 10px; margin: 15px 0; border-radius: 4px; }";
-    html += ".file-list { width: 100%; border-collapse: collapse; margin-top: 20px; }";
-    html += ".file-list th { background: #4CAF50; color: white; padding: 12px; text-align: left; }";
-    html += ".file-list td { padding: 12px; border-bottom: 1px solid #ddd; }";
-    html += ".file-list tr:hover { background: #f5f5f5; }";
-    html += ".dir { color: #2196F3; }";
-    html += ".file { color: #666; }";
-    html += ".size { color: #888; font-size: 0.9em; }";
-    html += ".date { color: #888; font-size: 0.9em; }";
-    html += ".nav { margin: 20px 0; }";
-    html += ".nav a { display: inline-block; padding: 8px 16px; background: #4CAF50; color: white; text-decoration: none; "
-            "border-radius: 4px; margin-right: 10px; }";
-    html += ".nav a:hover { background: #45a049; }";
-    html += ".icon { margin-right: 8px; }";
-    html += "footer { margin-top: 20px; text-align: center; color: #888; font-size: 0.9em; }";
-    html += "</style>";
-    html += "</head><body>";
-    html += "<div class='container'>";
-    html += "<h1>📁 文件列表: " + formattedPath + "</h1>";
-    html += "<div class='info'>";
-    html += "<p><strong>共享目录:</strong> " + m_shareDir + "</p>";
-    html += "<p><strong>服务器地址:</strong> http://" + m_localIp + ":" + QString::number(m_port) + "</p>";
-    html += "</div>";
-
-    html += "<div class='nav'>";
-    if (requestPath != "/") {
-        html += "<a href='" + parentPath + "'><span class='icon'>⬆️</span>返回上级</a>";
-    }
-    html += "<a href='/'>🏠 返回首页</a>";
-    html += "</div>";
-
-    html += "<table class='file-list'>";
-    html += "<thead><tr>";
-    html += "<th>名称</th><th>类型</th><th>大小</th><th>修改时间</th>";
-    html += "</tr></thead><tbody>";
-
-    if (entries.isEmpty()) {
-        html += "<tr><td colspan='4' style='text-align:center;color:#888;'>目录为空</td></tr>";
-    } else {
-        foreach (const QFileInfo& info, entries) {
-            QString name = info.fileName();
-            QString urlPath = requestPath;
-            if (!urlPath.endsWith("/"))
-                urlPath += "/";
-            urlPath += QUrl::toPercentEncoding(name);
-
-            QString typeIcon, typeText;
-            qint64 size = info.size();
-            QString sizeText;
-
-            if (info.isDir()) {
-                typeIcon = "📁";
-                typeText = "文件夹";
-                sizeText = "-";
-            } else {
-                typeIcon = "📄";
-                typeText = "文件";
-                if (size < 1024) {
-                    sizeText = QString("%1 B").arg(size);
-                } else if (size < 1024 * 1024) {
-                    sizeText = QString("%1 KB").arg(size / 1024.0, 0, 'f', 1);
-                } else if (size < 1024 * 1024 * 1024) {
-                    sizeText = QString("%1 MB").arg(size / (1024.0 * 1024.0), 0, 'f', 1);
-                } else {
-                    sizeText = QString("%1 GB").arg(size / (1024.0 * 1024.0 * 1024.0), 0, 'f', 2);
-                }
-            }
-
-            QString modified = info.lastModified().toString("yyyy-MM-dd HH:mm:ss");
-            QString className = info.isDir() ? "dir" : "file";
-
-            html += "<tr>";
-            html += "<td class='" + className + "'><span class='icon'>" + typeIcon + "</span><a href='" + urlPath + "'>" + name +
-                    "</a></td>";
-            html += "<td>" + typeText + "</td>";
-            html += "<td class='size'>" + sizeText + "</td>";
-            html += "<td class='date'>" + modified + "</td>";
-            html += "</tr>";
-        }
-    }
-
-    html += "</tbody></table>";
-
-    html += "<footer>";
-    html += "<p>Qt HTTP File Server | " + QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss") + "</p>";
-    html += "</footer>";
-
-    html += "</div></body></html>";
-
-    sendHttpResponse(socket, 200, "OK", html.toUtf8(), "text/html; charset=UTF-8");
 }
 
-QString HttpServer::getMimeType(const QString& fileName)
+std::string HttpServer::formatFileSize(qint64 size) const
 {
-    static QMimeDatabase mimeDatabase;
-    QMimeType mimeType = mimeDatabase.mimeTypeForFile(fileName, QMimeDatabase::MatchExtension);
-
-    if (mimeType.isValid()) {
-        return mimeType.name();
+    if (size < 1024) {
+        return std::to_string(size) + " B";
+    } else if (size < 1024 * 1024) {
+        char buffer[20];
+        snprintf(buffer, sizeof(buffer), "%.1f KB", size / 1024.0);
+        return buffer;
+    } else {
+        char buffer[20];
+        snprintf(buffer, sizeof(buffer), "%.1f MB", size / (1024.0 * 1024.0));
+        return buffer;
     }
+}
 
-    // 常见文件类型的MIME类型映射
-    QString ext = QFileInfo(fileName).suffix().toLower();
+std::string HttpServer::formatFolderSize() const
+{
+    return "[文件夹]";
+}
 
-    if (ext == "txt" || ext == "log" || ext == "md" || ext == "json" || ext == "xml" || ext == "yml" || ext == "yaml" ||
-        ext == "ini" || ext == "cfg" || ext == "conf") {
+std::string HttpServer::getContentType(const QString& filename) const
+{
+    QString file = filename.toLower();
+
+    if (file.endsWith(".txt"))
         return "text/plain";
-    }
-    if (ext == "html" || ext == "htm")
+    if (file.endsWith(".html") || file.endsWith(".htm"))
         return "text/html";
-    if (ext == "css")
+    if (file.endsWith(".css"))
         return "text/css";
-    if (ext == "js")
+    if (file.endsWith(".js"))
         return "application/javascript";
-    if (ext == "json")
-        return "application/json";
-    if (ext == "xml")
-        return "application/xml";
-    if (ext == "pdf")
-        return "application/pdf";
-    if (ext == "jpg" || ext == "jpeg")
+
+    if (file.endsWith(".jpg") || file.endsWith(".jpeg"))
         return "image/jpeg";
-    if (ext == "png")
+    if (file.endsWith(".png"))
         return "image/png";
-    if (ext == "gif")
+    if (file.endsWith(".gif"))
         return "image/gif";
-    if (ext == "bmp")
+    if (file.endsWith(".bmp"))
         return "image/bmp";
-    if (ext == "svg")
-        return "image/svg+xml";
-    if (ext == "ico")
+    if (file.endsWith(".ico"))
         return "image/x-icon";
-    if (ext == "zip")
+
+    if (file.endsWith(".pdf"))
+        return "application/pdf";
+    if (file.endsWith(".zip"))
         return "application/zip";
-    if (ext == "rar")
-        return "application/vnd.rar";
-    if (ext == "7z")
+    if (file.endsWith(".rar"))
+        return "application/x-rar-compressed";
+    if (file.endsWith(".7z"))
         return "application/x-7z-compressed";
-    if (ext == "tar")
-        return "application/x-tar";
-    if (ext == "gz")
-        return "application/gzip";
-    if (ext == "exe")
-        return "application/x-msdownload";
-    if (ext == "msi")
-        return "application/x-msi";
-    if (ext == "doc" || ext == "docx")
-        return "application/msword";
-    if (ext == "xls" || ext == "xlsx")
-        return "application/vnd.ms-excel";
-    if (ext == "ppt" || ext == "pptx")
-        return "application/vnd.ms-powerpoint";
-    if (ext == "mp3")
+
+    if (file.endsWith(".mp3"))
         return "audio/mpeg";
-    if (ext == "mp4")
+    if (file.endsWith(".wav"))
+        return "audio/wav";
+
+    if (file.endsWith(".mp4"))
         return "video/mp4";
-    if (ext == "avi")
+    if (file.endsWith(".avi"))
         return "video/x-msvideo";
-    if (ext == "mkv")
-        return "video/x-matroska";
+
+    if (file.endsWith(".doc") || file.endsWith(".docx"))
+        return "application/msword";
+    if (file.endsWith(".xls") || file.endsWith(".xlsx"))
+        return "application/vnd.ms-excel";
+    if (file.endsWith(".ppt") || file.endsWith(".pptx"))
+        return "application/vnd.ms-powerpoint";
 
     return "application/octet-stream";
 }
 
-void HttpServer::send404(QTcpSocket* socket, const QString& path)
+void HttpServer::setupRoutes()
 {
-    QString html = "<!DOCTYPE html>";
-    html += "<html><head><meta charset='UTF-8'><style>";
-    html += "body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }";
-    html += "h1 { color: #d32f2f; }";
-    html += "a { color: #1976d2; text-decoration: none; }";
-    html += "</style></head><body>";
-    html += "<h1>❌ 404 Not Found</h1>";
-    html += "<p>请求的资源未找到: <strong>" + path + "</strong></p>";
-    html += "<p><a href='/'>返回首页</a></p>";
-    html += "</body></html>";
+    // 首页
+    server->Get("/", [this](const httplib::Request& req, httplib::Response& res) { handleRoot(req, res); });
 
-    sendHttpResponse(socket, 404, "Not Found", html.toUtf8(), "text/html; charset=UTF-8");
+    // 文件列表页面（根目录）
+    server->Get("/files", [this](const httplib::Request& req, httplib::Response& res) { handleFileList(req, res, ""); });
+
+    // 子目录列表
+    server->Get("/list(.*)", [this](const httplib::Request& req, httplib::Response& res) {
+        std::string path = req.matches[1];
+        if (path.empty() || path == "/") {
+            path = "";
+        } else if (path[0] == '/') {
+            path = path.substr(1);
+        }
+        handleFileList(req, res, path);
+    });
+
+    // 下载文件
+    server->Get("/download/(.*)", [this](const httplib::Request& req, httplib::Response& res) { handleDownload(req, res); });
+
+    // 健康检查
+    server->Get("/health", [this](const httplib::Request& req, httplib::Response& res) { handleHealth(req, res); });
 }
 
-void HttpServer::send400(QTcpSocket* socket, const QString& message)
+void HttpServer::handleRoot(const httplib::Request& req, httplib::Response& res)
 {
-    QString html = "<!DOCTYPE html>";
-    html += "<html><head><meta charset='UTF-8'><style>";
-    html += "body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }";
-    html += "h1 { color: #d32f2f; }";
-    html += "a { color: #1976d2; text-decoration: none; }";
-    html += "</style></head><body>";
-    html += "<h1>⚠️ 400 Bad Request</h1>";
-    html += "<p>" + message + "</p>";
-    html += "<p><a href='/'>返回首页</a></p>";
-    html += "</body></html>";
+    std::string html = R"(<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>文件下载服务</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #f0f0f0;
+    color: #333;
+}
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+h1 {
+    color: #0066cc;
+    border-bottom: 2px solid #0066cc;
+    padding-bottom: 10px;
+}
+h2 {
+    color: #333;
+    border-left: 4px solid #0066cc;
+    padding-left: 10px;
+}
+.nav {
+    margin: 20px 0;
+    padding: 15px;
+    background: #e8f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 3px;
+}
+.nav a {
+    display: inline-block;
+    margin-right: 10px;
+    padding: 8px 16px;
+    background: #0066cc;
+    color: white;
+    text-decoration: none;
+    border-radius: 3px;
+}
+.nav a:hover {
+    background: #0052a3;
+}
+.feature-item {
+    background: #f9f9f9;
+    margin: 10px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+code {
+    background: #f5f5f5;
+    padding: 2px 4px;
+    border: 1px solid #ddd;
+    font-family: "Courier New", monospace;
+}
+.footer {
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+    color: #666;
+    font-size: 12px;
+    text-align: center;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+}
+table, th, td {
+    border: 1px solid #ccc;
+}
+th, td {
+    padding: 8px;
+    text-align: left;
+}
+th {
+    background: #e8f3ff;
+}
+.folder-icon {
+    color: #ff9900;
+}
+.file-icon {
+    color: #0066cc;
+}
+.breadcrumb {
+    margin: 10px 0;
+    padding: 5px 10px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>📁 文件下载服务</h1>
+<p>这是一个简单的HTTP文件服务器，兼容各种旧版本浏览器。</p>
 
-    sendHttpResponse(socket, 400, "Bad Request", html.toUtf8(), "text/html; charset=UTF-8");
+<div class="nav">
+    <a href="/files">查看文件列表</a>
+    <a href="/health">服务状态</a>
+</div>
+
+<h2>主要功能</h2>
+<div class="feature-item">
+    <strong>📁 文件/文件夹列表</strong><br>
+    查看服务器上所有文件和文件夹。<br>
+    地址: <a href="/files"><code>/files</code></a>
+</div>
+
+<div class="feature-item">
+    <strong>⬇️ 文件下载</strong><br>
+    点击文件名可直接下载文件。<br>
+    格式: <code>/download/路径/文件名</code>
+</div>
+
+<div class="feature-item">
+    <strong>📄 文件浏览</strong><br>
+    支持浏览子目录，面包屑导航。<br>
+    格式: <code>/list/子目录</code>
+</div>
+
+<h2>使用示例</h2>
+<pre>
+# 根目录列表
+http://localhost:8080/files
+
+# 子目录列表
+http://localhost:8080/list/subfolder
+
+# 下载文件
+http://localhost:8080/download/path/to/file.txt
+</pre>
+
+<h2>文件类型支持</h2>
+<table>
+<tr><th>文件类型</th><th>说明</th></tr>
+<tr><td>📁 文件夹</td><td>可点击进入子目录</td></tr>
+<tr><td>.txt</td><td>文本文件</td></tr>
+<tr><td>.jpg/.png/.gif</td><td>图片文件</td></tr>
+<tr><td>.pdf</td><td>PDF文档</td></tr>
+<tr><td>.zip/.rar</td><td>压缩文件</td></tr>
+<tr><td>.mp3/.wav</td><td>音频文件</td></tr>
+<tr><td>其他</td><td>二进制下载</td></tr>
+</table>
+
+<div class="footer">
+<p>服务器根目录: )" + root_dir.toStdString() +
+                       R"(</p>
+<p>兼容性: 支持IE6+、Firefox 2+、Chrome 1+、Safari 3+等旧版浏览器</p>
+</div>
+</div>
+</body>
+</html>)";
+    res.set_content(html, "text/html");
 }
 
-void HttpServer::sendHttpResponse(QTcpSocket* socket, int statusCode, const QString& statusText, const QByteArray& body,
-                                  const QString& contentType)
+void HttpServer::handleFileList(const httplib::Request& req, httplib::Response& res, const std::string& relativePath)
 {
-    QByteArray response;
-    response.append(QString("HTTP/1.1 %1 %2\r\n").arg(statusCode).arg(statusText).toUtf8());
-    response.append("Content-Type: " + contentType.toUtf8() + "\r\n");
-    response.append("Content-Length: " + QByteArray::number(body.size()) + "\r\n");
-    response.append("Connection: close\r\n");
-    response.append("Server: Qt-HttpServer/1.0\r\n");
-    response.append("\r\n");
-    response.append(body);
+    QString currentPath = QDir(root_dir).filePath(QString::fromStdString(relativePath));
+    QDir dir(currentPath);
 
-    socket->write(response);
-    socket->flush();
-    socket->waitForBytesWritten(3000);
-    socket->disconnectFromHost();
-}
-
-QString HttpServer::formatDirectoryPath(const QString& path)
-{
-    if (path == "/")
-        return "/";
-
-    QString formatted = path;
-    if (!formatted.endsWith("/")) {
-        formatted += "/";
+    if (!dir.exists()) {
+        res.status = 404;
+        std::string html = R"(<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>目录不存在</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 50px; text-align: center; }
+.error { color: #d9534f; font-size: 24px; margin: 20px; }
+.back { margin: 20px; }
+</style>
+</head>
+<body>
+<div class="error">⚠️ 目录不存在: )" +
+                           relativePath + R"(</div>
+<div class="back"><a href="/files">返回根目录</a></div>
+</body>
+</html>)";
+        res.set_content(html, "text/html");
+        return;
     }
-    return formatted;
+
+    // 获取文件夹和文件列表
+    dir.setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+    dir.setSorting(QDir::DirsFirst | QDir::Name);
+
+    std::stringstream ss;
+    ss << "<!DOCTYPE html>"
+       << "<html><head>"
+       << "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">"
+       << "<title>文件列表 - " << (relativePath.empty() ? "根目录" : relativePath) << "</title>"
+       << "<style>"
+       << "body { font-family: Arial, sans-serif; margin: 20px; padding: 0; background: #f0f0f0; }"
+       << ".container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border: 1px solid #ccc; }"
+       << "h1 { color: #0066cc; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }"
+       << ".breadcrumb { margin: 10px 0; padding: 8px 12px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; }"
+       << ".breadcrumb a { color: #0066cc; text-decoration: none; }"
+       << ".breadcrumb a:hover { text-decoration: underline; }"
+       << ".breadcrumb span { color: #666; }"
+       << ".nav-links { margin: 10px 0; }"
+       << ".nav-links a { margin-right: 10px; color: #0066cc; text-decoration: none; }"
+       << ".nav-links a:hover { text-decoration: underline; }"
+       << ".list-table { width: 100%; border-collapse: collapse; margin: 20px 0; }"
+       << ".list-table th, .list-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }"
+       << ".list-table th { background: #e8f3ff; font-weight: bold; }"
+       << ".list-table tr:nth-child(even) { background: #f9f9f9; }"
+       << ".list-table tr:hover { background: #f0f7ff; }"
+       << ".folder-row { background: #fff8e1 !important; }"
+       << ".folder-row:hover { background: #ffecb3 !important; }"
+       << ".folder-icon { color: #ff9800; font-weight: bold; }"
+       << ".file-icon { color: #2196f3; }"
+       << ".item-name a { color: #0066cc; text-decoration: none; }"
+       << ".item-name a:hover { text-decoration: underline; }"
+       << ".item-size { color: #666; font-size: 0.9em; }"
+       << ".item-date { color: #666; font-size: 0.9em; }"
+       << ".item-action { min-width: 60px; }"
+       << ".no-items { padding: 20px; background: #f9f9f9; border: 1px dashed #ccc; text-align: center; }"
+       << ".current-dir { color: #666; font-size: 0.9em; margin: 5px 0; }"
+       << "</style>"
+       << "</head><body>"
+       << "<div class=\"container\">"
+       << "<h1>📁 文件列表</h1>";
+
+    // 面包屑导航
+    ss << "<div class=\"breadcrumb\">";
+    ss << "<a href=\"/\">首页</a> &gt; ";
+    ss << "<a href=\"/files\">根目录</a>";
+
+    if (!relativePath.empty()) {
+        std::vector<std::string> pathParts;
+        std::stringstream pathStream(relativePath);
+        std::string part;
+
+        // 分割路径
+        while (std::getline(pathStream, part, '/')) {
+            if (!part.empty()) {
+                pathParts.push_back(part);
+            }
+        }
+
+        // 构建面包屑
+        std::string accumulatedPath;
+        for (size_t i = 0; i < pathParts.size(); i++) {
+            accumulatedPath += "/" + pathParts[i];
+            ss << " &gt; <a href=\"/list" << accumulatedPath << "\">" << pathParts[i] << "</a>";
+        }
+    }
+    ss << "</div>";
+
+    ss << "<div class=\"nav-links\">"
+       << "<a href=\"/\">← 返回首页</a> | "
+       << "<a href=\"/files\">↻ 刷新列表</a>"
+       << "</div>";
+
+    // 当前目录信息
+    ss << "<div class=\"current-dir\">当前目录: " << (relativePath.empty() ? "/" : relativePath.c_str()) << "</div>";
+
+    QFileInfoList items = dir.entryInfoList();
+
+    if (items.isEmpty()) {
+        ss << "<div class=\"no-items\">目录为空，没有文件或文件夹。</div>";
+    } else {
+        ss << "<h2>目录内容 (" << items.size() << " 项)</h2>"
+           << "<table class=\"list-table\">"
+           << "<tr><th width=\"50%\">名称</th><th width=\"15%\">大小</th><th width=\"20%\">修改时间</th><th "
+              "width=\"15%\">操作</th></tr>";
+
+        for (const QFileInfo& item : items) {
+            QString name = item.fileName();
+            QString fullPath = item.absoluteFilePath();
+            QString relativeFilePath = QDir(root_dir).relativeFilePath(fullPath);
+
+            bool isDir = item.isDir();
+
+            ss << "<tr" << (isDir ? " class=\"folder-row\"" : "") << ">";
+
+            // 名称列
+            ss << "<td class=\"item-name\">";
+            if (isDir) {
+                ss << "<span class=\"folder-icon\">📁 </span>";
+                // 文件夹链接
+                std::string folderUrl = "/list";
+                if (!relativePath.empty()) {
+                    folderUrl += "/" + relativePath;
+                }
+                folderUrl += "/" + name.toStdString();
+                // 编码 URL
+                std::string encodedUrl;
+                for (char c : folderUrl) {
+                    if (c == ' ')
+                        encodedUrl += "%20";
+                    else
+                        encodedUrl += c;
+                }
+                ss << "<a href=\"" << encodedUrl << "\">" << name.toStdString() << "/</a>";
+            } else {
+                ss << "<span class=\"file-icon\">📄 </span>";
+                // 文件链接
+                std::string fileUrl = "/download/" + relativeFilePath.toStdString();
+                // 编码 URL
+                std::string encodedUrl;
+                for (char c : fileUrl) {
+                    if (c == ' ')
+                        encodedUrl += "%20";
+                    else
+                        encodedUrl += c;
+                }
+                ss << "<a href=\"" << encodedUrl << "\">" << name.toStdString() << "</a>";
+            }
+            ss << "</td>";
+
+            // 大小列
+            ss << "<td class=\"item-size\">";
+            if (isDir) {
+                ss << this->formatFolderSize();
+            } else {
+                ss << this->formatFileSize(item.size());
+            }
+            ss << "</td>";
+
+            // 修改时间列
+            ss << "<td class=\"item-date\">" << item.lastModified().toString("yyyy-MM-dd hh:mm").toStdString() << "</td>";
+
+            // 操作列
+            ss << "<td class=\"item-action\">";
+            if (isDir) {
+                ss << "<a href=\"/list";
+                if (!relativePath.empty()) {
+                    ss << "/" << relativePath;
+                }
+                ss << "/" << name.toStdString() << "\">打开</a>";
+            } else {
+                ss << "<a href=\"/download/" << relativeFilePath.toStdString() << "\">下载</a>";
+            }
+            ss << "</td>";
+
+            ss << "</tr>";
+        }
+
+        ss << "</table>";
+    }
+
+    // 统计信息
+    int dirCount = 0;
+    int fileCount = 0;
+    qint64 totalSize = 0;
+
+    for (const QFileInfo& item : items) {
+        if (item.isDir()) {
+            dirCount++;
+        } else {
+            fileCount++;
+            totalSize += item.size();
+        }
+    }
+
+    ss << "<div style=\"margin-top: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6;\">"
+       << "<strong>统计信息:</strong> " << dirCount << " 个文件夹, " << fileCount << " 个文件, "
+       << "总大小: " << this->formatFileSize(totalSize) << "</div>";
+
+    ss << "</div></body></html>";
+
+    res.set_content(ss.str(), "text/html");
+}
+
+void HttpServer::handleDownload(const httplib::Request& req, httplib::Response& res)
+{
+    if (req.matches.size() < 2) {
+        res.status = 400;
+        res.set_content("文件路径未指定", "text/plain");
+        return;
+    }
+
+    std::string filepath = req.matches[1];
+    QString fullPath = QDir(root_dir).filePath(QString::fromStdString(filepath));
+
+    QFile file(fullPath);
+    if (!file.exists()) {
+        res.status = 404;
+
+        // 返回友好的404页面
+        std::string html = R"(<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>文件未找到</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 50px; text-align: center; }
+.error { color: #d9534f; font-size: 24px; margin: 20px; }
+.back { margin: 20px; }
+</style>
+</head>
+<body>
+<div class="error">⚠️ 文件未找到: )" +
+                           filepath + R"(</div>
+<div class="back"><a href="/files">返回文件列表</a></div>
+</body>
+</html>)";
+        res.set_content(html, "text/html");
+        return;
+    }
+
+    QFileInfo fileInfo(file);
+    if (fileInfo.isDir()) {
+        res.status = 400;
+        res.set_content("不能下载文件夹", "text/plain");
+        return;
+    }
+
+    // 获取文件大小
+    qint64 fileSize = fileInfo.size();
+
+    // 设置 Content-Type
+    std::string content_type = getContentType(fileInfo.fileName());
+    res.set_header("Content-Type", content_type);
+
+    // 设置下载头
+    std::string filename = fileInfo.fileName().toStdString();
+    res.set_header("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+    // 设置文件大小
+    res.set_header("Content-Length", std::to_string(fileSize));
+
+    // 普通下载
+    if (file.open(QIODevice::ReadOnly)) {
+        QByteArray fileData = file.readAll();
+        file.close();
+
+        res.set_content(std::string(fileData.constData(), fileData.size()), content_type);
+    } else {
+        res.status = 500;
+        res.set_content("无法读取文件", "text/plain");
+    }
+}
+
+void HttpServer::handleHealth(const httplib::Request& req, httplib::Response& res)
+{
+    std::string html = R"(<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>服务状态</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 50px; text-align: center; }
+.status { font-size: 24px; color: #28a745; margin: 20px; }
+.info { margin: 20px; padding: 20px; background: #f8f9fa; border: 1px solid #dee2e6; display: inline-block; }
+</style>
+</head>
+<body>
+<div class="status">✅ 服务运行正常</div>
+<div class="info">
+<p><strong>服务器状态:</strong> 运行中</p>
+<p><strong>文件根目录:</strong> )" +
+                       root_dir.toStdString() + R"(</p>
+</div>
+<div style="margin: 20px;">
+<a href="/">返回首页</a> |
+<a href="/files">文件列表</a>
+</div>
+</body>
+</html>)";
+
+    res.set_content(html, "text/html");
 }

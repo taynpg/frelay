@@ -1,54 +1,70 @@
-#include <QCommandLineOption>
-#include <QCommandLineParser>
-#include <QCoreApplication>
+// main.cpp
+#include <csignal>
+#include <cstdlib>
 #include <iostream>
 
 #include "HttpServer.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+std::unique_ptr<HttpServer> server;
+
+void signalHandler(int signal)
+{
+    std::cout << "\n收到信号 " << signal << "，正在关闭服务器..." << std::endl;
+    if (server) {
+        server->stop();
+    }
+    exit(0);
+}
+
 int main(int argc, char* argv[])
 {
-    QCoreApplication app(argc, argv);
-    app.setApplicationName("Qt5 File Server");
-    app.setApplicationVersion("1.0");
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+#endif
 
-    QCommandLineParser parser;
-    parser.setApplicationDescription("Simple HTTP file server for Qt5");
-    parser.addHelpOption();
-    parser.addVersionOption();
+    // 设置信号处理
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
 
-    // 添加端口选项
-    QCommandLineOption portOption(QStringList() << "p" << "port", "Port to listen on (default: 8080)", "port", "8080");
-    parser.addOption(portOption);
+    int port = 8080;
+    QString root_dir = "./files";
 
-    // 添加目录选项
-    QCommandLineOption dirOption(QStringList() << "d" << "directory", "Directory to serve (default: current directory)",
-                                 "directory", ".");
-    parser.addOption(dirOption);
+    // 解析命令行参数
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "-p" && i + 1 < argc) {
+            port = std::atoi(argv[++i]);
+        } else if (arg == "-d" && i + 1 < argc) {
+            root_dir = argv[++i];
+        } else if (arg == "-h" || arg == "--help") {
+            std::cout << "用法: " << argv[0] << " [选项]" << std::endl;
+            std::cout << "选项:" << std::endl;
+            std::cout << "  -p <端口>   设置服务器端口 (默认: 8080)" << std::endl;
+            std::cout << "  -d <目录>   设置文件目录 (默认: ./files)" << std::endl;
+            std::cout << "  -h, --help  显示帮助信息" << std::endl;
+            return 0;
+        }
+    }
 
-    // 添加绑定地址选项
-    QCommandLineOption hostOption(QStringList() << "b" << "bind", "Address to bind to (default: all interfaces)", "address",
-                                  "0.0.0.0");
-    parser.addOption(hostOption);
+    try {
+        server = std::make_unique<HttpServer>(root_dir);
 
-    parser.process(app);
+        std::cout << "启动文件下载服务..." << std::endl;
+        std::cout << "按 Ctrl+C 停止服务" << std::endl;
 
-    quint16 port = parser.value(portOption).toUShort();
-    QString shareDir = QDir(parser.value(dirOption)).absolutePath();
-    QString bindAddress = parser.value(hostOption);
+        if (!server->start(port)) {
+            std::cerr << "启动服务器失败！" << std::endl;
+            return 1;
+        }
 
-    // 检查目录是否存在
-    QDir dir(shareDir);
-    if (!dir.exists()) {
-        std::cerr << "Error: Directory does not exist: " << shareDir.toStdString() << std::endl;
-        std::cerr << "Current directory: " << QDir::currentPath().toStdString() << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "错误: " << e.what() << std::endl;
         return 1;
     }
 
-    HttpServer server;
-    if (!server.start(port, shareDir)) {
-        std::cerr << "Failed to start server!" << std::endl;
-        return 1;
-    }
-
-    return app.exec();
+    return 0;
 }
