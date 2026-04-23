@@ -369,6 +369,7 @@ void ClientCore::clearWaitTask()
         if (it != waitTask_.end()) {
             WaitTask& task = it.value();
             if (task.wo) {
+                task.wo->quit();
                 task.wo->wait();
                 delete task.wo;
                 task.wo = nullptr;
