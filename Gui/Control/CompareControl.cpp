@@ -423,9 +423,9 @@ void Compare::FilterMark()
     SetResult(result);
 
     if (key == "ALL") {
-        isResource_ = false;
-    } else {
         isResource_ = true;
+    } else {
+        isResource_ = false;
     }
     ui->tableWidget->setIsResource(isResource_);
 }
